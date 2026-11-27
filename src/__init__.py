@@ -1,0 +1,1 @@
+"""Midcap Momentum Index package."""

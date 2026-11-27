@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DIY Midcap 150 Momentum Index</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --card2: #222634;
+    --border: #2a2d3a;
+    --text: #e8eaf0;
+    --sub: #8b8fa8;
+    --equity: #22c55e;
+    --gold: #f59e0b;
+    --debt: #3b82f6;
+    --danger: #ef4444;
+    --accent: #6366f1;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+    padding-bottom: 48px;
+  }
+  .topbar {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .brand h1 { font-size: 16px; font-weight: 700; letter-spacing: 0.3px; }
+  .pill {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .pill-accent { color: #a5b4fc; background: rgba(99,102,241,0.16); border-color: rgba(99,102,241,0.35); }
+  .pill-green { color: #86efac; background: rgba(34,197,94,0.14); border-color: rgba(34,197,94,0.35); }
+  .pill-amber { color: #fde68a; background: rgba(245,158,11,0.14); border-color: rgba(245,158,11,0.35); }
+  .pill-red { color: #fca5a5; background: rgba(239,68,68,0.14); border-color: rgba(239,68,68,0.35); }
+  .pill-blue { color: #93c5fd; background: rgba(59,130,246,0.14); border-color: rgba(59,130,246,0.35); }
+  .meta-right { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--sub); }
+
+  .container { max-width: 1320px; margin: 0 auto; padding: 16px; }
+  .banner {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--equity);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .banner.defensive { border-left-color: var(--gold); background: linear-gradient(90deg, rgba(245,158,11,0.08), var(--card)); }
+  .banner-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .banner-sub { color: var(--sub); font-size: 13px; margin-top: 4px; }
+  .alloc-bar-wrap { min-width: min(100%, 260px); flex: 1 1 300px; }
+  .alloc-labels { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; color: var(--sub); font-weight: 600; }
+  .alloc-bar { height: 10px; border-radius: 999px; background: var(--card2); overflow: hidden; display: flex; }
+  .seg-eq { background: var(--equity); }
+  .seg-gold { background: var(--gold); }
+  .seg-liq { background: var(--debt); }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .kpi {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 14px;
+  }
+  .kpi-lbl { font-size: 11px; color: var(--sub); text-transform: uppercase; letter-spacing: 0.4px; }
+  .kpi-val { font-size: 21px; font-weight: 700; margin-top: 4px; font-family: var(--mono); }
+  .kpi-note { font-size: 11px; color: var(--sub); margin-top: 3px; }
+  .c-green { color: var(--equity); }
+  .c-amber { color: var(--gold); }
+  .c-red { color: var(--danger); }
+  .c-blue { color: var(--debt); }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+  }
+  .tab-btn {
+    background: var(--card);
+    color: var(--sub);
+    border: 1px solid var(--border);
+    padding: 8px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    min-width: 0;
+  }
+  .card h2 { font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+
+  .controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .ctrl label { display: block; font-size: 11px; color: var(--sub); margin-bottom: 5px; font-weight: 600; text-transform: uppercase; }
+  .ctrl input[type="number"], .ctrl input[type="text"], .ctrl select, textarea {
+    width: 100%;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  .quick-caps { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .chip-btn {
+    background: var(--card2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .chip-btn:hover, .chip-btn.active { border-color: var(--accent); background: rgba(99,102,241,0.2); }
+  .toggle-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; padding: 10px 12px; background: var(--card2); border-radius: 8px; margin-bottom: 14px; }
+  .toggle-row label { display: flex; align-items: center; gap: 7px; font-size: 13px; cursor: pointer; }
+  .btn-primary { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 7px 13px; font-weight: 600; font-size: 12px; cursor: pointer; }
+  .btn-secondary { background: var(--card2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 7px 13px; font-weight: 600; font-size: 12px; cursor: pointer; }
+
+  .table-wrap { overflow-x: auto; max-width: 100%; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 9px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--sub); background: var(--card2); position: sticky; top: 0; }
+  td.num, th.num { text-align: right; font-family: var(--mono); }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  tr.row-muted td { opacity: 0.55; }
+
+  .chart-box { position: relative; height: 340px; width: 100%; }
+  .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 16px; }
+  .two-col > * { min-width: 0; }
+  .qa-item { border-left: 3px solid var(--accent); padding-left: 12px; margin-bottom: 14px; }
+  .qa-item h3 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .qa-item p { color: #cbd5e1; font-size: 13px; }
+  .warn-box { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.35); border-radius: 10px; padding: 12px 14px; font-size: 13px; margin-bottom: 14px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <h1>DIY Midcap 150 Momentum Index</h1>
+    <span class="pill pill-accent" id="strategyBadge">F2 · 50/50 Raw Top20+30 · 9M</span>
+    <span class="pill pill-blue" id="nseBadge">NSE MCP Connecting...</span>
+  </div>
+  <div class="meta-right">
+    <span>As of <strong id="asOfDate">—</strong></span>
+    <span>·</span>
+    <span>Universe: <strong id="univCount">150</strong></span>
+  </div>
+</div>
+
+<div class="container" id="appRoot">
+  <div class="banner" id="regimeBanner">
+    <div>
+      <div class="banner-title">
+        <span id="regimeTitle">Loading Live Market Regime...</span>
+        <span class="pill pill-green" id="regimePill">—</span>
+      </div>
+      <div class="banner-sub" id="regimeSubtitle">Fetching live NSE Midcap 150 momentum metrics...</div>
+    </div>
+    <div class="alloc-bar-wrap">
+      <div class="alloc-labels">
+        <span id="lblEq">Equity —%</span>
+        <span id="lblGold">GOLDBEES —%</span>
+        <span id="lblLiq">LIQUIDCASE —%</span>
+      </div>
+      <div class="alloc-bar">
+        <div class="seg-eq" id="barEq" style="width:100%"></div>
+        <div class="seg-gold" id="barGold" style="width:0%"></div>
+        <div class="seg-liq" id="barLiq" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="portfolio">Portfolio &amp; Order Sheet</button>
+    <button class="tab-btn" data-tab="charts">Index &amp; Drawdown Charts</button>
+    <button class="tab-btn" data-tab="research">Backtest Findings &amp; Matrix</button>
+    <button class="tab-btn" data-tab="rankings">Live Top 60 Scorer</button>
+  </div>
+
+  <!-- TAB 1: PORTFOLIO & ORDER SHEET -->
+  <div class="tab-panel active" id="tab-portfolio">
+    <div class="card">
+      <h2>
+        <span>Execution Calculator &amp; Rebalance Ticket</span>
+        <div>
+          <button class="btn-secondary" id="exportCsvBtn">Export Orders CSV</button>
+        </div>
+      </h2>
+      <div class="controls-grid">
+        <div class="ctrl">
+          <label for="capitalInput">Your Capital (₹)</label>
+          <input type="number" id="capitalInput" value="100000" min="10000" step="10000">
+          <div class="quick-caps">
+            <button class="chip-btn active" data-cap="100000">₹1L</button>
+            <button class="chip-btn" data-cap="200000">₹2L</button>
+            <button class="chip-btn" data-cap="350000">₹3.5L</button>
+            <button class="chip-btn" data-cap="500000">₹5L</button>
+            <button class="chip-btn" data-cap="1000000">₹10L</button>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label for="presetSelect">Strategy Preset</label>
+          <select id="presetSelect">
+            <option value="F2">F2 Recommended: EW 50/50 Top20+30 · 9M · 6M Rebal · DD&gt;12% Sh75%</option>
+            <option value="F7">F7 Runner-Up: NormZ 50/50 Top20+30 · 9M · 6M Rebal · DD&gt;12% Sh75%</option>
+            <option value="F1">F1 Lower Churn: EW 50/50 Top20+30 · 9M · 6M Rebal · DD&gt;12% Sh50%</option>
+            <option value="F4">F4 Large Capital (&gt;₹5L): EW 50/50 · 12M Lookback · 12M Rebal · DD&gt;12% Sh50%</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <label for="postureOverride">Posture View</label>
+          <select id="postureOverride">
+            <option value="LIVE">Live Signal Today</option>
+            <option value="SIM_CRASH">Simulate Crash (DD &gt; 12% Triggered)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="toggle-row">
+        <label><input type="checkbox" id="slotCapToggle" checked> Sequential-SlotCap (&lt; ₹3.5L substitutes unaffordable stocks up)</label>
+        <label><input type="checkbox" id="liqSweepToggle" checked> Sweep Idle Cash into LIQUIDCASE (₹<span id="liqPxLbl">117.1</span>/u)</label>
+      </div>
+
+      <div class="kpi-grid" id="calcSummaryGrid"></div>
+
+      <div class="table-wrap" style="max-height: 520px; overflow-y: auto;">
+        <table id="ordersTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Asset / Symbol</th>
+              <th>Bucket</th>
+              <th class="num">Mom Score</th>
+              <th class="num">Target %</th>
+              <th class="num">LTP (₹)</th>
+              <th class="num">Target (₹)</th>
+              <th class="num">Buy Shares</th>
+              <th class="num">Actual (₹)</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span>Tax-Aware Holdings Diff &amp; 330–364d LTCG Shield (Browser Local Only)</span></h2>
+      <p style="color:var(--sub); font-size:12px; margin-bottom:10px;">
+        Paste current holdings as <code>SYMBOL,SHARES,YYYY-MM-DD</code> (stored only in browser <code>localStorage</code>). Flags positions near 365d LTCG conversion and enforces <strong>weakest-first</strong> trimming + ₹500 minimum delta filter.
+      </p>
+      <div class="two-col">
+        <div>
+          <textarea id="holdingsInput" rows="5" placeholder="LAURUSLABS,2,2025-12-15&#10;BHEL,10,2026-04-01&#10;GOLDBEES,150,2026-03-10"></textarea>
+          <div style="margin-top:8px; display:flex; gap:8px;">
+            <button class="btn-primary" id="computeDiffBtn">Compute Weakest-First Trade Diff</button>
+            <button class="btn-secondary" id="clearHoldingsBtn">Clear</button>
+          </div>
+        </div>
+        <div id="diffOutput" class="table-wrap" style="font-size:12px; color:var(--sub);">
+          Enter holdings on the left and click Compute Trade Diff.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: CHARTS -->
+  <div class="tab-panel" id="tab-charts">
+    <div class="card">
+      <h2>
+        <span>Cumulative Equity Curve (Post-Cost 15bps + STCG/LTCG Tax, Start ₹1,00,000)</span>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button class="chip-btn active" data-win="ALL">Full (2018–26)</button>
+          <button class="chip-btn" data-win="5Y">5Y</button>
+          <button class="chip-btn" data-win="3Y">3Y</button>
+          <button class="chip-btn" data-win="1Y">1Y</button>
+          <button class="chip-btn" id="logScaleBtn">Log Scale: ON</button>
+        </div>
+      </h2>
+      <div class="chart-box"><canvas id="navChart"></canvas></div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <h2><span>Drawdown Underwater Curve vs -12% Crash Trigger</span></h2>
+        <div class="chart-box"><canvas id="ddChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h2><span>Calendar Year Net Returns (%)</span></h2>
+        <div class="chart-box"><canvas id="yearlyChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span>Historical DD &gt; 12% Regime Switches (2018–2026)</span></h2>
+      <div class="table-wrap">
+        <table id="triggersTable">
+          <thead><tr><th>Date</th><th>Signal Event</th><th class="num">EW Index DD252</th><th class="num">Target Equity</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: RESEARCH MATRIX -->
+  <div class="tab-panel" id="tab-research">
+    <div class="warn-box">
+      <strong>Survivorship &amp; Scale Haircut Reality Check:</strong> Backtests use the current (2026) Nifty Midcap 150 constituent list back to 2016–18 (creating an observed <strong>~8% p.a.</strong> survivorship/equal-weight gap over investable <code>NIFTYMIDCAP150</code> TRI), and ₹1L accounts shelter LTCG under India's ₹1.25L/yr exemption. Expect <strong>6%–10% p.a. lower net CAGR in live deployment at larger capital</strong> than clean 2018–26 headline numbers — while the <em>relative</em> advantages (9M &gt; monthly churn, DD&gt;12% tail protection, 50/50 Gold+Liquid, weakest-first trimming) hold consistently across walk-forward windows.
+    </div>
+    <div class="card">
+      <h2><span>Key Strategy Decisions Answered Empirically</span></h2>
+      <div class="qa-item">
+        <h3>1. Optimal Rebalancing Cadence &amp; Holding Period: 6 Months (or 12M for &gt;₹5L)</h3>
+        <p>Monthly rebalancing cuts CAGR from 30.3% down to ~25.4% due to 398% turnover and 20% STCG. Semi-annual (6M, ~117%–260% turnover) captures fresh momentum without missing multi-month factor rotations while allowing partial holdings to cross 365 days into 12.5% LTCG. Clean warm-baseline 12M/12M adds ~1.6% net tax efficiency (<code>29.84%</code> vs <code>28.28%</code> unhedged) for large tax-sensitive accounts.</p>
+      </div>
+      <div class="qa-item">
+        <h3>2. Portfolio Split &amp; Weighting: 50/50 Raw Top 20 + Raw Top 30</h3>
+        <p>Combining ₹50k Raw Top 20 + ₹50k Raw Top 30 assigns <code>4.17%</code> each to Ranks 1–20 and <code>1.67%</code> each to Ranks 21–30 (30 total names). Equal-weight caps max stock exposure at 4.17%, whereas PDF <code>NormZ</code> adds ~2–3% CAGR (<code>28.69%</code> clean in F6 / <code>28.34%</code> in F7) at the cost of 9–12% top-stock concentration.</p>
+      </div>
+      <div class="qa-item">
+        <h3>3. How to Detect Market Falls Across 30 Separate Stocks: Midcap EW Index Drawdown &gt; 12%</h3>
+        <p>Tracking an Equal-Weight Midcap 150 index (published daily on this dashboard) cleanly beats noisy 200-DMA whipsaws (674% turnover) and Stock Breadth50 (452% TO, -32.2% DD). A broad <strong>-12% to -15% drawdown threshold</strong> (re-enter when &gt; 50-DMA &amp; DD &gt; -7.2%) fired only 9 times in 9 years, cutting max drawdown from <strong>-37.85% down to -24.57%</strong> (Calmar 0.75 → 1.05).</p>
+      </div>
+      <div class="qa-item">
+        <h3>4. Defensive Asset, Shift Sizing &amp; Sell Order: 50/50 GOLDBEES + LIQUIDCASE, Shift 75%, Weakest-First</h3>
+        <p><code>SILVERBEES</code> (-60.7% DD in 2026, -51.8% in-strategy) and <code>MON100</code> (-55.1% DD) fail during crashes; even pure <code>GOLDBEES</code> fell <strong>-31.68%</strong> in 2026 (₹146.53 → ₹100.11). Splitting defensives <strong>50% GOLDBEES + 50% LIQUIDCASE</strong> keeps defensive drawdown at -14.5%. Shifting <strong>75%</strong> weakest-first preserves Top momentum winners toward LTCG and cuts taxes paid by 17%–30% vs pro-rata.</p>
+      </div>
+      <div class="qa-item">
+        <h3>5. Fixing the ₹1,00,000 Expensive-Stock Bottleneck: Sequential-SlotCap + LIQUIDCASE Sweep</h3>
+        <p>On Nov 26, 2026, stocks like <code>APARINDS</code> (₹14,200), <code>OFSS</code> (₹9,291), <code>RADICO</code> (₹4,671) leave 33.4% cash idle under blind integer rounding. Sequentially substituting unaffordable top ranks lifts ₹1L equity deployment from <strong>66.6% → 87.6%</strong> (30/30 held) and sweeps residual cash into <code>LIQUIDCASE</code> (₹117.10/u) for <strong>99.96% capital deployment</strong> and +111 bps clean backtest CAGR.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span>Verified Clean Backtest Matrix (2018-01-02 to Current, 100%-Warm Baseline)</span></h2>
+      <div class="table-wrap">
+        <table id="researchTable">
+          <thead>
+            <tr>
+              <th>Scenario</th>
+              <th>Strategy</th>
+              <th class="num">CAGR%</th>
+              <th class="num">MaxDD%</th>
+              <th class="num">Calmar</th>
+              <th class="num">Sharpe</th>
+              <th class="num">Sortino</th>
+              <th class="num">Turn%</th>
+              <th class="num">Eq%</th>
+              <th class="num">Tax (₹)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: LIVE TOP 60 -->
+  <div class="tab-panel" id="tab-rankings">
+    <div class="card">
+      <h2>
+        <span>Top 60 Nifty Midcap 150 Momentum Rankings</span>
+        <input type="text" id="rankSearch" placeholder="Filter ticker (e.g. LAURUS)..." style="max-width:240px; background:var(--bg); color:var(--text); border:1px solid var(--border); padding:6px 10px; border-radius:8px;">
+      </h2>
+      <div class="table-wrap" style="max-height: 600px; overflow-y: auto;">
+        <table id="rankingsTable">
+          <thead>
+            <tr>
+              <th>9M Rank</th>
+              <th>12M Rank</th>
+              <th>Symbol</th>
+              <th class="num">LTP (₹)</th>
+              <th class="num">9M Mom %</th>
+              <th class="num">12M Mom %</th>
+              <th class="num">&gt;50DMA</th>
+              <th class="num">EW 50/50%</th>
+              <th class="num">NormZ%</th>
+              <th>₹1L SlotCap</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const fmtInr = (n) => n == null || !isFinite(n) ? '—' : '₹' + Number(n).toLocaleString('en-IN', {maximumFractionDigits: 2});
+const fmtPct = (n, d=2) => n == null || !isFinite(n) ? '—' : Number(n).toFixed(d) + '%';
+const fmtNum = (n, d=2) => n == null || !isFinite(n) ? '—' : Number(n).toFixed(d);
+
+let STATE = null;
+let CHARTS = {};
+let chartWindow = 'ALL';
+let chartLog = true;
+
+async function init() {
+  const res = await fetch('./data/live_state.json?_=' + Date.now());
+  STATE = await res.json();
+  renderHeaderAndRegime();
+  renderPortfolioCalculator();
+  renderResearchTable();
+  renderRankingsTable();
+  renderTriggersTable();
+  renderCharts();
+}
+
+function renderHeaderAndRegime() {
+  const r = STATE.regime;
+  const mood = STATE.nse_mcp_status?.market_mood;
+  document.getElementById('asOfDate').textContent = STATE.as_of_date;
+  document.getElementById('univCount').textContent = STATE.universe_count;
+  document.getElementById('liqPxLbl').textContent = fmtNum(r.etfs.LIQUIDCASE.price, 2);
+
+  const nseBadge = document.getElementById('nseBadge');
+  nseBadge.textContent = STATE.nse_mcp_status?.bulk_quotes_fetched
+    ? `NSE MCP · ${STATE.nse_mcp_status.bulk_quotes_fetched} quotes`
+    : 'Cached History';
+
+  const banner = document.getElementById('regimeBanner');
+  const isRiskOn = r.state === 'RISK_ON';
+  banner.className = isRiskOn ? 'banner' : 'banner defensive';
+  document.getElementById('regimeTitle').textContent = isRiskOn
+    ? '100% EQUITY · MOMENTUM RISK-ON'
+    : `CRASH HEDGE ACTIVE · ${r.target_equity_pct}% EQUITY / ${100 - r.target_equity_pct}% DEFENSIVE`;
+  const pill = document.getElementById('regimePill');
+  pill.className = isRiskOn ? 'pill pill-green' : 'pill pill-amber';
+  pill.textContent = isRiskOn ? 'RISK-ON' : 'DEFENSIVE 75%';
+
+  const sb = mood?.stock_breadth;
+  const ad = (sb && sb.up != null && sb.down != null) ? ` · NSE Adv ${sb.up}/${sb.down} Dec (${sb.up_pct}%)` : '';
+  document.getElementById('regimeSubtitle').textContent =
+    `EW Index ${r.ew_index} (DD252: ${fmtPct(r.ew_dd252_pct)} vs -12.0% trigger · 50DMA: ${r.ew_ma50})` +
+    (r.midcap150_index ? ` · Midcap 150: ${r.midcap150_index.toLocaleString('en-IN')} (${fmtPct(r.midcap150_dd252_pct)})` : '') +
+    ` · VIX: ${fmtNum(r.india_vix, 2)} · Breadth>50DMA: ${fmtPct(r.breadth_50_sma10_pct, 1)}${ad}`;
+
+  document.getElementById('lblEq').textContent = `Equity ${r.target_equity_pct}%`;
+  document.getElementById('lblGold').textContent = `GOLDBEES ${r.target_goldbees_pct}%`;
+  document.getElementById('lblLiq').textContent = `LIQUIDCASE ${r.target_liquidcase_pct}%`;
+  document.getElementById('barEq').style.width = `${r.target_equity_pct}%`;
+  document.getElementById('barGold').style.width = `${r.target_goldbees_pct}%`;
+  document.getElementById('barLiq').style.width = `${r.target_liquidcase_pct}%`;
+
+  const f2 = STATE.performance_summary.F2_9m_6M_DD12_Sh75_GoldLiq50 || {};
+  const f2d = STATE.performance_summary.F2_Disc1L_SlotCap || {};
+  const u0 = STATE.performance_summary.Unhedged_9m_6M || {};
+  const ew = STATE.performance_summary.Midcap150_EW_Universe || {};
+  const kpis = [
+    { lbl: 'F2 Net CAGR (2018–26)', val: fmtPct(f2.cagr_pct), note: `₹1L Discrete SlotCap: ${fmtPct(f2d.cagr_pct)}`, cls: 'c-green' },
+    { lbl: 'Max Drawdown Control', val: fmtPct(f2.max_dd_pct), note: `Unhedged: ${fmtPct(u0.max_dd_pct)} · EW: ${fmtPct(ew.max_dd_pct)}`, cls: 'c-blue' },
+    { lbl: 'Calmar / Sharpe (F2)', val: `${fmtNum(f2.calmar)} / ${fmtNum(f2.sharpe)}`, note: `₹1L Discrete: ${fmtNum(f2d.calmar)} / ${fmtNum(f2d.sharpe)}`, cls: 'c-green' },
+    { lbl: 'EW Index DD252', val: fmtPct(r.ew_dd252_pct), note: 'Trigger Exit: -12.0% · Re-enter: -7.2% & >50DMA', cls: r.ew_dd252_pct < -10 ? 'c-amber' : '' },
+    { lbl: 'GOLDBEES vs 50DMA', val: `₹${fmtNum(r.etfs.GOLDBEES.price)}`, note: r.etfs.GOLDBEES.above_ma50 ? 'Above 50DMA' : 'Below 50DMA (-31.7% from 2026 peak)', cls: 'c-amber' },
+    { lbl: 'India VIX (NSE MCP)', val: fmtNum(r.india_vix, 2), note: `Breadth >50DMA: ${fmtPct(r.breadth_50_sma10_pct, 1)}`, cls: '' },
+  ];
+  document.getElementById('kpiGrid').innerHTML = kpis.map(k => `
+    <div class="kpi">
+      <div class="kpi-lbl">${k.lbl}</div>
+      <div class="kpi-val ${k.cls}">${k.val}</div>
+      <div class="kpi-note">${k.note}</div>
+    </div>`).join('');
+}
+
+function computeBlendWeights(presetKey, capital, useSlotCap) {
+  const scoreField = presetKey === 'F4' ? 'r12' : 'r9';
+  const useNormZ = presetKey === 'F7';
+  const sorted = [...STATE.universe_scores]
+    .filter(x => x[scoreField] != null && isFinite(x.px) && x.px > 0)
+    .sort((a, b) => b[scoreField] - a[scoreField]);
+
+  const mean = sorted.reduce((s, x) => s + x[scoreField], 0) / sorted.length;
+  const sd = Math.sqrt(sorted.reduce((s, x) => s + (x[scoreField] - mean) ** 2, 0) / Math.max(1, sorted.length - 1)) || 1;
+  const normZVal = (raw) => { const z = (raw - mean) / sd; return z > 0 ? 1 + z : 1 / (1 - z); };
+
+  const banned = new Set();
+  let chosen = [];
+  for (let iter = 0; iter < 60; iter++) {
+    const elig = sorted.filter(x => !banned.has(x.sym));
+    const top20 = elig.slice(0, 20);
+    const top30 = elig.slice(0, 30);
+    const nz20 = top20.reduce((s, x) => s + normZVal(x[scoreField]), 0) || 1;
+    const nz30 = top30.reduce((s, x) => s + normZVal(x[scoreField]), 0) || 1;
+
+    const wMap = new Map();
+    top20.forEach(x => wMap.set(x.sym, (wMap.get(x.sym) || 0) + 0.5 * (useNormZ ? normZVal(x[scoreField]) / nz20 : 1 / top20.length)));
+    top30.forEach(x => wMap.set(x.sym, (wMap.get(x.sym) || 0) + 0.5 * (useNormZ ? normZVal(x[scoreField]) / nz30 : 1 / top30.length)));
+
+    chosen = top30.map((x, idx) => ({ ...x, rank: idx + 1, score: x[scoreField], wt: wMap.get(x.sym) || 0, bucket: idx < 20 ? 'Top20' : 'Rank21-30' }));
+    if (!useSlotCap) break;
+    const bad = chosen.find(x => x.px > capital * x.wt);
+    if (!bad) break;
+    banned.add(bad.sym);
+  }
+  return { chosen, skipped: [...banned] };
+}
+
+function getLatestComputedOrders() {
+  const capital = Math.max(10000, Number(document.getElementById('capitalInput').value) || 100000);
+  const preset = document.getElementById('presetSelect').value;
+  const simCrash = document.getElementById('postureOverride').value === 'SIM_CRASH' || STATE.regime.state === 'DEFENSIVE';
+  const useSlotCap = document.getElementById('slotCapToggle').checked;
+  const useSweep = document.getElementById('liqSweepToggle').checked;
+
+  const shift = (preset === 'F1' || preset === 'F4') ? 0.50 : 0.75;
+  const eqFrac = simCrash ? (1.0 - shift) : 1.0;
+  const defFrac = simCrash ? shift : 0.0;
+  const eqBudget = capital * eqFrac;
+
+  const { chosen, skipped } = computeBlendWeights(preset, eqBudget, useSlotCap);
+  let eqDeployed = 0;
+  let heldCount = 0;
+  const rows = [];
+
+  if (defFrac > 0) {
+    const gPx = STATE.regime.etfs.GOLDBEES.price;
+    const lPx = STATE.regime.etfs.LIQUIDCASE.price;
+    const gTgt = capital * defFrac * 0.5;
+    const lTgt = capital * defFrac * 0.5;
+    const gSh = Math.floor(gTgt / gPx);
+    const lSh = Math.floor(lTgt / lPx);
+    rows.push({ rank: 'D1', sym: 'GOLDBEES', bucket: 'Defensive 50%', score: null, wt: defFrac * 0.5, px: gPx, tgt: gTgt, sh: gSh, inv: gSh * gPx, note: 'Crash Hedge ETF' });
+    rows.push({ rank: 'D2', sym: 'LIQUIDCASE', bucket: 'Defensive 50%', score: null, wt: defFrac * 0.5, px: lPx, tgt: lTgt, sh: lSh, inv: lSh * lPx, note: 'Cash Preservation ETF' });
+  }
+
+  chosen.forEach(x => {
+    const tgt = eqBudget * x.wt;
+    const sh = Math.floor(tgt / x.px);
+    const inv = sh * x.px;
+    if (sh > 0) heldCount += 1;
+    eqDeployed += inv;
+    rows.push({
+      rank: x.rank, sym: x.sym, bucket: x.bucket, score: x.score, wt: x.wt * eqFrac, px: x.px, tgt, sh, inv,
+      note: sh === 0 ? 'Price > slot (0 sh)' : (eqFrac < 0.99 && x.rank <= 15 ? 'Core winner retained' : ''),
+    });
+  });
+
+  const defInvested = rows.filter(r => String(r.rank).startsWith('D')).reduce((s, r) => s + r.inv, 0);
+  const remCash = Math.max(0, capital - eqDeployed - defInvested);
+  const liqPx = STATE.regime.etfs.LIQUIDCASE.price;
+  const sweepSh = useSweep ? Math.floor(remCash / liqPx) : 0;
+  const sweepInv = sweepSh * liqPx;
+  if (sweepSh > 0) {
+    rows.push({ rank: 'SWP', sym: 'LIQUIDCASE', bucket: 'Idle Cash Sweep', score: null, wt: sweepInv / capital, px: liqPx, tgt: remCash, sh: sweepSh, inv: sweepInv, note: 'Parks leftover integer-share cash' });
+  }
+  const idleCash = Math.max(0, remCash - sweepInv);
+  return { capital, preset, eqFrac, simCrash, rows, eqDeployed, defInvested, sweepInv, idleCash, heldCount, totalSlots: chosen.length, skipped };
+}
+
+function renderPortfolioCalculator() {
+  const res = getLatestComputedOrders();
+  const totalDeployed = res.eqDeployed + res.defInvested + res.sweepInv;
+  const cards = [
+    { lbl: 'Equity Deployed', val: fmtInr(res.eqDeployed), note: `${fmtPct(res.eqDeployed / res.capital * 100, 1)} (${res.heldCount}/${res.totalSlots} stocks)`, cls: 'c-green' },
+    { lbl: 'Defensive ETFs', val: fmtInr(res.defInvested), note: res.simCrash ? `${fmtPct(res.defInvested / res.capital * 100, 1)} (50/50 Gold+Liquid)` : '0% (Risk-On)', cls: 'c-amber' },
+    { lbl: 'LIQUIDCASE Sweep', val: fmtInr(res.sweepInv), note: `${fmtPct(res.sweepInv / res.capital * 100, 1)} residual cash parked`, cls: 'c-blue' },
+    { lbl: 'Uninvested Cash', val: fmtInr(res.idleCash), note: `Total Utilized: ${fmtPct(totalDeployed / res.capital * 100, 2)}`, cls: '' },
+    { lbl: 'Skipped (SlotCap)', val: String(res.skipped.length), note: res.skipped.slice(0, 4).join(', ') || 'None (All Top 30 affordable)', cls: res.skipped.length ? 'c-amber' : 'c-green' },
+  ];
+  document.getElementById('calcSummaryGrid').innerHTML = cards.map(c => `
+    <div class="kpi"><div class="kpi-lbl">${c.lbl}</div><div class="kpi-val ${c.cls}">${c.val}</div><div class="kpi-note">${c.note}</div></div>`).join('');
+
+  const tbody = document.querySelector('#ordersTable tbody');
+  tbody.innerHTML = res.rows.map(r => `
+    <tr class="${r.sh === 0 ? 'row-muted' : ''}">
+      <td>${r.rank}</td>
+      <td><strong>${r.sym}</strong></td>
+      <td><span class="pill ${r.bucket.includes('Defensive') ? 'pill-amber' : r.bucket.includes('Sweep') ? 'pill-blue' : r.bucket === 'Top20' ? 'pill-green' : 'pill-accent'}">${r.bucket}</span></td>
+      <td class="num">${r.score != null ? fmtPct(r.score) : '—'}</td>
+      <td class="num">${fmtPct(r.wt * 100, 2)}</td>
+      <td class="num">${fmtNum(r.px)}</td>
+      <td class="num">${fmtInr(r.tgt)}</td>
+      <td class="num"><strong>${r.sh}</strong></td>
+      <td class="num">${fmtInr(r.inv)}</td>
+      <td style="font-size:12px; color:var(--sub)">${r.note}</td>
+    </tr>`).join('');
+}
+
+function computeHoldingsDiff() {
+  const txt = document.getElementById('holdingsInput').value.trim();
+  localStorage.setItem('mmi_holdings_csv', txt);
+  const res = getLatestComputedOrders();
+  const tgtMap = new Map();
+  res.rows.forEach(r => tgtMap.set(r.sym, (tgtMap.get(r.sym) || 0) + r.sh));
+
+  const held = new Map();
+  const pxMap = new Map(STATE.universe_scores.map(u => [u.sym, u.px]));
+  pxMap.set('GOLDBEES', STATE.regime.etfs.GOLDBEES.price);
+  pxMap.set('LIQUIDCASE', STATE.regime.etfs.LIQUIDCASE.price);
+
+  const asOf = new Date(STATE.as_of_date + 'T00:00:00Z');
+  txt.split(/\r?\n/).forEach(line => {
+    const parts = line.split(',').map(s => s.trim());
+    if (!parts[0] || !parts[1]) return;
+    const sym = parts[0].toUpperCase();
+    const sh = parseInt(parts[1], 10) || 0;
+    const dt = parts[2] ? new Date(parts[2] + 'T00:00:00Z') : null;
+    const daysHeld = dt && !isNaN(dt) ? Math.round((asOf - dt) / 86400000) : null;
+    held.set(sym, { sh, daysHeld });
+  });
+
+  const allSyms = new Set([...held.keys(), ...tgtMap.keys()]);
+  const actions = [];
+  allSyms.forEach(sym => {
+    const cur = held.get(sym)?.sh || 0;
+    const days = held.get(sym)?.daysHeld;
+    const tgt = tgtMap.get(sym) || 0;
+    const px = pxMap.get(sym) || 0;
+    const delta = tgt - cur;
+    const deltaInr = Math.abs(delta) * px;
+    let act = 'HOLD';
+    let badge = 'pill-blue';
+    let note = '';
+    if (delta > 0 && deltaInr >= 500) { act = `BUY +${delta}`; badge = 'pill-green'; }
+    else if (delta < 0 && (tgt === 0 || deltaInr >= 500)) {
+      act = `SELL ${delta}`; badge = 'pill-red';
+      if (days != null && days >= 330 && days < 365) {
+        note = `⚠ Held ${days}d — LTCG in ${365 - days}d!`;
+      }
+    } else if (delta !== 0) {
+      note = `Below ₹500 min trade delta (${fmtInr(deltaInr)})`;
+    }
+    if (days != null && !note) note = `${days}d held (${days >= 365 ? 'LTCG 12.5%' : 'STCG 20%'})`;
+    actions.push({ sym, cur, tgt, delta, deltaInr, act, badge, note });
+  });
+
+  actions.sort((a, b) => (a.act.startsWith('SELL') ? -2 : a.act.startsWith('BUY') ? -1 : 1) - (b.act.startsWith('SELL') ? -2 : b.act.startsWith('BUY') ? -1 : 1));
+  document.getElementById('diffOutput').innerHTML = `
+    <table><thead><tr><th>Symbol</th><th class="num">Held</th><th class="num">Target</th><th>Action</th><th class="num">Trade ₹</th><th>Tax / Notes</th></tr></thead>
+    <tbody>${actions.map(a => `<tr><td><strong>${a.sym}</strong></td><td class="num">${a.cur}</td><td class="num">${a.tgt}</td><td><span class="pill ${a.badge}">${a.act}</span></td><td class="num">${fmtInr(a.deltaInr)}</td><td>${a.note}</td></tr>`).join('')}</tbody></table>`;
+}
+
+function renderResearchTable() {
+  const rows = STATE.clean_verification || [];
+  document.querySelector('#researchTable tbody').innerHTML = rows.map(r => `
+    <tr>
+      <td><span class="pill ${r.scenario.includes('Disc1L_SlotCap') ? 'pill-green' : r.scenario === 'Benchmark' ? 'pill-blue' : 'pill-accent'}">${r.scenario}</span></td>
+      <td><strong>${r.name}</strong></td>
+      <td class="num">${fmtPct(r.cagr_pct)}</td>
+      <td class="num c-red">${fmtPct(r.max_dd_pct)}</td>
+      <td class="num">${fmtNum(r.calmar)}</td>
+      <td class="num">${fmtNum(r.sharpe)}</td>
+      <td class="num">${fmtNum(r.sortino)}</td>
+      <td class="num">${fmtPct(r.ann_turnover_pct, 1)}</td>
+      <td class="num">${r.avg_eq_pct != null ? fmtPct(r.avg_eq_pct, 1) : '—'}</td>
+      <td class="num">${r.total_tax_paid != null ? fmtInr(r.total_tax_paid) : '—'}</td>
+    </tr>`).join('');
+}
+
+function renderRankingsTable() {
+  const q = (document.getElementById('rankSearch').value || '').trim().toUpperCase();
+  const rows = STATE.rankings_top60.filter(r => !q || r.symbol.includes(q));
+  document.querySelector('#rankingsTable tbody').innerHTML = rows.map(r => `
+    <tr>
+      <td><strong>#${r.rank_9m}</strong></td>
+      <td>${r.rank_12m != null ? '#' + r.rank_12m : '—'}</td>
+      <td><strong>${r.symbol}</strong></td>
+      <td class="num">${fmtNum(r.price)}</td>
+      <td class="num c-green">${fmtPct(r.raw_9m_pct)}</td>
+      <td class="num">${fmtPct(r.raw_12m_pct)}</td>
+      <td class="num">${r.above_ma50 ? '<span class="c-green">Yes</span>' : '<span class="c-red">No</span>'}</td>
+      <td class="num">${r.ew_5050_wt_pct ? fmtPct(r.ew_5050_wt_pct) : '—'}</td>
+      <td class="num">${r.nz_5050_wt_pct ? fmtPct(r.nz_5050_wt_pct) : '—'}</td>
+      <td>${r.affordable_slotcap_1l ? '<span class="pill pill-green">Selected ₹1L</span>' : '<span style="color:var(--sub)">Candidate</span>'}</td>
+    </tr>`).join('');
+}
+
+function renderTriggersTable() {
+  const rows = STATE.regime.historical_triggers || [];
+  document.querySelector('#triggersTable tbody').innerHTML = rows.map(t => `
+    <tr>
+      <td>${t.date}</td>
+      <td><span class="pill ${t.event.includes('EXIT') ? 'pill-amber' : 'pill-green'}">${t.event}</span></td>
+      <td class="num">${fmtPct(t.ew_dd252_pct)}</td>
+      <td class="num">${fmtPct(t.equity_pct, 0)}</td>
+    </tr>`).join('');
+}
+
+function renderCharts() {
+  if (typeof Chart === 'undefined') return;
+  const ch = STATE.charts;
+  const allDates = ch.dates;
+  let startIdx = 0;
+  const cutMap = { '1Y': -85, '3Y': -252, '5Y': -420, 'ALL': 0 };
+  if (chartWindow !== 'ALL') startIdx = Math.max(0, allDates.length + cutMap[chartWindow]);
+
+  const labels = allDates.slice(startIdx);
+  const rebased = (arr) => {
+    const sub = arr.slice(startIdx);
+    const base = sub[0] || 1;
+    return sub.map(v => Number(((v / base) * 100000).toFixed(2)));
+  };
+
+  if (CHARTS.nav) CHARTS.nav.destroy();
+  CHARTS.nav = new Chart(document.getElementById('navChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'F2 Recommended (EW DD12 Sh75)', data: rebased(ch.nav.F2_9m_6M_DD12_Sh75_GoldLiq50), borderColor: '#22c55e', borderWidth: 2.3, pointRadius: 0 },
+        { label: 'F7 NormZ (DD12 Sh75)', data: rebased(ch.nav.F7_NormZ_9m_6M_DD12_Sh75_GoldLiq50), borderColor: '#6366f1', borderWidth: 2, pointRadius: 0 },
+        { label: 'Unhedged 50/50 9M', data: rebased(ch.nav.Unhedged_9m_6M), borderColor: '#94a3b8', borderWidth: 1.5, borderDash: [4,4], pointRadius: 0 },
+        { label: 'Midcap 150 EW Universe', data: rebased(ch.nav.Midcap150_EW_Universe), borderColor: '#3b82f6', borderWidth: 1.5, pointRadius: 0 },
+        { label: '50/50 Gold + Liquid', data: rebased(ch.nav.GOLD_50_LIQUID_50), borderColor: '#f59e0b', borderWidth: 1.5, pointRadius: 0 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        y: { type: chartLog ? 'logarithmic' : 'linear', ticks: { color: '#8b8fa8' }, grid: { color: '#2a2d3a' } },
+        x: { ticks: { color: '#8b8fa8', maxTicksLimit: 10 }, grid: { display: false } },
+      },
+      plugins: { legend: { labels: { color: '#e8eaf0' } } },
+    },
+  });
+
+  if (CHARTS.dd) CHARTS.dd.destroy();
+  CHARTS.dd = new Chart(document.getElementById('ddChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'F2 Hedged Drawdown %', data: ch.drawdown_pct.F2_9m_6M_DD12_Sh75_GoldLiq50.slice(startIdx), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.12)', fill: true, borderWidth: 1.8, pointRadius: 0 },
+        { label: 'Unhedged Drawdown %', data: ch.drawdown_pct.Unhedged_9m_6M.slice(startIdx), borderColor: '#ef4444', borderWidth: 1.3, pointRadius: 0 },
+        { label: '-12% Trigger Threshold', data: labels.map(() => -12), borderColor: '#f59e0b', borderDash: [5,5], borderWidth: 1.2, pointRadius: 0 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { ticks: { color: '#8b8fa8' }, grid: { color: '#2a2d3a' } }, x: { ticks: { color: '#8b8fa8', maxTicksLimit: 8 }, grid: { display: false } } },
+      plugins: { legend: { labels: { color: '#e8eaf0' } } },
+    },
+  });
+
+  const yF2 = STATE.performance_summary.F2_9m_6M_DD12_Sh75_GoldLiq50.yearly_returns_pct || {};
+  const yUn = STATE.performance_summary.Unhedged_9m_6M.yearly_returns_pct || {};
+  const yEw = STATE.performance_summary.Midcap150_EW_Universe.yearly_returns_pct || {};
+  const yrs = Object.keys(yF2);
+
+  if (CHARTS.yearly) CHARTS.yearly.destroy();
+  CHARTS.yearly = new Chart(document.getElementById('yearlyChart'), {
+    type: 'bar',
+    data: {
+      labels: yrs,
+      datasets: [
+        { label: 'F2 DIY Index', data: yrs.map(y => yF2[y]), backgroundColor: '#22c55e' },
+        { label: 'Unhedged 50/50', data: yrs.map(y => yUn[y]), backgroundColor: '#6366f1' },
+        { label: 'Midcap 150 EW', data: yrs.map(y => yEw[y]), backgroundColor: '#3b82f6' },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { ticks: { color: '#8b8fa8' }, grid: { color: '#2a2d3a' } }, x: { ticks: { color: '#8b8fa8' }, grid: { display: false } } },
+      plugins: { legend: { labels: { color: '#e8eaf0' } } },
+    },
+  });
+}
+
+// Event bindings
+document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  if (btn.dataset.tab === 'charts') renderCharts();
+}));
+
+document.querySelectorAll('.quick-caps .chip-btn').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.quick-caps .chip-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const cap = Number(btn.dataset.cap);
+  document.getElementById('capitalInput').value = cap;
+  document.getElementById('slotCapToggle').checked = cap < 350000;
+  renderPortfolioCalculator();
+}));
+
+['capitalInput', 'presetSelect', 'postureOverride', 'slotCapToggle', 'liqSweepToggle'].forEach(id => {
+  document.getElementById(id).addEventListener('change', () => renderPortfolioCalculator());
+  document.getElementById(id).addEventListener('input', () => renderPortfolioCalculator());
+});
+
+document.getElementById('rankSearch').addEventListener('input', renderRankingsTable);
+document.getElementById('computeDiffBtn').addEventListener('click', computeHoldingsDiff);
+document.getElementById('clearHoldingsBtn').addEventListener('click', () => {
+  document.getElementById('holdingsInput').value = '';
+  localStorage.removeItem('mmi_holdings_csv');
+  document.getElementById('diffOutput').textContent = 'Cleared saved holdings.';
+});
+
+document.querySelectorAll('[data-win]').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('[data-win]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  chartWindow = btn.dataset.win;
+  renderCharts();
+}));
+
+document.getElementById('logScaleBtn').addEventListener('click', (e) => {
+  chartLog = !chartLog;
+  e.target.textContent = 'Log Scale: ' + (chartLog ? 'ON' : 'OFF');
+  renderCharts();
+});
+
+document.getElementById('exportCsvBtn').addEventListener('click', () => {
+  const res = getLatestComputedOrders();
+  const header = 'Rank,Symbol,Bucket,WeightPct,LTP,TargetINR,BuyShares,ActualINR\n';
+  const body = res.rows.map(r => `${r.rank},${r.sym},${r.bucket},${(r.wt*100).toFixed(2)},${r.px},${r.tgt.toFixed(2)},${r.sh},${r.inv.toFixed(2)}`).join('\n');
+  const blob = new Blob([header + body], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `midcap_momentum_orders_${STATE.as_of_date}_${res.capital}.csv`;
+  a.click();
+});
+
+const saved = localStorage.getItem('mmi_holdings_csv');
+if (saved) document.getElementById('holdingsInput').value = saved;
+
+init().catch(err => {
+  document.getElementById('regimeTitle').textContent = 'Error Loading Live State';
+  document.getElementById('regimeSubtitle').textContent = err.message;
+});
+</script>
+</body>
+</html>

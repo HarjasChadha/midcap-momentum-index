@@ -1,0 +1,137 @@
+          group                                                                     label  cagr_pct  max_dd_pct  calmar  sharpe  sortino  ann_turnover_pct  avg_eq_pct  win_years_pct
+     DD_PLATEAU                           DD>10%|Shift50%|GOLD_50_LIQUID_50|weakest_first     27.78      -29.43    0.94    1.15     1.42             216.2        88.2           80.0
+     DD_PLATEAU                              DD>10%|Shift50%|GOLD_OR_LIQUID|weakest_first     28.33      -29.06    0.98    1.18     1.46             216.3        88.2           70.0
+     DD_PLATEAU                                    DD>10%|Shift50%|GOLDBEES|weakest_first     28.55      -30.63    0.93    1.17     1.44             216.3        88.2           80.0
+     DD_PLATEAU                           DD>10%|Shift75%|GOLD_50_LIQUID_50|weakest_first     26.80      -26.85    1.00    1.15     1.39             263.0        82.6           70.0
+     DD_PLATEAU                              DD>10%|Shift75%|GOLD_OR_LIQUID|weakest_first     27.62      -26.12    1.06    1.16     1.43             263.2        82.5           70.0
+     DD_PLATEAU                                    DD>10%|Shift75%|GOLDBEES|weakest_first     27.92      -28.56    0.98    1.15     1.42             263.2        82.5           70.0
+     DD_PLATEAU                               DD>10%|Shift100%|GOLD_50_LIQUID_50|pro_rata     24.58      -29.33    0.84    1.03     1.23             311.2        77.0           70.0
+     DD_PLATEAU                                  DD>10%|Shift100%|GOLD_OR_LIQUID|pro_rata     25.63      -28.15    0.91    1.04     1.25             311.3        77.0           70.0
+     DD_PLATEAU                                        DD>10%|Shift100%|GOLDBEES|pro_rata     26.01      -30.10    0.86    1.02     1.26             311.3        77.0           70.0
+     DD_PLATEAU                           DD>12%|Shift50%|GOLD_50_LIQUID_50|weakest_first     29.89      -26.92    1.11    1.24     1.54             210.3        90.6           80.0
+     DD_PLATEAU                              DD>12%|Shift50%|GOLD_OR_LIQUID|weakest_first     30.58      -27.99    1.09    1.27     1.58             210.5        90.6           80.0
+     DD_PLATEAU                                    DD>12%|Shift50%|GOLDBEES|weakest_first     31.20      -28.73    1.09    1.28     1.62             210.6        90.6           80.0
+     DD_PLATEAU                           DD>12%|Shift75%|GOLD_50_LIQUID_50|weakest_first     29.96      -24.22    1.24    1.29     1.57             254.9        86.1           80.0
+     DD_PLATEAU                              DD>12%|Shift75%|GOLD_OR_LIQUID|weakest_first     30.99      -23.67    1.31    1.31     1.63             255.1        86.1           70.0
+     DD_PLATEAU                                    DD>12%|Shift75%|GOLDBEES|weakest_first     31.92      -24.38    1.31    1.34     1.69             255.1        86.1           80.0
+     DD_PLATEAU                               DD>12%|Shift100%|GOLD_50_LIQUID_50|pro_rata     28.01      -25.46    1.10    1.19     1.44             300.1        81.7           70.0
+     DD_PLATEAU                                  DD>12%|Shift100%|GOLD_OR_LIQUID|pro_rata     29.31      -25.20    1.16    1.22     1.49             300.1        81.7           70.0
+     DD_PLATEAU                                        DD>12%|Shift100%|GOLDBEES|pro_rata     30.53      -26.18    1.17    1.25     1.59             300.1        81.7           70.0
+     DD_PLATEAU                           DD>14%|Shift50%|GOLD_50_LIQUID_50|weakest_first     30.38      -29.14    1.04    1.23     1.49             178.3        92.7           80.0
+     DD_PLATEAU                              DD>14%|Shift50%|GOLD_OR_LIQUID|weakest_first     31.02      -29.33    1.06    1.25     1.54             178.4        92.6           80.0
+     DD_PLATEAU                                    DD>14%|Shift50%|GOLDBEES|weakest_first     31.52      -30.05    1.05    1.27     1.56             178.5        92.6           80.0
+     DD_PLATEAU                           DD>14%|Shift75%|GOLD_50_LIQUID_50|weakest_first     29.63      -25.32    1.17    1.22     1.47             208.0        89.0           80.0
+     DD_PLATEAU                              DD>14%|Shift75%|GOLD_OR_LIQUID|weakest_first     30.58      -25.99    1.18    1.24     1.53             208.2        89.0           80.0
+     DD_PLATEAU                                    DD>14%|Shift75%|GOLDBEES|weakest_first     31.33      -26.46    1.18    1.27     1.57             208.2        89.0           80.0
+     DD_PLATEAU                               DD>14%|Shift100%|GOLD_50_LIQUID_50|pro_rata     28.78      -26.41    1.09    1.18     1.41             238.6        85.5           70.0
+     DD_PLATEAU                                  DD>14%|Shift100%|GOLD_OR_LIQUID|pro_rata     30.02      -27.04    1.11    1.20     1.47             238.6        85.5           70.0
+     DD_PLATEAU                                        DD>14%|Shift100%|GOLDBEES|pro_rata     31.01      -26.14    1.19    1.24     1.54             238.6        85.5           70.0
+     DD_PLATEAU                           DD>15%|Shift50%|GOLD_50_LIQUID_50|weakest_first     30.38      -29.14    1.04    1.21     1.48             167.1        93.5           80.0
+     DD_PLATEAU                              DD>15%|Shift50%|GOLD_OR_LIQUID|weakest_first     30.97      -29.33    1.06    1.23     1.52             167.2        93.5           80.0
+     DD_PLATEAU                                    DD>15%|Shift50%|GOLDBEES|weakest_first     31.37      -30.05    1.04    1.25     1.53             167.3        93.5           80.0
+     DD_PLATEAU                           DD>15%|Shift75%|GOLD_50_LIQUID_50|weakest_first     29.78      -26.74    1.11    1.21     1.46             190.8        90.4           80.0
+     DD_PLATEAU                              DD>15%|Shift75%|GOLD_OR_LIQUID|weakest_first     30.66      -26.95    1.14    1.23     1.52             190.9        90.3           80.0
+     DD_PLATEAU                                    DD>15%|Shift75%|GOLDBEES|weakest_first     31.26      -26.95    1.16    1.25     1.55             191.0        90.3           80.0
+     DD_PLATEAU                               DD>15%|Shift100%|GOLD_50_LIQUID_50|pro_rata     29.01      -26.70    1.09    1.17     1.41             215.8        87.2           80.0
+     DD_PLATEAU                                  DD>15%|Shift100%|GOLD_OR_LIQUID|pro_rata     30.20      -27.06    1.12    1.20     1.47             215.8        87.2           80.0
+     DD_PLATEAU                                        DD>15%|Shift100%|GOLDBEES|pro_rata     30.97      -27.07    1.14    1.23     1.53             215.8        87.2           80.0
+BASKET_x_REGIME                                         50kRaw20+30_9mLB_Reb6M | Unhedged     31.93      -37.86    0.84    1.19     1.43             114.6       100.0           90.0
+BASKET_x_REGIME                 50kRaw20+30_9mLB_Reb6M | DD12_Shift50_WeakFirst_GoldLiq50     29.89      -26.92    1.11    1.24     1.54             210.3        90.6           80.0
+BASKET_x_REGIME                 50kRaw20+30_9mLB_Reb6M | DD12_Shift75_WeakFirst_GoldLiq50     29.96      -24.22    1.24    1.29     1.57             254.9        86.1           80.0
+BASKET_x_REGIME                          50kRaw20+30_9mLB_Reb6M | DD12_Shift100_GoldOrLiq     29.31      -25.20    1.16    1.22     1.49             300.1        81.7           70.0
+BASKET_x_REGIME            50kRaw20+30_9mLB_Reb6M | MA200Band_Shift60_WeakFirst_GoldLiq50     28.65      -25.94    1.10    1.20     1.47             255.4        87.7           80.0
+BASKET_x_REGIME                                         50kRaw20+30_9mLB_Reb9M | Unhedged     27.78      -38.79    0.72    1.02     1.22              95.1       100.0           80.0
+BASKET_x_REGIME                 50kRaw20+30_9mLB_Reb9M | DD12_Shift50_WeakFirst_GoldLiq50     26.17      -33.61    0.78    1.06     1.30             192.3        90.7           70.0
+BASKET_x_REGIME                 50kRaw20+30_9mLB_Reb9M | DD12_Shift75_WeakFirst_GoldLiq50     25.98      -30.68    0.85    1.09     1.31             237.9        86.2           70.0
+BASKET_x_REGIME                          50kRaw20+30_9mLB_Reb9M | DD12_Shift100_GoldOrLiq     25.51      -27.34    0.93    1.03     1.25             283.4        81.7           70.0
+BASKET_x_REGIME            50kRaw20+30_9mLB_Reb9M | MA200Band_Shift60_WeakFirst_GoldLiq50     24.88      -34.86    0.71    1.01     1.23             238.0        87.8           60.0
+BASKET_x_REGIME                                        50kRaw20+30_9mLB_Reb12M | Unhedged     31.22      -37.87    0.82    1.16     1.41              69.0       100.0           90.0
+BASKET_x_REGIME                50kRaw20+30_9mLB_Reb12M | DD12_Shift50_WeakFirst_GoldLiq50     28.75      -28.45    1.01    1.18     1.48             166.8        90.6           80.0
+BASKET_x_REGIME                50kRaw20+30_9mLB_Reb12M | DD12_Shift75_WeakFirst_GoldLiq50     27.85      -26.85    1.04    1.18     1.45             212.4        86.1           80.0
+BASKET_x_REGIME                         50kRaw20+30_9mLB_Reb12M | DD12_Shift100_GoldOrLiq     27.30      -26.93    1.01    1.12     1.38             259.1        81.7           70.0
+BASKET_x_REGIME           50kRaw20+30_9mLB_Reb12M | MA200Band_Shift60_WeakFirst_GoldLiq50     27.30      -29.73    0.92    1.14     1.40             216.4        87.7           80.0
+BASKET_x_REGIME                                        50kRaw20+30_12mLB_Reb6M | Unhedged     28.99      -37.15    0.78    1.09     1.26             110.8        94.3           80.0
+BASKET_x_REGIME                50kRaw20+30_12mLB_Reb6M | DD12_Shift50_WeakFirst_GoldLiq50     28.10      -27.32    1.03    1.19     1.43             206.7        85.0           70.0
+BASKET_x_REGIME                50kRaw20+30_12mLB_Reb6M | DD12_Shift75_WeakFirst_GoldLiq50     27.32      -24.67    1.11    1.19     1.43             254.1        80.4           70.0
+BASKET_x_REGIME                         50kRaw20+30_12mLB_Reb6M | DD12_Shift100_GoldOrLiq     26.71      -28.91    0.92    1.12     1.35             300.2        76.0           60.0
+BASKET_x_REGIME           50kRaw20+30_12mLB_Reb6M | MA200Band_Shift60_WeakFirst_GoldLiq50     26.51      -25.86    1.03    1.14     1.36             244.2        82.0           70.0
+BASKET_x_REGIME                                       50kRaw20+30_12mLB_Reb12M | Unhedged     33.62      -37.15    0.91    1.34     1.50              69.8        88.6          100.0
+BASKET_x_REGIME               50kRaw20+30_12mLB_Reb12M | DD12_Shift50_WeakFirst_GoldLiq50     32.26      -27.32    1.18    1.44     1.71             149.6        81.0          100.0
+BASKET_x_REGIME               50kRaw20+30_12mLB_Reb12M | DD12_Shift75_WeakFirst_GoldLiq50     30.96      -25.35    1.22    1.42     1.68             186.6        77.3           90.0
+BASKET_x_REGIME                        50kRaw20+30_12mLB_Reb12M | DD12_Shift100_GoldOrLiq     29.90      -27.23    1.10    1.31     1.56             223.8        73.8           70.0
+BASKET_x_REGIME          50kRaw20+30_12mLB_Reb12M | MA200Band_Shift60_WeakFirst_GoldLiq50     30.99      -25.39    1.22    1.41     1.67             182.3        78.9           90.0
+BASKET_x_REGIME                                        50kRaw20+30_NormZ_Reb6M | Unhedged     34.14      -38.46    0.89    1.24     1.52             117.7       100.0           90.0
+BASKET_x_REGIME                50kRaw20+30_NormZ_Reb6M | DD12_Shift50_WeakFirst_GoldLiq50     32.34      -27.53    1.17    1.31     1.65             214.8        90.6           80.0
+BASKET_x_REGIME                50kRaw20+30_NormZ_Reb6M | DD12_Shift75_WeakFirst_GoldLiq50     31.95      -24.05    1.33    1.34     1.66             259.3        86.2           80.0
+BASKET_x_REGIME                         50kRaw20+30_NormZ_Reb6M | DD12_Shift100_GoldOrLiq     30.81      -26.00    1.19    1.25     1.54             304.3        81.7           70.0
+BASKET_x_REGIME           50kRaw20+30_NormZ_Reb6M | MA200Band_Shift60_WeakFirst_GoldLiq50     30.76      -26.17    1.18    1.26     1.57             260.8        87.7           90.0
+BASKET_x_REGIME                                        Raw25_12mLB_Buf40_Reb6M | Unhedged     28.26      -37.42    0.76    1.05     1.22              92.6        94.3           80.0
+BASKET_x_REGIME                Raw25_12mLB_Buf40_Reb6M | DD12_Shift50_WeakFirst_GoldLiq50     27.63      -28.19    0.98    1.17     1.41             189.7        84.9           70.0
+BASKET_x_REGIME                Raw25_12mLB_Buf40_Reb6M | DD12_Shift75_WeakFirst_GoldLiq50     26.71      -24.43    1.09    1.16     1.39             236.8        80.4           70.0
+BASKET_x_REGIME                         Raw25_12mLB_Buf40_Reb6M | DD12_Shift100_GoldOrLiq     26.22      -27.56    0.95    1.10     1.32             281.7        76.0           60.0
+BASKET_x_REGIME           Raw25_12mLB_Buf40_Reb6M | MA200Band_Shift60_WeakFirst_GoldLiq50     26.03      -26.08    1.00    1.11     1.33             226.7        82.0           70.0
+BASKET_x_REGIME                                       Raw25_12mLB_Buf40_Reb12M | Unhedged     31.25      -38.36    0.81    1.23     1.38              62.3        88.6           90.0
+BASKET_x_REGIME               Raw25_12mLB_Buf40_Reb12M | DD12_Shift50_WeakFirst_GoldLiq50     30.68      -27.92    1.10    1.36     1.63             142.2        81.0           90.0
+BASKET_x_REGIME               Raw25_12mLB_Buf40_Reb12M | DD12_Shift75_WeakFirst_GoldLiq50     29.28      -24.94    1.17    1.34     1.60             179.2        77.3           80.0
+BASKET_x_REGIME                        Raw25_12mLB_Buf40_Reb12M | DD12_Shift100_GoldOrLiq     28.32      -27.94    1.01    1.23     1.48             216.2        73.8           70.0
+BASKET_x_REGIME          Raw25_12mLB_Buf40_Reb12M | MA200Band_Shift60_WeakFirst_GoldLiq50     29.14      -25.62    1.14    1.31     1.56             174.6        78.9           80.0
+   START_OFFSET       F1_50kRaw20+30_9mLB_Reb6M_DD12_Shift50_GoldLiq50 | start=2017-12-01     29.89      -26.92    1.11    1.24     1.54             210.3        90.6           80.0
+   START_OFFSET       F1_50kRaw20+30_9mLB_Reb6M_DD12_Shift50_GoldLiq50 | start=2018-01-01     26.26      -29.44    0.89    1.05     1.30             214.1        90.5           66.7
+   START_OFFSET       F1_50kRaw20+30_9mLB_Reb6M_DD12_Shift50_GoldLiq50 | start=2018-02-01     27.54      -26.26    1.05    1.13     1.35             212.1        90.4           66.7
+   START_OFFSET       F1_50kRaw20+30_9mLB_Reb6M_DD12_Shift50_GoldLiq50 | start=2018-03-01     25.68      -28.56    0.90    1.05     1.24             219.5        90.5           66.7
+EXEC_AND_STRESS            F1_50kRaw20+30_9mLB_Reb6M_DD12_Shift50_GoldLiq50 | Discrete_1L     28.90      -24.68    1.17    1.25     1.53             201.4        83.7           80.0
+EXEC_AND_STRESS            F1_50kRaw20+30_9mLB_Reb6M_DD12_Shift50_GoldLiq50 | Discrete_2L     29.11      -25.61    1.14    1.23     1.51             204.9        86.8           80.0
+EXEC_AND_STRESS    F1_50kRaw20+30_9mLB_Reb6M_DD12_Shift50_GoldLiq50 | Stress_2xCost_30bps     29.12      -27.07    1.08    1.20     1.49             210.3        90.6           80.0
+   WALK_FORWARD            F1_50kRaw20+30_9mLB_Reb6M_DD12_Shift50_GoldLiq50 | WF1_2018_20     15.11      -26.92    0.56    0.56     0.69             254.1        84.0           75.0
+   WALK_FORWARD            F1_50kRaw20+30_9mLB_Reb6M_DD12_Shift50_GoldLiq50 | WF2_2021_23     49.54      -25.12    1.97    2.28     2.86             176.2        94.5          100.0
+   WALK_FORWARD            F1_50kRaw20+30_9mLB_Reb6M_DD12_Shift50_GoldLiq50 | WF3_2024_26     29.35      -20.49    1.43    1.05     1.27             228.2        93.7          100.0
+   START_OFFSET       F2_50kRaw20+30_9mLB_Reb6M_DD12_Shift75_GoldLiq50 | start=2017-12-01     29.96      -24.22    1.24    1.29     1.57             254.9        86.1           80.0
+   START_OFFSET       F2_50kRaw20+30_9mLB_Reb6M_DD12_Shift75_GoldLiq50 | start=2018-01-01     26.16      -25.38    1.03    1.08     1.32             258.6        86.0           66.7
+   START_OFFSET       F2_50kRaw20+30_9mLB_Reb6M_DD12_Shift75_GoldLiq50 | start=2018-02-01     26.23      -27.26    0.96    1.10     1.31             253.1        85.8           66.7
+   START_OFFSET       F2_50kRaw20+30_9mLB_Reb6M_DD12_Shift75_GoldLiq50 | start=2018-03-01     24.63      -26.74    0.92    1.02     1.20             263.4        85.8           66.7
+EXEC_AND_STRESS            F2_50kRaw20+30_9mLB_Reb6M_DD12_Shift75_GoldLiq50 | Discrete_1L     29.09      -22.07    1.32    1.29     1.57             242.7        79.9           80.0
+EXEC_AND_STRESS            F2_50kRaw20+30_9mLB_Reb6M_DD12_Shift75_GoldLiq50 | Discrete_2L     29.15      -24.27    1.20    1.27     1.54             248.4        82.6           80.0
+EXEC_AND_STRESS    F2_50kRaw20+30_9mLB_Reb6M_DD12_Shift75_GoldLiq50 | Stress_2xCost_30bps     29.02      -24.72    1.17    1.23     1.51             255.0        86.1           80.0
+   WALK_FORWARD            F2_50kRaw20+30_9mLB_Reb6M_DD12_Shift75_GoldLiq50 | WF1_2018_20     15.46      -21.42    0.72    0.62     0.79             314.2        76.4           75.0
+   WALK_FORWARD            F2_50kRaw20+30_9mLB_Reb6M_DD12_Shift75_GoldLiq50 | WF2_2021_23     48.63      -24.18    2.01    2.27     2.80             203.9        91.7           66.7
+   WALK_FORWARD            F2_50kRaw20+30_9mLB_Reb6M_DD12_Shift75_GoldLiq50 | WF3_2024_26     28.95      -17.06    1.70    1.05     1.24             279.1        90.7          100.0
+   START_OFFSET      F3_50kRaw20+30_9mLB_Reb6M_DD12_Shift100_GoldOrLiq | start=2017-12-01     29.31      -25.20    1.16    1.22     1.49             300.1        81.7           70.0
+   START_OFFSET      F3_50kRaw20+30_9mLB_Reb6M_DD12_Shift100_GoldOrLiq | start=2018-01-01     26.28      -25.08    1.05    1.06     1.28             303.5        81.5           66.7
+   START_OFFSET      F3_50kRaw20+30_9mLB_Reb6M_DD12_Shift100_GoldOrLiq | start=2018-02-01     26.26      -26.74    0.98    1.07     1.28             291.9        81.3           66.7
+   START_OFFSET      F3_50kRaw20+30_9mLB_Reb6M_DD12_Shift100_GoldOrLiq | start=2018-03-01     24.60      -27.34    0.90    0.99     1.17             308.8        81.2           66.7
+EXEC_AND_STRESS           F3_50kRaw20+30_9mLB_Reb6M_DD12_Shift100_GoldOrLiq | Discrete_1L     28.50      -23.24    1.23    1.22     1.48             283.9        76.4           70.0
+EXEC_AND_STRESS           F3_50kRaw20+30_9mLB_Reb6M_DD12_Shift100_GoldOrLiq | Discrete_2L     28.55      -25.45    1.12    1.20     1.45             291.5        78.8           70.0
+EXEC_AND_STRESS   F3_50kRaw20+30_9mLB_Reb6M_DD12_Shift100_GoldOrLiq | Stress_2xCost_30bps     28.20      -25.85    1.09    1.16     1.41             300.5        81.7           70.0
+   WALK_FORWARD           F3_50kRaw20+30_9mLB_Reb6M_DD12_Shift100_GoldOrLiq | WF1_2018_20     16.07      -19.63    0.82    0.60     0.78             374.5        68.8           75.0
+   WALK_FORWARD           F3_50kRaw20+30_9mLB_Reb6M_DD12_Shift100_GoldOrLiq | WF2_2021_23     45.59      -24.60    1.85    2.11     2.55             231.8        88.9           66.7
+   WALK_FORWARD           F3_50kRaw20+30_9mLB_Reb6M_DD12_Shift100_GoldOrLiq | WF3_2024_26     29.09      -17.06    1.71    1.05     1.24             330.5        87.9           66.7
+   START_OFFSET     F4_50kRaw20+30_12mLB_Reb12M_DD12_Shift50_GoldLiq50 | start=2017-12-01     32.26      -27.32    1.18    1.44     1.71             149.6        81.0          100.0
+   START_OFFSET     F4_50kRaw20+30_12mLB_Reb12M_DD12_Shift50_GoldLiq50 | start=2018-01-01     27.97      -27.50    1.02    1.14     1.40             166.9        90.6           88.9
+   START_OFFSET     F4_50kRaw20+30_12mLB_Reb12M_DD12_Shift50_GoldLiq50 | start=2018-02-01     28.44      -28.54    1.00    1.18     1.43             161.7        90.4           77.8
+   START_OFFSET     F4_50kRaw20+30_12mLB_Reb12M_DD12_Shift50_GoldLiq50 | start=2018-03-01     30.26      -25.55    1.18    1.27     1.54             174.2        90.5           77.8
+EXEC_AND_STRESS          F4_50kRaw20+30_12mLB_Reb12M_DD12_Shift50_GoldLiq50 | Discrete_1L     31.01      -25.87    1.20    1.42     1.68             144.8        76.1          100.0
+EXEC_AND_STRESS          F4_50kRaw20+30_12mLB_Reb12M_DD12_Shift50_GoldLiq50 | Discrete_2L     31.03      -26.44    1.17    1.39     1.64             147.0        78.5           90.0
+EXEC_AND_STRESS  F4_50kRaw20+30_12mLB_Reb12M_DD12_Shift50_GoldLiq50 | Stress_2xCost_30bps     31.75      -27.46    1.16    1.41     1.67             149.6        81.0           90.0
+   WALK_FORWARD          F4_50kRaw20+30_12mLB_Reb12M_DD12_Shift50_GoldLiq50 | WF1_2018_20     21.68      -27.32    0.79    1.19     1.33             159.5        56.0          100.0
+   WALK_FORWARD          F4_50kRaw20+30_12mLB_Reb12M_DD12_Shift50_GoldLiq50 | WF2_2021_23     53.38      -24.02    2.22    2.51     3.11             134.0        94.5           66.7
+   WALK_FORWARD          F4_50kRaw20+30_12mLB_Reb12M_DD12_Shift50_GoldLiq50 | WF3_2024_26     25.51      -18.21    1.40    0.92     1.17             179.4        93.6          100.0
+   START_OFFSET    F5_50kRaw20+30_12mLB_Reb12M_DD12_Shift100_GoldOrLiq | start=2017-12-01     29.90      -27.23    1.10    1.31     1.56             223.8        73.8           70.0
+   START_OFFSET    F5_50kRaw20+30_12mLB_Reb12M_DD12_Shift100_GoldOrLiq | start=2018-01-01     26.14      -26.35    0.99    1.05     1.28             259.5        81.5           66.7
+   START_OFFSET    F5_50kRaw20+30_12mLB_Reb12M_DD12_Shift100_GoldOrLiq | start=2018-02-01     27.41      -26.84    1.02    1.13     1.36             246.3        81.3           66.7
+   START_OFFSET    F5_50kRaw20+30_12mLB_Reb12M_DD12_Shift100_GoldOrLiq | start=2018-03-01     28.05      -28.70    0.98    1.15     1.37             267.8        81.2           66.7
+EXEC_AND_STRESS         F5_50kRaw20+30_12mLB_Reb12M_DD12_Shift100_GoldOrLiq | Discrete_1L     29.33      -25.16    1.17    1.31     1.56             214.8        69.8           70.0
+EXEC_AND_STRESS         F5_50kRaw20+30_12mLB_Reb12M_DD12_Shift100_GoldOrLiq | Discrete_2L     29.06      -27.17    1.07    1.28     1.52             218.6        71.7           70.0
+EXEC_AND_STRESS F5_50kRaw20+30_12mLB_Reb12M_DD12_Shift100_GoldOrLiq | Stress_2xCost_30bps     29.10      -27.87    1.04    1.26     1.51             224.2        73.8           70.0
+   WALK_FORWARD         F5_50kRaw20+30_12mLB_Reb12M_DD12_Shift100_GoldOrLiq | WF1_2018_20     19.76      -18.70    1.06    0.97     1.20             223.1        45.8           75.0
+   WALK_FORWARD         F5_50kRaw20+30_12mLB_Reb12M_DD12_Shift100_GoldOrLiq | WF2_2021_23     48.19      -25.63    1.88    2.26     2.73             199.4        88.9           66.7
+   WALK_FORWARD         F5_50kRaw20+30_12mLB_Reb12M_DD12_Shift100_GoldOrLiq | WF3_2024_26     26.51      -15.65    1.69    0.99     1.22             281.4        87.9           66.7
+   START_OFFSET      F6_50kRaw20+30_NormZ_Reb6M_DD12_Shift50_GoldLiq50 | start=2017-12-01     32.34      -27.53    1.17    1.31     1.65             214.8        90.6           80.0
+   START_OFFSET      F6_50kRaw20+30_NormZ_Reb6M_DD12_Shift50_GoldLiq50 | start=2018-01-01     28.92      -26.62    1.09    1.15     1.44             218.5        90.6           66.7
+   START_OFFSET      F6_50kRaw20+30_NormZ_Reb6M_DD12_Shift50_GoldLiq50 | start=2018-02-01     31.44      -25.69    1.22    1.28     1.58             215.1        90.5           66.7
+   START_OFFSET      F6_50kRaw20+30_NormZ_Reb6M_DD12_Shift50_GoldLiq50 | start=2018-03-01     27.68      -29.95    0.92    1.11     1.35             222.0        90.5           66.7
+EXEC_AND_STRESS           F6_50kRaw20+30_NormZ_Reb6M_DD12_Shift50_GoldLiq50 | Discrete_1L     31.43      -25.29    1.24    1.32     1.65             205.0        84.2           80.0
+EXEC_AND_STRESS           F6_50kRaw20+30_NormZ_Reb6M_DD12_Shift50_GoldLiq50 | Discrete_2L     31.71      -26.21    1.21    1.30     1.63             209.5        87.1           80.0
+EXEC_AND_STRESS   F6_50kRaw20+30_NormZ_Reb6M_DD12_Shift50_GoldLiq50 | Stress_2xCost_30bps     31.53      -27.68    1.14    1.27     1.60             214.9        90.7           80.0
+   WALK_FORWARD           F6_50kRaw20+30_NormZ_Reb6M_DD12_Shift50_GoldLiq50 | WF1_2018_20     15.80      -27.53    0.57    0.58     0.72             261.4        84.0           75.0
+   WALK_FORWARD           F6_50kRaw20+30_NormZ_Reb6M_DD12_Shift50_GoldLiq50 | WF2_2021_23     57.28      -25.22    2.27    2.50     3.20             180.0        94.5          100.0
+   WALK_FORWARD           F6_50kRaw20+30_NormZ_Reb6M_DD12_Shift50_GoldLiq50 | WF3_2024_26     29.64      -22.09    1.34    1.04     1.30             227.7        93.6          100.0
