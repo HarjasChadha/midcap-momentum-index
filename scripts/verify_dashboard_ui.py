@@ -46,10 +46,11 @@ def main() -> None:
             page.goto(target_url, wait_until="networkidle", timeout=30000)
             page.wait_for_selector("#ordersTable tbody tr", timeout=15000)
 
-            # 1) Verify initial ₹1L SlotCap render
+            # 1) Verify initial ₹1L SlotCap render + MF4 4-block diagnostics panel
             title_txt = page.locator("#regimeTitle").inner_text()
             sub_txt = page.locator("#regimeSubtitle").inner_text()
-            assert "RISK-ON" in title_txt or "CRASH HEDGE" in title_txt, f"Unexpected banner: {title_txt}"
+            assert any(k in title_txt for k in ("RISK-ON", "CAUTIOUS", "DEFENSIVE")), f"Unexpected banner: {title_txt}"
+            assert page.locator("#mfBlocksGrid > div").count() == 5, "Expected 5 MF4 diagnostic block cards"
             assert "undefined" not in sub_txt and "NaN" not in sub_txt, f"Bad text in subtitle: {sub_txt}"
             assert "undefined" not in page.locator("body").inner_text(), "Found 'undefined' in rendered UI"
             order_rows = page.locator("#ordersTable tbody tr").count()
@@ -65,13 +66,18 @@ def main() -> None:
             page.wait_for_timeout(200)
             assert not page.is_checked("#slotCapToggle"), "SlotCap should auto-uncheck at ₹5L"
             cap5l_txt = page.locator("#calcSummaryGrid").inner_text()
-            assert "₹" in cap5l_txt and "5,00" not in cap5l_txt or "Equity Deployed" in cap5l_txt
+            assert "₹" in cap5l_txt and "EQUITY DEPLOYED" in cap5l_txt.upper(), f"Unexpected calcSummaryGrid at 5L: {cap5l_txt}"
 
-            # 3) Test Simulate Crash posture -> confirms GOLDBEES & LIQUIDCASE defensive ETFs appear
+            # 3) Test Simulate Crash posture under R3 (TrendGold gate ETF) & F2 (50/50 Gold+Liquid)
             page.select_option("#postureOverride", "SIM_CRASH")
             page.wait_for_timeout(200)
-            orders_txt = page.locator("#ordersTable tbody").inner_text()
-            assert "GOLDBEES" in orders_txt and "LIQUIDCASE" in orders_txt, "Crash simulation must allocate GOLDBEES + LIQUIDCASE"
+            r3_orders_txt = page.locator("#ordersTable tbody").inner_text()
+            assert ("LIQUIDCASE" in r3_orders_txt or "GOLDBEES" in r3_orders_txt), "R3 Crash simulation must allocate TrendGold gate ETF"
+            page.select_option("#presetSelect", "F2")
+            page.wait_for_timeout(200)
+            f2_orders_txt = page.locator("#ordersTable tbody").inner_text()
+            assert "GOLDBEES" in f2_orders_txt and "LIQUIDCASE" in f2_orders_txt, "Legacy F2 Crash must allocate both GOLDBEES + LIQUIDCASE"
+            page.select_option("#presetSelect", "R3")
             page.select_option("#postureOverride", "LIVE")
 
             # 4) Test Holdings Diff + LTCG 330-364d shield warning
@@ -86,14 +92,16 @@ def main() -> None:
             page.wait_for_timeout(500)
             assert page.locator("#navChart").is_visible()
             assert page.locator("#ddChart").is_visible()
-            assert page.locator("#triggersTable tbody tr").count() >= 10
+            assert page.locator("#triggersTable tbody tr").count() >= 5
             page.screenshot(path=str(ARTIFACT_DIR / "midcap_dashboard_charts.png"), full_page=False)
 
-            # 6) Switch to Research tab & verify both 16Y PIT matrix and clean 2018-26 matrix
+            # 6) Switch to Research tab & verify 16Y PIT, Crash Anatomy, F&O Compare, and synchronized Clean Matrix
             page.click('button[data-tab="research"]')
             page.wait_for_timeout(200)
-            assert page.locator("#pitResearchTable tbody tr").count() >= 15
-            assert page.locator("#researchTable tbody tr").count() >= 25
+            assert page.locator("#pitResearchTable tbody tr").count() >= 10
+            assert page.locator("#crashAnatomyTable tbody tr").count() >= 8
+            assert page.locator("#fnoCompareTable tbody tr").count() >= 4
+            assert page.locator("#researchTable tbody tr").count() >= 12
 
             # 7) Switch to Rankings tab & test filter
             page.click('button[data-tab="rankings"]')

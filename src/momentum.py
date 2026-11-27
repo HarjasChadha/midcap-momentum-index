@@ -51,10 +51,21 @@ def compute_score_matrix(
         ann_vol = (vol * math.sqrt(252.0)).replace(0.0, np.nan)
         return ret / ann_vol
 
+    def _sortino_adj(lb: int) -> pd.DataFrame:
+        ret = _raw_ret(lb)
+        r_clip = daily_rets.clip(-0.40, 0.60)
+        sdev2 = (np.minimum(r_clip, 0.0) ** 2).rolling(lb, min_periods=max(20, int(0.8 * lb))).mean() * 247.0
+        if skip_days > 0:
+            sdev2 = sdev2.shift(skip_days)
+        ann_sdev = np.sqrt(sdev2).clip(lower=0.06)
+        return ret / ann_sdev
+
     if mode == "raw":
         scores = _raw_ret(lookback_days)
     elif mode == "risk_adj":
         scores = _risk_adj(lookback_days)
+    elif mode == "sortino":
+        scores = _sortino_adj(lookback_days)
     elif mode == "blend_6_12":
         scores = 0.5 * _zscore_rows(_raw_ret(126)) + 0.5 * _zscore_rows(_raw_ret(252))
     elif mode == "blend_3_6_12":

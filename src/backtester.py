@@ -42,15 +42,21 @@ def compute_metrics(nav: pd.Series, turnover_series: pd.Series | None = None, to
     if len(s) < 20:
         return {"error": "insufficient data"}
     rets = s.pct_change().dropna()
-    yrs = len(s) / 252.0
+    # Use true calendar years when index is ISO dates (falls back to trading days/252 for non-date indices)
+    try:
+        cal_days = (pd.Timestamp(str(s.index[-1])) - pd.Timestamp(str(s.index[0]))).days
+        yrs = cal_days / 365.2425 if cal_days > 20 else len(s) / 252.0
+    except Exception:
+        yrs = len(s) / 252.0
+    days_per_yr = len(s) / yrs if yrs > 0 else 252.0
     cagr = (float(s.iloc[-1]) / float(s.iloc[0])) ** (1.0 / yrs) - 1.0
-    ann_vol = float(rets.std() * math.sqrt(252.0))
+    ann_vol = float(rets.std() * math.sqrt(days_per_yr))
     dd_series = s / s.cummax() - 1.0
     max_dd = float(dd_series.min())
     calmar = cagr / abs(max_dd) if max_dd < -1e-9 else float("inf")
     sharpe = (cagr - rf_annual) / ann_vol if ann_vol > 1e-9 else 0.0
     downside = rets[rets < 0]
-    down_vol = float(downside.std() * math.sqrt(252.0)) if len(downside) > 2 else ann_vol
+    down_vol = float(downside.std() * math.sqrt(days_per_yr)) if len(downside) > 2 else ann_vol
     sortino = (cagr - rf_annual) / down_vol if down_vol > 1e-9 else 0.0
     ulcer = float(math.sqrt(np.mean((dd_series.values * 100.0) ** 2)))
 
@@ -136,11 +142,11 @@ def run_backtest(
     if len(dates) < 30:
         raise ValueError("Backtest date range too short")
 
-    adj = adj_df.loc[dates].ffill()
-    raw = raw_df.loc[dates].ffill()
-    def_series = def_df[cfg.defensive_asset].reindex(dates).ffill().bfill(limit=5)
+    adj = adj_df.loc[dates].ffill(limit=5)
+    raw = raw_df.loc[dates].ffill(limit=5)
+    def_series = def_df[cfg.defensive_asset].reindex(dates).ffill(limit=5)
     sweep_col = cfg.sweep_asset if cfg.sweep_asset in def_df.columns else cfg.defensive_asset
-    sweep_series = def_df[sweep_col].reindex(dates).ffill().bfill(limit=5)
+    sweep_series = def_df[sweep_col].reindex(dates).ffill(limit=5)
     eq_alloc = eq_alloc_series.reindex(dates).fillna(1.0).clip(0.0, 1.0)
     sleeves_cfg = cfg.sleeves or [{"score_key": "raw_9m", "top_n": 30, "alloc": 1.0, "weighting": "equal"}]
     need_vol = any(s.get("weighting") == "inv_vol" for s in sleeves_cfg)
@@ -361,7 +367,7 @@ def run_backtest(
                     score_rows = {k: v.loc[score_date] for k, v in score_matrices.items() if score_date in v.index}
                     vrow = vol_63.loc[score_date] if score_date in vol_63.index else None
                     sleeve_targets[s_idx] = select_affordable_blend(
-                        score_rows, sleeves, raw_score_row, total_val * max(0.25, float(eq_alloc.iloc[i])), vrow, prev_set
+                        score_rows, sleeves, raw_score_row, total_val * max(0.50, float(eq_alloc.iloc[i])), vrow, prev_set
                     )
                 else:
                     sub_pairs = []
@@ -398,7 +404,10 @@ def run_backtest(
                 # Keep strongest momentum stocks fully weighted; trim weakest first!
                 smat0 = score_matrices[sleeves[0]["score_key"]]
                 srow_prev = smat0.loc[score_date] if score_date in smat0.index else pd.Series(dtype=float)
-                ordered = sorted(active_eq_weights.keys(), key=lambda s: float(srow_prev.get(s, -999.0)), reverse=True)
+                def _score_val(sym_k: str) -> float:
+                    v = float(srow_prev.get(sym_k, -999.0))
+                    return v if math.isfinite(v) else -999.0
+                ordered = sorted(active_eq_weights.keys(), key=_score_val, reverse=True)
                 rem_budget = target_eq_frac
                 for sym in ordered:
                     w_full = active_eq_weights[sym]

@@ -19,7 +19,14 @@ from src.backtester import BacktestConfig, compute_metrics, run_backtest  # noqa
 from src.data_loader import BENCHMARK_TICKERS, fetch_and_cache_all, load_universe  # noqa: E402
 from src.momentum import combine_sleeves, compute_score_matrix, select_affordable_blend, select_sleeve_weights  # noqa: E402
 from src.nse_mcp import NseMcpClient  # noqa: E402
-from src.regime import build_defensive_series, build_ew_index, build_regime_features, compute_equity_allocation_series  # noqa: E402
+from src.regime import (  # noqa: E402
+    build_defensive_series,
+    build_ew_index,
+    build_regime_features,
+    compute_equity_allocation_series,
+    compute_multifactor_state,
+    get_trend_gold_status,
+)
 
 TRACKED_ETFS = ["GOLDBEES", "SILVERBEES", "EBBETF0431", "LTGILTBEES", "LIQUIDCASE", "LIQUIDBEES", "NIFTYBEES", "MON100", "MIDCAPIETF"]
 
@@ -190,27 +197,23 @@ def _build_discrete_orders(weights: dict[str, float], raw_prices: pd.Series, sco
 
 def _extract_regime_triggers(feat: pd.DataFrame, alloc_series: pd.Series) -> list[dict[str, Any]]:
     triggers = []
-    prev_val = 1.0
+    prev_val = float(alloc_series.iloc[0]) if not alloc_series.empty else 1.0
     for dt, val in alloc_series.items():
-        if val < 0.99 and prev_val >= 0.99:
+        v = float(val)
+        if abs(v - prev_val) > 0.05:
+            if v < prev_val:
+                ev = "EXIT_TO_DEFENSIVE" if v < 0.40 else "SHIFT_TO_CAUTIOUS"
+            else:
+                ev = "REENTER_EQUITY" if v >= 0.99 else "STEP_UP_CAUTIOUS"
             triggers.append(
                 {
                     "date": str(dt),
-                    "event": "EXIT_TO_DEFENSIVE",
-                    "equity_pct": round(float(val) * 100.0, 1),
+                    "event": ev,
+                    "equity_pct": round(v * 100.0, 1),
                     "ew_dd252_pct": round(float(feat.loc[dt, "ew_dd252"]) * 100.0, 2),
                 }
             )
-        elif val >= 0.99 and prev_val < 0.99:
-            triggers.append(
-                {
-                    "date": str(dt),
-                    "event": "REENTER_EQUITY",
-                    "equity_pct": 100.0,
-                    "ew_dd252_pct": round(float(feat.loc[dt, "ew_dd252"]) * 100.0, 2),
-                }
-            )
-        prev_val = float(val)
+            prev_val = v
     return triggers
 
 
@@ -240,12 +243,14 @@ def build_live_state() -> dict[str, Any]:
         "raw_9m": compute_score_matrix(adj_df.ffill(limit=2), 189, 21, "raw"),
         "raw_12m": compute_score_matrix(adj_df.ffill(limit=2), 252, 21, "raw"),
         "risk_9m": compute_score_matrix(adj_df.ffill(limit=2), 189, 21, "risk_adj"),
+        "sortino_9m": compute_score_matrix(adj_df.ffill(limit=2), 189, 21, "sortino"),
     }
 
     last_dt = str(adj_df.index[-1])
     s9 = scores["raw_9m"].loc[last_dt]
     s12 = scores["raw_12m"].loc[last_dt]
     sr9 = scores["risk_9m"].loc[last_dt]
+    ss9 = scores["sortino_9m"].loc[last_dt]
     raw_last = raw_df.ffill(limit=5).loc[last_dt] if last_dt in raw_df.index else raw_df.ffill(limit=5).iloc[-1]
     ma50_last = adj_df.ffill(limit=2).rolling(50, min_periods=30).mean().loc[last_dt]
 
@@ -254,6 +259,8 @@ def build_live_state() -> dict[str, Any]:
     presets_summary: dict[str, Any] = {}
     nav_curves: dict[str, pd.Series] = {}
 
+    reg_mf4, mf_diag = compute_multifactor_state(feat, bench_df)
+    tg_status = get_trend_gold_status(bench_df)
     reg_dd15 = compute_equity_allocation_series(feat, "index_dd", {"dd_thresh": 0.15, "reenter_ma": 50, "defensive_shift": 0.75})
     reg_dd75 = compute_equity_allocation_series(feat, "index_dd", {"dd_thresh": 0.12, "reenter_ma": 50, "defensive_shift": 0.75})
     reg_dd50 = compute_equity_allocation_series(feat, "index_dd", {"dd_thresh": 0.12, "reenter_ma": 50, "defensive_shift": 0.50})
@@ -262,7 +269,12 @@ def build_live_state() -> dict[str, Any]:
     def _slv(key: str, wt: str) -> list[dict[str, Any]]:
         return [{"score_key": key, "top_n": 20, "alloc": 0.5, "weighting": wt}, {"score_key": key, "top_n": 30, "alloc": 0.5, "weighting": wt}]
 
+    sweep_col = "LIQUID_REALISTIC" if "LIQUID_REALISTIC" in def_df.columns else "LIQUID_TBILL"
     curve_specs = {
+        "R3_Risk9m_6M_MF4_TrendGold150": (_slv("risk_9m", "equal"), 126, reg_mf4, "TREND_GOLD150_OR_LIQ", "weakest_first", False, False),
+        "R3_Disc1L_SlotCap": (_slv("risk_9m", "equal"), 126, reg_mf4, "TREND_GOLD150_OR_LIQ", "weakest_first", True, True),
+        "S3_Sortino9m_6M_MF4_TrendGold150": (_slv("sortino_9m", "equal"), 126, reg_mf4, "TREND_GOLD150_OR_LIQ", "weakest_first", False, False),
+        "S3_Disc1L_SlotCap": (_slv("sortino_9m", "equal"), 126, reg_mf4, "TREND_GOLD150_OR_LIQ", "weakest_first", True, True),
         "R2_Risk9m_6M_DD15_Sh75_GoldLiq50": (_slv("risk_9m", "equal"), 126, reg_dd15, "GOLD_50_LIQUID_50", "weakest_first", False, False),
         "R2_Disc1L_SlotCap": (_slv("risk_9m", "equal"), 126, reg_dd15, "GOLD_50_LIQUID_50", "weakest_first", True, True),
         "R7_NormZ_Risk9m_6M_DD15_Sh75_GoldLiq50": (_slv("risk_9m", "norm_z"), 126, reg_dd15, "GOLD_50_LIQUID_50", "weakest_first", False, False),
@@ -294,7 +306,7 @@ def build_live_state() -> dict[str, Any]:
                 discrete_shares=af,
                 affordability_filter=af,
                 sweep_idle_cash=sw,
-                sweep_asset="LIQUID_TBILL",
+                sweep_asset=sweep_col,
             ),
             stock_ma50=stock_ma50,
         )
@@ -310,19 +322,20 @@ def build_live_state() -> dict[str, Any]:
     nav_curves["GOLD_50_LIQUID_50"] = gold50_series / float(gold50_series.iloc[0]) * 100_000.0
     presets_summary["GOLD_50_LIQUID_50"] = compute_metrics(nav_curves["GOLD_50_LIQUID_50"])
 
-    # Compute current live posture under primary R2 (DD > 15%, Sh75%, re-enter >50DMA & DD > -9.0%)
+    tg_series = def_df["TREND_GOLD150_OR_LIQ"].loc[clean_start:last_dt].dropna()
+    nav_curves["TREND_GOLD150_OR_LIQ"] = tg_series / float(tg_series.iloc[0]) * 100_000.0
+    presets_summary["TREND_GOLD150_OR_LIQ"] = compute_metrics(nav_curves["TREND_GOLD150_OR_LIQ"])
+
+    # Compute current T+1 live posture from causal 4-block multi-factor composite + TrendGold EMA150 gate
     ew_cur = float(feat["ew_index"].iloc[-1])
     ew_peak252 = float(feat["ew_index"].iloc[max(0, len(feat) - 252) :].max())
     ew_dd_now = ew_cur / ew_peak252 - 1.0 if ew_peak252 > 0 else 0.0
     ew_ma50_now = float(feat["ew_ma50"].iloc[-1])
     ew_ma200_now = float(feat["ew_ma200"].iloc[-1])
-    active_eq_frac = float(reg_dd15.iloc[-1])
-    if active_eq_frac > 0.5 and ew_dd_now < -0.15:
-        t1_eq_frac = 0.25
-    elif active_eq_frac < 0.99 and ew_cur > ew_ma50_now and ew_dd_now > -0.09:
-        t1_eq_frac = 1.0
-    else:
-        t1_eq_frac = active_eq_frac
+    mf_last = mf_diag.iloc[-1]
+    t1_eq_frac = float(mf_last["target_eq_eod"])
+    def_frac = round(max(0.0, 1.0 - t1_eq_frac), 4)
+    active_def_etf = str(tg_status.get("active_defensive_etf", "LIQUIDCASE"))
 
     goldbees_px = float(bench_df["GOLDBEES"].dropna().iloc[-1]) if "GOLDBEES" in bench_df.columns else 100.0
     goldbees_ma50 = float(bench_df["GOLDBEES"].dropna().rolling(50).mean().iloc[-1]) if "GOLDBEES" in bench_df.columns else 100.0
@@ -339,19 +352,23 @@ def build_live_state() -> dict[str, Any]:
             mpk = float(ms.iloc[max(0, len(ms) - 252) :].max())
             midcap_idx_dd252 = (float(ms.iloc[-1]) / mpk - 1.0) * 100.0
 
-    # Top 60 rankings + Risk-Adj & Raw weights for client-side dynamic calculator
+    # Top 60 rankings + Risk-Adj, Sortino, Raw weights for client-side dynamic calculator
     ranked_raw9 = s9.dropna().sort_values(ascending=False)
     ranked_risk9 = sr9.dropna().sort_values(ascending=False)
+    ranked_sortino9 = ss9.dropna().sort_values(ascending=False)
     w_raw_eq = combine_sleeves([(0.5, select_sleeve_weights(s9, 20, "equal")), (0.5, select_sleeve_weights(s9, 30, "equal"))])
     w_raw_slotcap = select_affordable_blend({"raw_9m": s9}, _slv("raw_9m", "equal"), raw_last, 100_000.0)
     w_risk_eq = combine_sleeves([(0.5, select_sleeve_weights(sr9, 20, "equal")), (0.5, select_sleeve_weights(sr9, 30, "equal"))])
     w_risk_slotcap = select_affordable_blend({"risk_9m": sr9}, _slv("risk_9m", "equal"), raw_last, 100_000.0)
+    w_sortino_eq = combine_sleeves([(0.5, select_sleeve_weights(ss9, 20, "equal")), (0.5, select_sleeve_weights(ss9, 30, "equal"))])
+    w_sortino_slotcap = select_affordable_blend({"sortino_9m": ss9}, _slv("sortino_9m", "equal"), raw_last, 100_000.0)
     w_risk_nz = combine_sleeves([(0.5, select_sleeve_weights(sr9, 20, "norm_z")), (0.5, select_sleeve_weights(sr9, 30, "norm_z"))])
     w_risk_nz_slotcap = select_affordable_blend({"risk_9m": sr9}, _slv("risk_9m", "norm_z"), raw_last, 100_000.0)
     w_blend_nz = combine_sleeves([(0.5, select_sleeve_weights(s9, 20, "norm_z")), (0.5, select_sleeve_weights(s9, 30, "norm_z"))])
     w_blend_12m_eq = combine_sleeves([(0.5, select_sleeve_weights(s12, 20, "equal")), (0.5, select_sleeve_weights(s12, 30, "equal"))])
 
     rank_raw9_map = {sym: r for r, sym in enumerate(ranked_raw9.index, start=1)}
+    rank_sortino9_map = {sym: r for r, sym in enumerate(ranked_sortino9.index, start=1)}
     rank12_map = {sym: r for r, sym in enumerate(s12.dropna().sort_values(ascending=False).index, start=1)}
     adj_live = adj_df.ffill(limit=2)
     rankings_top60 = []
@@ -362,11 +379,13 @@ def build_live_state() -> dict[str, Any]:
         rankings_top60.append(
             {
                 "rank_risk9m": r_risk,
+                "rank_sortino9m": rank_sortino9_map.get(sym),
                 "rank_9m": rank_raw9_map.get(sym),
                 "rank_12m": rank12_map.get(sym),
                 "symbol": sym,
                 "price": px,
                 "risk_9m": float(sr9[sym]),
+                "sortino_9m": float(ss9[sym]) if pd.notna(ss9.get(sym)) else None,
                 "raw_9m_pct": float(s9[sym] * 100.0) if pd.notna(s9.get(sym)) else None,
                 "raw_12m_pct": float(s12.get(sym, np.nan) * 100.0) if pd.notna(s12.get(sym)) else None,
                 "above_ma50": bool(math.isfinite(adx) and math.isfinite(m50) and adx > m50),
@@ -379,7 +398,7 @@ def build_live_state() -> dict[str, Any]:
             }
         )
 
-    # Full 150 scored list (compact for client-side dynamic preset switching: Risk9M / Raw9M / Raw12M & Equal / NormZ)
+    # Full 150 scored list (compact for client-side dynamic preset switching: Risk9M / Sortino9M / Raw9M / Raw12M & Equal / NormZ)
     universe_scores = []
     for sym in ranked_risk9.index:
         px = float(raw_last.get(sym, np.nan))
@@ -390,6 +409,7 @@ def build_live_state() -> dict[str, Any]:
                 "sym": sym,
                 "px": round(px, 2),
                 "rk9": round(float(sr9[sym]), 4),
+                "so9": round(float(ss9[sym]), 4) if pd.notna(ss9.get(sym)) else None,
                 "r9": round(float(s9[sym]) * 100.0, 2) if pd.notna(s9.get(sym)) else None,
                 "r12": round(float(s12[sym]) * 100.0, 2) if pd.notna(s12.get(sym)) else None,
                 "ma50": bool(pd.notna(ma50_last.get(sym)) and adj_live.loc[last_dt, sym] > ma50_last.get(sym)),
@@ -405,60 +425,82 @@ def build_live_state() -> dict[str, Any]:
     dd_sub = (nav_df / nav_df.cummax() - 1.0).iloc[sample_idx] * 100.0
     ew_dd_sub = feat["ew_dd252"].reindex(nav_sub.index) * 100.0
 
-    clean_ver_path = REPO_ROOT / "reports" / "clean_verification.json"
-    clean_ver = json.loads(clean_ver_path.read_text()) if clean_ver_path.exists() else []
+    # Synchronize Clean Backtest Matrix directly with live 2018-26 curve simulations
+    clean_matrix_specs = [
+        ("R3 Recommended (₹1L SlotCap)", "R3_Disc1L_SlotCap"),
+        ("R3 Optimal MF (Frac)", "R3_Risk9m_6M_MF4_TrendGold150"),
+        ("S3 Runner-Up (₹1L SlotCap)", "S3_Disc1L_SlotCap"),
+        ("S3 Sortino MF (Frac)", "S3_Sortino9m_6M_MF4_TrendGold150"),
+        ("R7 Concentrated NormZ", "R7_NormZ_Risk9m_6M_DD15_Sh75_GoldLiq50"),
+        ("R2 Simple DD15 (Frac)", "R2_Risk9m_6M_DD15_Sh75_GoldLiq50"),
+        ("R2 Simple DD15 (₹1L SlotCap)", "R2_Disc1L_SlotCap"),
+        ("F2 Legacy V1 (Frac)", "F2_9m_6M_DD12_Sh75_GoldLiq50"),
+        ("F4 Large Cap 12M", "F4_12m_12M_DD12_Sh50_GoldLiq50"),
+        ("Baseline Unhedged 9M", "Unhedged_9m_6M"),
+        ("Benchmark", "Midcap150_EW_Universe"),
+        ("Defensive Gate ETF", "TREND_GOLD150_OR_LIQ"),
+        ("Defensive 50/50", "GOLD_50_LIQUID_50"),
+    ]
+    clean_ver = []
+    for scen, k in clean_matrix_specs:
+        m = presets_summary.get(k)
+        if m:
+            clean_ver.append({"scenario": scen, "name": k, **m})
 
-    # Compact 16-year Zero-Survivorship Point-in-Time vs Current summary from official NSE archives (2011-2026)
+    # Clean ETF-Free 16-Year Zero-Survivorship Point-in-Time Validation Summary
     pit_validation_16yr: list[dict[str, Any]] = []
-    pit_path = REPO_ROOT / "reports" / "nse_17yr_train_val_oos.json"
-    if pit_path.exists():
-        pit_json = json.loads(pit_path.read_text())
-        bms = pit_json.get("benchmarks", {})
-        for u_key, b_key, lbl in [
-            ("PIT Zero-Survivorship (787 Stocks)", "PIT", "Passive Midcap 150 EW Proxy (Ranks 81-230)"),
-            ("Current-2026 Constituents (Biased)", "CURR", "Passive Midcap 150 EW Universe"),
-        ]:
-            bm = bms.get(b_key, {})
-            if bm:
-                pit_validation_16yr.append(
-                    {
-                        "universe": u_key,
-                        "strategy": lbl,
-                        "p1_cagr": bm.get("P1_Train_2011_16", {}).get("cagr_pct"),
-                        "p2_cagr": bm.get("P2_Val1_2016_21", {}).get("cagr_pct"),
-                        "p3_cagr": bm.get("P3_Val2_2021_26", {}).get("cagr_pct"),
-                        "full_cagr": bm.get("FULL_2011_26", {}).get("cagr_pct"),
-                        "full_dd": bm.get("FULL_2011_26", {}).get("max_dd_pct"),
-                        "full_sh": bm.get("FULL_2011_26", {}).get("sharpe"),
-                    }
-                )
-        want_cids = {
-            "Risk_9M_EW | 6M | DD15_Sh75_GL50": "R2 Upgraded (Risk9M EW · 6M · DD>15%)",
-            "Hybrid_9M_EW | 6M | DD15_Sh75_GL50": "Hybrid 50/50 (Raw+Risk · 6M · DD>15%)",
-            "Raw_9M_NormZ | 6M | DD15_Sh75_GL50": "Raw9M NormZ · 6M · DD>15%",
-            "Raw_9M_EW | 6M | DD15_Sh75_GL50": "Raw9M EW · 6M · DD>15%",
-            "Risk_9M_EW | 6M | DD12_Sh75_GL50": "Risk9M EW · 6M · DD>12%",
-            "Raw_9M_EW | 6M | DD12_Sh75_GL50": "F2 Legacy (Raw9M EW · 6M · DD>12%)",
-            "Risk_9M_EW | 6M | MA200Band_Sh75_GL50": "Risk9M EW · 6M · MA200 Band",
-            "Raw_9M_EW | 6M | Unhedged": "Unhedged Raw9M EW · 6M",
+    src_16_path = REPO_ROOT / "reports" / "src_exact_16yr_verification.json"
+    deep_r1_path = REPO_ROOT / "reports" / "numba_deep_research.json"
+    deep_r2_path = REPO_ROOT / "reports" / "numba_part2_verification.json"
+    research_v3: dict[str, Any] = {}
+    if src_16_path.exists():
+        src16 = json.loads(src_16_path.read_text())
+        research_v3["src_exact_16yr"] = src16
+        lbl_map = {
+            "R3_src_Frac": "R3 Optimal (Risk9M · 4-Block MF · TrendGold150)",
+            "R3_src_Disc1L": "R3 Optimal ₹1L Discrete SlotCap",
+            "S3_src_Frac": "S3 Sortino9M · 4-Block MF · TrendGold150",
+            "S3_src_Disc1L": "S3 Sortino9M ₹1L Discrete SlotCap",
+            "R3_NormZ_Frac": "R3 Concentrated NormZ · 4-Block MF · TrendGold150",
+            "R2_src_Frac": "R2 Simple Trigger (Risk9M · DD>15% · 50/50 Gold+Liq)",
+            "R2_src_Disc1L": "R2 Simple Trigger ₹1L Discrete SlotCap",
+            "F2_src_Frac": "F2 Legacy V1 (Raw9M · DD>12% · 50/50 Gold+Liq)",
+            "Unhedged_Risk9M": "Unhedged Risk9M EW (No Regime Hedge)",
+            "Unhedged_Sortino9M": "Unhedged Sortino9M EW (No Regime Hedge)",
         }
-        rec_map = {(r["universe"], r["config_id"]): r for r in pit_json.get("records", [])}
-        for u_raw, u_lbl in [("PIT_NO_SURVIVOR_150", "PIT Zero-Survivorship (787 Stocks)"), ("CURRENT_2026_150", "Current-2026 Constituents (Biased)")]:
-            for cid, disp in want_cids.items():
-                r = rec_map.get((u_raw, cid))
-                if r:
-                    pit_validation_16yr.append(
-                        {
-                            "universe": u_lbl,
-                            "strategy": disp,
-                            "p1_cagr": r["P1_Train_2011_16_cagr"],
-                            "p2_cagr": r["P2_Val1_2016_21_cagr"],
-                            "p3_cagr": r["P3_Val2_2021_26_cagr"],
-                            "full_cagr": r["FULL_2011_26_cagr"],
-                            "full_dd": r["FULL_2011_26_dd"],
-                            "full_sh": r["FULL_2011_26_sh"],
-                        }
-                    )
+        pit_validation_16yr.append(
+            {
+                "universe": "Clean ETF-Free PIT (772 Eqs)",
+                "strategy": "Passive Midcap 150 EW Benchmark (Zero-Leak)",
+                "p1_cagr": 0.40,
+                "p2_cagr": 15.23,
+                "p3_cagr": 14.58,
+                "full_cagr": 9.77,
+                "full_dd": -54.08,
+                "full_sh": 0.18,
+            }
+        )
+        for row in src16.get("rows", []):
+            disp = lbl_map.get(row["lbl"], row["lbl"])
+            pit_validation_16yr.append(
+                {
+                    "universe": "Clean ETF-Free PIT (772 Eqs)",
+                    "strategy": disp,
+                    "p1_cagr": row["P1_cagr"],
+                    "p2_cagr": row["P2_cagr"],
+                    "p3_cagr": row["P3_cagr"],
+                    "full_cagr": row["FULL_cagr"],
+                    "full_dd": row["FULL_dd"],
+                    "full_sh": row["FULL_sh"],
+                }
+            )
+    if deep_r1_path.exists():
+        r1j = json.loads(deep_r1_path.read_text())
+        research_v3["gold_liquid_frontier"] = [x for x in r1j.get("gold_liquid_frontier", []) if x.get("signal") == "EQ4_MultiFactor"]
+    if deep_r2_path.exists():
+        r2j = json.loads(deep_r2_path.read_text())
+        research_v3["crash_anatomy"] = r2j.get("crash_anatomy", [])
+        research_v3["fno_hedges"] = r2j.get("fno_hedges", [])[:3]
 
     payload = {
         "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -474,10 +516,12 @@ def build_live_state() -> dict[str, Any]:
             "market_mood": nse_telemetry.get("mood"),
         },
         "regime": {
-            "state": "RISK_ON" if t1_eq_frac >= 0.99 else "DEFENSIVE",
+            "state": "RISK_ON" if t1_eq_frac >= 0.99 else ("CAUTIOUS" if t1_eq_frac >= 0.50 else "DEFENSIVE"),
+            "state_code": int(mf_last["state_code"]),
+            "active_defensive_etf": active_def_etf,
             "target_equity_pct": round(t1_eq_frac * 100.0, 1),
-            "target_goldbees_pct": round((1.0 - t1_eq_frac) * 50.0, 1),
-            "target_liquidcase_pct": round((1.0 - t1_eq_frac) * 50.0, 1),
+            "target_goldbees_pct": round(def_frac * 100.0, 1) if active_def_etf == "GOLDBEES" else 0.0,
+            "target_liquidcase_pct": round(def_frac * 100.0, 1) if active_def_etf == "LIQUIDCASE" else 0.0,
             "ew_index": round(ew_cur, 2),
             "ew_ma50": round(ew_ma50_now, 2),
             "ew_ma200": round(ew_ma200_now, 2),
@@ -488,15 +532,29 @@ def build_live_state() -> dict[str, Any]:
             "midcap150_dd252_pct": round(midcap_idx_dd252, 2) if midcap_idx_dd252 is not None else None,
             "breadth_50_sma10_pct": round(float(feat["breadth_50_sma10"].iloc[-1]) * 100.0, 2),
             "india_vix": vix_now,
+            "trend_gold_status": tg_status,
+            "multifactor_blocks": {
+                "b1_trend": round(float(mf_last["b1_trend"]), 3),
+                "b2_vol": round(float(mf_last["b2_vol"]), 3),
+                "b3_breadth": round(float(mf_last["b3_breadth"]), 3),
+                "b4_macro_gold": round(float(mf_last["b4_macro_gold"]), 3),
+                "composite_raw": round(float(mf_last["composite_raw"]), 3),
+                "composite_smooth": round(float(mf_last["composite_smooth"]), 3),
+                "weights": {"trend": 0.44, "vol_vix": 0.10, "breadth": 0.34, "macro_gold": 0.12},
+                "thresholds": {"defensive": -0.25, "cautious": -0.10, "reenter_risk_on": 0.18},
+            },
             "etfs": {
-                "GOLDBEES": {"price": goldbees_px, "above_ma50": goldbees_px > goldbees_ma50},
+                "GOLDBEES": {"price": goldbees_px, "above_ma50": goldbees_px > goldbees_ma50, "ema150": tg_status.get("gold_ema150"), "above_ema150_gate": tg_status.get("gold_above_gate")},
                 "LIQUIDCASE": {"price": liquidcase_px},
                 "EBBETF0431": {"price": float(bench_df["EBBETF0431"].dropna().iloc[-1]) if "EBBETF0431" in bench_df.columns else None},
                 "LTGILTBEES": {"price": float(bench_df["LTGILTBEES"].dropna().iloc[-1]) if "LTGILTBEES" in bench_df.columns else None},
             },
-            "historical_triggers": _extract_regime_triggers(feat.loc[clean_start:], reg_dd15.loc[clean_start:]),
+            "historical_triggers": _extract_regime_triggers(feat.loc[clean_start:], reg_mf4.loc[clean_start:]),
+            "legacy_dd15_triggers": _extract_regime_triggers(feat.loc[clean_start:], reg_dd15.loc[clean_start:]),
         },
         "orders_1L": {
+            "R3_Risk9M_SlotCap_LiqSweep": _build_discrete_orders(w_risk_slotcap, raw_last, s9, s12, 100_000.0, liquidcase_px),
+            "S3_Sortino9M_SlotCap_LiqSweep": _build_discrete_orders(w_sortino_slotcap, raw_last, s9, s12, 100_000.0, liquidcase_px),
             "R2_Risk9M_SlotCap_LiqSweep": _build_discrete_orders(w_risk_slotcap, raw_last, s9, s12, 100_000.0, liquidcase_px),
             "R2_Risk9M_NoCap": _build_discrete_orders(w_risk_eq, raw_last, s9, s12, 100_000.0, liquidcase_px),
             "R7_Risk9M_NormZ_SlotCap": _build_discrete_orders(w_risk_nz_slotcap, raw_last, s9, s12, 100_000.0, liquidcase_px),
@@ -515,6 +573,7 @@ def build_live_state() -> dict[str, Any]:
         },
         "clean_verification": clean_ver,
         "pit_validation_16yr": pit_validation_16yr,
+        "research_v3": research_v3,
     }
 
     safe_payload = sanitize_for_json(payload)

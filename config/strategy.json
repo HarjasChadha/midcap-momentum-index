@@ -1,8 +1,8 @@
 {
-  "name": "DIY Nifty Midcap 150 Momentum Index (R2 Risk-Adj DD15 Recommended)",
-  "version": "2.0.0",
-  "primary_strategy": "R2_Risk9m_6M_DD15_Sh75_GoldLiq50",
-  "runner_up_strategy": "R7_NormZ_Risk9m_6M_DD15_Sh75_GoldLiq50",
+  "name": "DIY Nifty Midcap 150 Momentum Index (R3 Multi-Factor + TrendGold)",
+  "version": "3.0.0",
+  "primary_strategy": "R3_Risk9m_6M_MF4_TrendGold150",
+  "runner_up_strategy": "S3_Sortino9m_6M_MF4_TrendGold150",
   "basket": {
     "universe": "NIFTY_MIDCAP_150",
     "sleeves": [
@@ -21,16 +21,21 @@
     "ltcg_near_expiry_days_max": 364
   },
   "regime": {
-    "signal": "ew_index_drawdown_from_252d_peak",
+    "signal": "orthogonal_4block_multifactor_wf4",
+    "block_weights": {"trend": 0.44, "vol_vix": 0.10, "breadth": 0.34, "macro_gold": 0.12},
+    "asymmetric_ewma": {"tau_down": 8, "tau_up": 22},
+    "states": {"risk_on_pct": 100.0, "cautious_pct": 60.0, "defensive_pct": 25.0},
+    "thresholds": {"enter_defensive": -0.25, "enter_cautious": -0.10, "reenter_risk_on": 0.18, "min_hold_up_days": 25},
     "trigger_dd_pct": -15.0,
     "reenter_dd_pct": -9.0,
     "reenter_above_ma_days": 50,
     "defensive_shift_pct": 75.0,
     "equity_floor_pct": 25.0,
     "trim_order": "weakest_first",
+    "defensive_engine": "TREND_GOLD150_OR_LIQ",
     "defensive_mix": [
-      {"symbol": "GOLDBEES", "weight": 0.50, "role": "Crisis / equity-decorrelation hedge"},
-      {"symbol": "LIQUIDCASE", "weight": 0.50, "role": "Capital preservation & 0% gold-slump buffer"}
+      {"symbol": "GOLDBEES", "rule": "Hold 100% of defensive slice when GOLDBEES > 1.02*EMA150 (hysteresis +-2%)", "role": "Confirmed Safe-Haven Trend"},
+      {"symbol": "LIQUIDCASE", "rule": "Hold 100% of defensive slice when GOLDBEES < 0.98*EMA150 + 100% idle cash sweep", "role": "Capital preservation during gold bear slumps (e.g. -31.7% 2026)"}
     ]
   },
   "retail_execution": {
@@ -42,12 +47,31 @@
       "equity_stcg_pct": 20.0,
       "equity_ltcg_pct": 12.5,
       "equity_ltcg_annual_exempt_inr": 125000,
+      "debt_etf_slab_pct": 30.0,
       "cost_bps_one_way": 15.0
     }
   },
   "presets": {
+    "R3_Risk9m_6M_MF4_TrendGold150": {
+      "label": "R3 Optimal Multi-Factor (Risk-Adj 9M · 4-Block Regime · TrendGold EMA150 / LIQUIDCASE)",
+      "weighting": "equal",
+      "score_key": "risk_9m",
+      "rebalance_days": 126,
+      "regime_rule": "multifactor_wf4",
+      "defensive_asset": "TREND_GOLD150_OR_LIQ",
+      "trim_mode": "weakest_first"
+    },
+    "S3_Sortino9m_6M_MF4_TrendGold150": {
+      "label": "S3 Sortino Multi-Factor (Downside-Vol 9M · 4-Block Regime · TrendGold EMA150 / LIQUIDCASE)",
+      "weighting": "equal",
+      "score_key": "sortino_9m",
+      "rebalance_days": 126,
+      "regime_rule": "multifactor_wf4",
+      "defensive_asset": "TREND_GOLD150_OR_LIQ",
+      "trim_mode": "weakest_first"
+    },
     "R2_Risk9m_6M_DD15_Sh75_GoldLiq50": {
-      "label": "R2 Upgraded Default (EW 50/50 Risk-Adj 9M · 6M Rebal · DD>15% Sh75%)",
+      "label": "R2 Simple Trigger (EW 50/50 Risk-Adj 9M · 6M Rebal · DD>15% Sh75%)",
       "weighting": "equal",
       "score_key": "risk_9m",
       "rebalance_days": 126,
@@ -67,32 +91,12 @@
       "trim_mode": "weakest_first"
     },
     "F2_9m_6M_DD12_Sh75_GoldLiq50": {
-      "label": "F2 Raw Baseline (EW 50/50 Raw 9M · 6M Rebal · DD>12% Sh75%)",
+      "label": "F2 Legacy V1 (EW 50/50 Raw 9M · 6M Rebal · DD>12% Sh75%)",
       "weighting": "equal",
       "score_key": "raw_9m",
       "rebalance_days": 126,
       "dd_thresh": 0.12,
       "defensive_shift": 0.75,
-      "defensive_asset": "GOLD_50_LIQUID_50",
-      "trim_mode": "weakest_first"
-    },
-    "F7_NormZ_9m_6M_DD12_Sh75_GoldLiq50": {
-      "label": "F7 Raw NormZ (NormZ 50/50 Raw 9M · 6M Rebal · DD>12% Sh75%)",
-      "weighting": "norm_z",
-      "score_key": "raw_9m",
-      "rebalance_days": 126,
-      "dd_thresh": 0.12,
-      "defensive_shift": 0.75,
-      "defensive_asset": "GOLD_50_LIQUID_50",
-      "trim_mode": "weakest_first"
-    },
-    "F1_9m_6M_DD12_Sh50_GoldLiq50": {
-      "label": "F1 Conservative Churn (EW 50/50 Raw 9M · 6M Rebal · DD>12% Sh50%)",
-      "weighting": "equal",
-      "score_key": "raw_9m",
-      "rebalance_days": 126,
-      "dd_thresh": 0.12,
-      "defensive_shift": 0.50,
       "defensive_asset": "GOLD_50_LIQUID_50",
       "trim_mode": "weakest_first"
     },

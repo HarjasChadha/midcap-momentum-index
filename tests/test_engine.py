@@ -16,7 +16,13 @@ from src.momentum import combine_sleeves, compute_score_matrix, normalize_z_pdf,
 from src.nse_archive_loader import parse_bc_purpose_factor  # noqa: E402
 from src.nse_mcp import CMMKT_MCP_URL, NseMcpClient  # noqa: E402
 from src.prowess_loader import build_point_in_time_midcap150_mask, load_prowess_file, prowess_to_panels  # noqa: E402
-from src.regime import build_defensive_series, build_regime_features, compute_equity_allocation_series  # noqa: E402
+from src.regime import (  # noqa: E402
+    build_defensive_series,
+    build_regime_features,
+    compute_equity_allocation_series,
+    compute_multifactor_state,
+    get_trend_gold_status,
+)
 
 
 def _synthetic_market(days: int = 360, n_stocks: int = 40):
@@ -149,18 +155,23 @@ class EngineTests(unittest.TestCase):
 
     def test_live_state_and_config_strict_json(self):
         cfg = json.loads((REPO_ROOT / "config" / "strategy.json").read_text())
-        self.assertEqual(cfg["primary_strategy"], "R2_Risk9m_6M_DD15_Sh75_GoldLiq50")
+        self.assertEqual(cfg["primary_strategy"], "R3_Risk9m_6M_MF4_TrendGold150")
         live_path = REPO_ROOT / "data" / "live_state.json"
         if live_path.exists():
             def _reject_nan(val):
                 raise ValueError(f"Forbidden JSON constant: {val}")
             data = json.loads(live_path.read_text(), parse_constant=_reject_nan)
             self.assertEqual(data["universe_count"], 150)
-            self.assertIn(data["regime"]["state"], {"RISK_ON", "DEFENSIVE"})
+            self.assertIn(data["regime"]["state"], {"RISK_ON", "CAUTIOUS", "DEFENSIVE"})
+            self.assertIn("multifactor_blocks", data["regime"])
+            self.assertIn("trend_gold_status", data["regime"])
             self.assertGreaterEqual(len(data["rankings_top60"]), 50)
+            self.assertEqual(data["orders_1L"]["R3_Risk9M_SlotCap_LiqSweep"]["held_count"], 30)
+            self.assertEqual(data["orders_1L"]["S3_Sortino9M_SlotCap_LiqSweep"]["held_count"], 30)
             self.assertEqual(data["orders_1L"]["R2_Risk9M_SlotCap_LiqSweep"]["held_count"], 30)
             self.assertEqual(data["orders_1L"]["F2_SlotCap_LiqSweep"]["held_count"], 30)
             self.assertIn("rk9", data["universe_scores"][0])
+            self.assertIn("so9", data["universe_scores"][0])
 
     def test_prowess_loader_and_point_in_time_mask(self):
         import tempfile
@@ -193,6 +204,52 @@ class EngineTests(unittest.TestCase):
         self.assertAlmostEqual(parse_bc_purpose_factor("AGM/DIV-FINRS 22+SPLRS 10")[0], 1.0)
         self.assertAlmostEqual(parse_bc_purpose_factor("DIV- FIN RS.6.5+SPL RS.60")[0], 1.0)
         self.assertAlmostEqual(parse_bc_purpose_factor("SCH OF AGMT-BONUS DEB 1:1")[0], 1.0)
+
+    def test_sortino_score_penalizes_downside_more_than_upside(self):
+        days = 240
+        idx = [d.strftime("%Y-%m-%d") for d in pd.bdate_range("2023-01-02", periods=days)]
+        r_clean = np.full(days, 0.0018)
+        r_clean[50] = 0.04  # Upside spike only
+        r_down = np.full(days, 0.0024)
+        r_down[60:80:2] = -0.025  # Downside tail shocks
+        r_down[61:81:2] = 0.021
+        p_clean = 100.0 * np.cumprod(1.0 + r_clean)
+        p_down = 100.0 * np.cumprod(1.0 + r_down)
+        # Equalize total 189d lookback price gain at t[-22]
+        scale = p_clean[-22] / p_down[-22]
+        p_down = p_down * scale
+        df = pd.DataFrame({"CLEAN": p_clean, "DOWN": p_down}, index=idx)
+        so = compute_score_matrix(df, 189, 21, "sortino").iloc[-1]
+        self.assertGreater(float(so["CLEAN"]), float(so["DOWN"]))
+
+    def test_trend_gold_ema150_hysteresis_and_series(self):
+        idx = [d.strftime("%Y-%m-%d") for d in pd.bdate_range("2022-01-03", periods=320)]
+        gold = np.concatenate([np.linspace(50.0, 90.0, 220), np.linspace(89.0, 55.0, 100)])
+        bench = pd.DataFrame({
+            "GOLDBEES": gold,
+            "LIQUIDBEES": 100.0 * (1.06 ** (np.arange(320) / 252.0)),
+            "LIQUIDCASE": 100.0 * (1.06 ** (np.arange(320) / 252.0)),
+        }, index=idx)
+        st_top = get_trend_gold_status(bench.iloc[:220])
+        self.assertTrue(st_top["gold_above_gate"])
+        self.assertEqual(st_top["active_defensive_etf"], "GOLDBEES")
+        st_end = get_trend_gold_status(bench)
+        self.assertFalse(st_end["gold_above_gate"])
+        self.assertEqual(st_end["active_defensive_etf"], "LIQUIDCASE")
+        defs = build_defensive_series(bench)
+        self.assertIn("TREND_GOLD150_OR_LIQ", defs.columns)
+        # During the final Gold slump window, TREND_GOLD150_OR_LIQ holds steady or earns cash instead of dropping with Gold
+        self.assertGreater(float(defs["TREND_GOLD150_OR_LIQ"].iloc[-1] / defs["TREND_GOLD150_OR_LIQ"].iloc[260]), 0.99)
+
+    def test_multifactor_wf4_is_causal_and_no_future_leak(self):
+        adj_df, _, bench = _synthetic_market(days=420, n_stocks=35)
+        feat = build_regime_features(adj_df, bench)
+        alloc_full, _ = compute_multifactor_state(feat, bench)
+        alloc_trim, _ = compute_multifactor_state(feat.iloc[:-10], bench.iloc[:-10])
+        pd.testing.assert_series_equal(alloc_full.iloc[:-10], alloc_trim, check_names=False)
+        alloc_via_rule = compute_equity_allocation_series(feat, "multifactor_wf4", {"bench_df": bench})
+        pd.testing.assert_series_equal(alloc_full, alloc_via_rule, check_names=False)
+        self.assertTrue(set(np.unique(alloc_full.values)).issubset({0.25, 0.60, 1.0}))
 
 
 if __name__ == "__main__":

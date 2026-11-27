@@ -60,8 +60,8 @@ def parse_bc_purpose_factor(purpose: str) -> tuple[float, str]:
     factor = 1.0
     tags: list[str] = []
 
-    # 1. Bonus ratio A:B (A new shares per B held -> factor = B / (A + B))
-    for m in re.finditer(r"BON(?:US)?\s*[-:/]?\s*(\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)", p):
+    # 1. Bonus ratio A:B (A new shares per B held -> factor = B / (A + B), allowing @ / ISSUE / SHARES)
+    for m in re.finditer(r"BON(?:US)?\s*(?:ISSUE|SHARES)?\s*[-:/@]?\s*(\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)", p):
         a, b = float(m.group(1)), float(m.group(2))
         if a > 0 and b > 0:
             factor *= b / (a + b)
@@ -74,7 +74,7 @@ def parse_bc_purpose_factor(purpose: str) -> tuple[float, str]:
         p,
     )
     if not fv_match:
-        fv_match = re.search(r"RS\.?\s*(\d+(?:\.\d+)?)\s*(?:TO|TORS)\s*(?:RS\.?|RE\.?)?\s*(\d+(?:\.\d+)?)", p)
+        fv_match = re.search(r"RS\.?\s*(\d+(?:\.\d+)?)\s*(?:/-)?\s*(?:TO|TORS)\s*(?:RS\.?|RE\.?)?\s*(\d+(?:\.\d+)?)", p)
     if fv_match:
         old_fv, new_fv = float(fv_match.group(1)), float(fv_match.group(2))
         if old_fv > 0 and new_fv > 0 and old_fv != new_fv:
@@ -85,6 +85,8 @@ def parse_bc_purpose_factor(purpose: str) -> tuple[float, str]:
         tags.append("demerger")
     elif "RIGHT" in p or "RIGH" in p:
         tags.append("rights")
+    elif not tags and any(k in p for k in ("SPLIT", "SPLT", "SUB-DIV", "SUB DIV", "BON")):
+        tags.append("truncated_split_or_bonus")
 
     return factor, "+".join(tags) if tags else "other"
 
@@ -362,10 +364,6 @@ def build_2010_2026_nse_dataset(repo_root: str | Path, start_year: int = 2010, e
 
     def _apply_ca_on_series(s_adj: pd.Series, s_raw: pd.Series, sym: str, ex_dt: str, purpose: str, factor: float, tag: str) -> tuple[bool, float, str, str]:
         dt_obj = pd.Timestamp(ex_dt)
-        for prev_dt, prev_tag in applied_recent.get(sym, []):
-            if abs((dt_obj - prev_dt).days) <= 12 and prev_tag == tag:
-                return False, factor, tag, ex_dt
-
         cut_dt = ex_dt
         win_mask = (dates_idx >= (dt_obj - pd.Timedelta(days=15)).strftime("%Y-%m-%d")) & (dates_idx <= (dt_obj + pd.Timedelta(days=15)).strftime("%Y-%m-%d"))
         sub_raw = s_raw.loc[win_mask].dropna()
@@ -379,18 +377,24 @@ def build_2010_2026_nse_dataset(repo_root: str | Path, start_year: int = 2010, e
                     if factor < 0.78 and abs(float(drops.loc[best_dt]) - factor) > 0.35 * max(factor, float(drops.loc[best_dt])) and float(drops.loc[best_dt]) > 0.75:
                         return False, factor, tag, ex_dt
                     cut_dt = best_dt
-                elif any(k in tag or k in purpose.upper() for k in ("demerger", "rights", "ARRANG", "SCHEME", "REDUCT")):
+                elif any(k in tag or k in purpose.upper() for k in ("demerger", "rights", "truncated_split", "ARRANG", "SCHEME", "REDUCT", "SPLIT", "SPLT", "BON")):
                     cut_dt = str(drops.idxmin())
                     emp_r = float(drops.loc[cut_dt])
                     if 0.05 < emp_r < 0.85:
                         factor = emp_r
-                        tag = "demerger_or_scheme_emp"
+                        tag = "empirical_ca_drop"
             elif factor < 0.78:
                 return False, factor, tag, ex_dt
             elif factor > 1.5 and not jumps.empty:
                 cut_dt = str((jumps - factor).abs().idxmin())
             elif factor > 1.5:
                 return False, factor, tag, ex_dt
+
+        # Deduplicate ANY overlapping corporate action resolved within 12d on the same symbol (prevents double-adjusted demergers/splits like DCMSRIND & GLOBE!)
+        cut_obj = pd.Timestamp(cut_dt)
+        for prev_dt, _ in applied_recent.get(sym, []):
+            if abs((cut_obj - prev_dt).days) <= 12 or abs((dt_obj - prev_dt).days) <= 12:
+                return False, factor, tag, cut_dt
 
         if abs(factor - 1.0) < 1e-4:
             return False, factor, tag, cut_dt
@@ -400,7 +404,7 @@ def build_2010_2026_nse_dataset(repo_root: str | Path, start_year: int = 2010, e
             return False, factor, tag, cut_dt
 
         s_adj.loc[pre_mask] = s_adj.loc[pre_mask] * factor
-        applied_recent.setdefault(sym, []).append((pd.Timestamp(cut_dt), tag))
+        applied_recent.setdefault(sym, []).append((cut_obj, tag))
         return True, factor, tag, cut_dt
 
     def _run_bc_for_symbols(target_syms: set[str] | None = None) -> None:
@@ -416,7 +420,7 @@ def build_2010_2026_nse_dataset(repo_root: str | Path, start_year: int = 2010, e
                 factor, tag = parse_bc_purpose_factor(purpose)
             if tag == "dividend_or_other":
                 pu = purpose.upper()
-                if not any(k in pu for k in ("ARRANG", "SCHEME", "DEMERG", "REDUCT", "CONSOL")):
+                if not any(k in pu for k in ("ARRANG", "SCHEME", "DEMERG", "REDUCT", "CONSOL", "SPLIT", "SPLT", "BON")):
                     continue
                 tag = "demerger"
             ok, f_used, t_used, dt_used = _apply_ca_on_series(adj_df[sym], raw_df[sym], sym, ex_dt, purpose, factor, tag)
@@ -425,9 +429,9 @@ def build_2010_2026_nse_dataset(repo_root: str | Path, start_year: int = 2010, e
 
     _run_bc_for_symbols(None)
 
-    # Supplement ONLY residual post-2021 extreme drops (non-BC splits / combined Bonus+Split like FCL, 360ONE, SHRIRAMFIN, BESTAGRO) via NSE MCP
-    post21_mask = ((adj_df.pct_change(fill_method=None) < -0.45) & step_liq).loc[dates_idx >= "2021-12-01"]
-    rem_syms = sorted(post21_mask.columns[post21_mask.any(axis=0)])
+    # Supplement residual liquid extreme drops (including pre-2021 missing Bc splits like DWARKESH) via NSE MCP
+    post10_mask = (adj_df.pct_change(fill_method=None) < -0.45) & step_liq
+    rem_syms = sorted(post10_mask.columns[post10_mask.any(axis=0)])
     if rem_syms:
         try:
             from src.nse_mcp import NseMcpClient
@@ -462,8 +466,12 @@ def build_2010_2026_nse_dataset(repo_root: str | Path, start_year: int = 2010, e
         except Exception:
             pass
 
-    # Reconcile tracked ETFs cleanly (preferring split-adjusted Pd + etf*.csv fallback with same CA factors)
-    tracked_etfs = ["GOLDBEES", "LIQUIDBEES", "LIQUIDCASE", "NIFTYBEES", "MON100", "SILVERBEES", "EBBETF0431", "LTGILTBEES"]
+    # Reconcile tracked ETFs cleanly (including N100/HNGSNGBEES/JUNIORBEES/BANKBEES/Gilt ETFs for multi-asset hedging)
+    tracked_etfs = [
+        "GOLDBEES", "LIQUIDBEES", "LIQUIDCASE", "NIFTYBEES", "JUNIORBEES", "BANKBEES",
+        "HNGSNGBEES", "N100", "MON100", "SILVERBEES", "EBBETF0430", "EBBETF0431",
+        "LTGILTBEES", "LICNETFGSC", "SETF10GILT",
+    ]
     etf_adj = pd.DataFrame(index=dates_idx)
     for etf in tracked_etfs:
         s_raw_e = raw_df[etf] if etf in raw_df.columns else pd.Series(index=dates_idx, dtype=float)
@@ -473,13 +481,11 @@ def build_2010_2026_nse_dataset(repo_root: str | Path, start_year: int = 2010, e
             etf_adj[etf] = adj_df[etf]
         elif not s_raw_e.dropna().empty:
             etf_adj[etf] = s_raw_e
-        # Ensure 100:1 / 10:1 ETF splits (e.g. GOLDBEES 2019-12-19, NIFTYBEES 2019-12-19) are always adjusted cleanly if absent from Pd
         if etf in etf_adj.columns:
             s_tmp = etf_adj[etf].dropna()
             if len(s_tmp) > 5:
                 r = s_tmp / s_tmp.shift(1)
                 for cdt in r[r < 0.25].index:
-                    # Only apply abrupt split factor when it's an ETF FV split step (stable afterward, not volatile equity)
                     pos = s_tmp.index.get_loc(cdt)
                     if isinstance(pos, int) and pos + 2 < len(s_tmp) and 0.7 < float(s_tmp.iloc[pos + 2]) / float(s_tmp.iloc[pos]) < 1.3:
                         etf_adj.loc[dates_idx < cdt, etf] *= float(r.loc[cdt])
