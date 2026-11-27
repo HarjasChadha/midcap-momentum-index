@@ -237,17 +237,17 @@ def build_live_state() -> dict[str, Any]:
     stock_ma50 = adj_df.rolling(50, min_periods=30).mean()
 
     scores = {
-        "raw_9m": compute_score_matrix(adj_df, 189, 21, "raw"),
-        "raw_12m": compute_score_matrix(adj_df, 252, 21, "raw"),
-        "risk_9m": compute_score_matrix(adj_df, 189, 21, "risk_adj"),
+        "raw_9m": compute_score_matrix(adj_df.ffill(limit=2), 189, 21, "raw"),
+        "raw_12m": compute_score_matrix(adj_df.ffill(limit=2), 252, 21, "raw"),
+        "risk_9m": compute_score_matrix(adj_df.ffill(limit=2), 189, 21, "risk_adj"),
     }
 
     last_dt = str(adj_df.index[-1])
     s9 = scores["raw_9m"].loc[last_dt]
     s12 = scores["raw_12m"].loc[last_dt]
     sr9 = scores["risk_9m"].loc[last_dt]
-    raw_last = raw_df.loc[last_dt].ffill() if last_dt in raw_df.index else raw_df.ffill().iloc[-1]
-    ma50_last = stock_ma50.loc[last_dt]
+    raw_last = raw_df.ffill(limit=5).loc[last_dt] if last_dt in raw_df.index else raw_df.ffill(limit=5).iloc[-1]
+    ma50_last = adj_df.ffill(limit=2).rolling(50, min_periods=30).mean().loc[last_dt]
 
     # Run clean 2018-01-02..today backtests for dashboard equity curves & preset comparisons
     clean_start = "2018-01-02"
@@ -348,10 +348,11 @@ def build_live_state() -> dict[str, Any]:
     w_blend_12m_eq = combine_sleeves([(0.5, select_sleeve_weights(s12, 20, "equal")), (0.5, select_sleeve_weights(s12, 30, "equal"))])
 
     rank12_map = {sym: r for r, sym in enumerate(s12.dropna().sort_values(ascending=False).index, start=1)}
+    adj_live = adj_df.ffill(limit=2)
     rankings_top60 = []
     for r, sym in enumerate(ranked_9m.index[:60], start=1):
         px = float(raw_last.get(sym, np.nan))
-        adx = float(adj_df.loc[last_dt, sym])
+        adx = float(adj_live.loc[last_dt, sym]) if pd.notna(adj_live.loc[last_dt, sym]) else float("nan")
         m50 = float(ma50_last.get(sym, np.nan))
         rankings_top60.append(
             {
@@ -381,7 +382,7 @@ def build_live_state() -> dict[str, Any]:
                 "px": round(px, 2),
                 "r9": round(float(s9[sym]) * 100.0, 2),
                 "r12": round(float(s12[sym]) * 100.0, 2) if pd.notna(s12.get(sym)) else None,
-                "ma50": bool(pd.notna(ma50_last.get(sym)) and adj_df.loc[last_dt, sym] > ma50_last.get(sym)),
+                "ma50": bool(pd.notna(ma50_last.get(sym)) and adj_live.loc[last_dt, sym] > ma50_last.get(sym)),
             }
         )
 
