@@ -37,8 +37,17 @@ Replacing all single-threshold / static `50-50` heuristics after a **Numba (`21,
 - `src/regime.py`: Lagged zero-leak EW index builder (`mask.shift(1)`), causal **`compute_multifactor_state` (`MF4`)**, **`get_trend_gold_status` (`TrendGold150`)**, **`TREND_GOLD150_OR_LIQ`**, **`LIQUID_REALISTIC`**, and `MON100_STITCHED`.
 - `src/backtester.py`: Causal `T+1` FIFO engine with Indian STCG/LTCG tax lots, `ffill(limit=5)` delisting guard, weakest-first trimming, integer shares, and cash sweep.
 - `scripts/numba_research_engine.py`, `scripts/run_numba_sweeps.py`, `scripts/run_final_verification_suite.py`: Offline Numba (`21,600+` grid) + SciPy walk-forward research scripts *(zero production CI dependency on `numba`/`scipy`)*.
+- `notebooks/`: Google Colab `.ipynb` workspace — dedicated subfolder for every standalone research/pipeline notebook (`01`..`09`) **plus** an all-in-one master notebook (`00_master_colab_all_in_one/Midcap_Momentum_Complete_Colab.ipynb`). See [notebooks/README.md](notebooks/README.md) for 1-click Colab launch links.
 - `scripts/update_live.py` & `.github/workflows/daily_update.yml`: Automated EOD NSE MCP updater regenerating strict `data/live_state.json`.
 - `index.html`: Interactive dashboard featuring live **4-Block Regime Diagnostics**, **`R3` / `S3` / `R2` / `R7` / `F2` / `F4`** preset switcher, `TrendGold` crash simulation, `330–364d` LTCG diff tool, Chart.js comparison charts, 16-year FIFO & Crash/F&O matrices, and Top-60 Scorer.
+
+---
+
+## Google Colab Notebooks (Both Separate Folders & Combined Master)
+
+[![Open Master Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HarjasChadha/midcap-momentum-index/blob/main/notebooks/00_master_colab_all_in_one/Midcap_Momentum_Complete_Colab.ipynb)
+
+Full 1-click Colab directory for every individual folder (`01`..`09`): **[notebooks/README.md](notebooks/README.md)**
 
 ---
 
