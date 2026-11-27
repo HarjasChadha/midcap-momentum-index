@@ -371,10 +371,13 @@
   <!-- TAB 3: RESEARCH MATRIX -->
   <div class="tab-panel" id="tab-research">
     <div class="warn-box">
-      <strong>Clean ETF-Free 16-Year Zero-Survivorship Audit (4,171 Days × 4,047 Equities, 419 NSE ETFs Excluded, Lagged PIT Mask):</strong> After purging `LIQUID1`/`GOLD*` ETF contamination and 1-day mask look-ahead leak, passive rolling Midcap Ranks 81–230 (772 equities) returned <strong>9.77% CAGR</strong> (<code>-54.08%</code> MaxDD, <code>0.18</code> Sharpe). Replacing arbitrary <code>-15%</code>/<code>50-50</code> heuristics with <strong>Numba + SciPy Walk-Forward Multi-Factor + TrendGold EMA150 (R3)</strong> delivers <strong>18.16% CAGR</strong> (<code>-26.93%</code> DD, <code>0.78</code> Sharpe) across all 3 blind regimes (<code>13.76% → 25.69% → 21.26%</code>) — beating legacy <code>F2</code> (<code>12.04%</code> / <code>0.39</code> Sh) by <strong>+6.12% p.a.</strong> and doubling risk-adjusted Sharpe!
+      <strong>Clean ETF-Free 16-Year Zero-Survivorship Audit (4,171 Days × 4,047 Equities, 419 NSE ETFs Excluded, Lagged PIT Mask):</strong> After purging <code>LIQUID1</code>/<code>GOLD*</code> ETF contamination and 1-day mask look-ahead leak, passive rolling Midcap Ranks 81–230 (772 equities) returned <strong>9.77% CAGR</strong> (<code>-54.08%</code> MaxDD, <code>0.18</code> Sharpe). Replacing arbitrary <code>-15%</code>/<code>50-50</code> heuristics with <strong>Numba + SciPy Walk-Forward Multi-Factor + TrendGold EMA150 (R3)</strong> delivers <strong>18.16% CAGR</strong> (<code>-26.93%</code> DD, <code>0.78</code> Sharpe) across all 3 blind regimes (<code>13.76% → 25.69% → 21.26%</code>) — beating legacy <code>F2</code> (<code>12.04%</code> / <code>0.39</code> Sh) by <strong>+6.12% p.a.</strong> and doubling risk-adjusted Sharpe!
     </div>
     <div class="card">
-      <h2><span>All 6 Institutional Questions Answered Mathematically (Zero Arbitrary Constants)</span></h2>
+      <h2>
+        <span>All 6 Institutional Questions Answered Mathematically (Zero Arbitrary Constants)</span>
+        <a href="https://github.com/HarjasChadha/midcap-momentum-index/blob/main/MATHEMATICAL_SPECIFICATION.md" target="_blank" rel="noopener" class="btn-secondary" style="text-decoration:none;">Full Mathematical Spec (PDF/MD) ↗</a>
+      </h2>
       <div class="qa-item">
         <h3>1. How was -15% found, and why do single-trigger DD rules still fail OOS?</h3>
         <p>Exhaustive <strong>21,600-config Numba grid</strong> (<code>dd_win × dd_th × r_ratio × re_ma × confirm × thrust × shift</code>) found the marginal Sharpe peak sits at <strong>15%–16% drawdown</strong> from the 252d rolling peak (<code>0.15 → 0.429 Sh</code>; <code>0.16 → 0.435 Sh</code> vs <code>0.12 → 0.385 Sh</code> / <code>0.08 → 0.339 Sh</code> at 472% whipsaw TO). However, rank correlation across periods was <strong>Spearman ρ = -0.091 (P1→P2)</strong> and <strong>+0.122 (P1+P2→P3)</strong> — proving any single DD% threshold overfits prior crash amplitudes (e.g. legacy DD15 lost <code>-20.8%</code> vs <code>-16.7%</code> unhedged in 2022 RateHike).</p>

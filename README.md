@@ -2,7 +2,7 @@
 
 Autonomous research engine, Numba/SciPy walk-forward optimizer, **16-year official NSE `PR` + `Bc` Archive** & **NSE MCP** live pipeline, and static **GitHub Pages** execution terminal for running an independent **Nifty Midcap 150 Momentum** portfolio starting at `₹1,00,000`.
 
-Live Dashboard: **[harjaschadha.github.io/midcap-momentum-index](https://harjaschadha.github.io/midcap-momentum-index/)** · Full 6-Question Mathematical Proof & Report: [reports/FINAL_STRATEGY_REPORT.md](reports/FINAL_STRATEGY_REPORT.md)
+Live Dashboard: **[harjaschadha.github.io/midcap-momentum-index](https://harjaschadha.github.io/midcap-momentum-index/)** · **Complete Equations, Assumptions & Data Provenance:** **[MATHEMATICAL_SPECIFICATION.md](MATHEMATICAL_SPECIFICATION.md)** · Strategy Report: [reports/FINAL_STRATEGY_REPORT.md](reports/FINAL_STRATEGY_REPORT.md)
 
 ---
 
