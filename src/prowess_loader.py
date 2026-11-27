@@ -31,8 +31,17 @@ def load_prowess_file(path: str | Path) -> pd.DataFrame:
         sep = _detect_sep("\n".join(lines[:5]))
         return pd.read_csv(io.StringIO("\n".join(lines)), sep=sep, low_memory=False)
 
+    col_map: dict[str, str] = {}
     if p.suffix.lower() == ".zip":
         with zipfile.ZipFile(p, "r") as zf:
+            for name in zf.namelist():
+                if name.lower().endswith((".txt", ".csv")) and "map" in name.lower():
+                    mdf = _read_text(zf.read(name))
+                    if len(mdf.columns) >= 2:
+                        for _, row in mdf.iterrows():
+                            k, v = str(row.iloc[0]).strip(), str(row.iloc[1]).strip()
+                            if k and v and v.lower() != "nan":
+                                col_map[k] = v
             for name in zf.namelist():
                 if name.lower().endswith((".txt", ".csv")) and "readme" not in name.lower() and "map" not in name.lower():
                     df = _read_text(zf.read(name))
@@ -44,7 +53,7 @@ def load_prowess_file(path: str | Path) -> pd.DataFrame:
     if not frames:
         raise ValueError(f"No readable tabular data found in {p}")
     df = pd.concat(frames, ignore_index=True)
-    df.columns = [str(c).strip() for c in df.columns]
+    df.columns = [col_map.get(str(c).strip(), str(c).strip()) for c in df.columns]
     return df
 
 
