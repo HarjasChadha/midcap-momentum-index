@@ -14,6 +14,7 @@ from src.backtester import BacktestConfig, compute_metrics, run_backtest  # noqa
 from src.data_loader import _repair_transient_glitches  # noqa: E402
 from src.momentum import combine_sleeves, compute_score_matrix, normalize_z_pdf, select_affordable_blend, select_sleeve_weights  # noqa: E402
 from src.nse_mcp import CMMKT_MCP_URL, NseMcpClient  # noqa: E402
+from src.prowess_loader import build_point_in_time_midcap150_mask, load_prowess_file, prowess_to_panels  # noqa: E402
 from src.regime import build_defensive_series, build_regime_features, compute_equity_allocation_series  # noqa: E402
 
 
@@ -157,6 +158,30 @@ class EngineTests(unittest.TestCase):
             self.assertIn(data["regime"]["state"], {"RISK_ON", "DEFENSIVE"})
             self.assertGreaterEqual(len(data["rankings_top60"]), 50)
             self.assertEqual(data["orders_1L"]["F2_SlotCap_LiqSweep"]["held_count"], 30)
+
+    def test_prowess_loader_and_point_in_time_mask(self):
+        import tempfile
+        sample = (
+            "Company Name|NSE Symbol|Date|NSE Closing Price|NSE Adjusted Closing Price|NSE Market Capitalisation\n"
+            "Alpha Ltd|ALPHA|2024-01-02|100.0|100.0|50000\n"
+            "Alpha Ltd|ALPHA|2024-01-03|105.0|105.0|52500\n"
+            "Beta Ltd|BETA|2024-01-02|400.0|200.0|20000\n"
+            "Beta Ltd|BETA|2024-01-03|204.0|204.0|20400\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            f = Path(td) / "prowess_sample.txt"
+            f.write_text(sample)
+            raw_tbl = load_prowess_file(f)
+            panels = prowess_to_panels(raw_tbl)
+            self.assertAlmostEqual(float(panels["raw"].loc["2024-01-02", "BETA"]), 400.0)
+            self.assertAlmostEqual(float(panels["adj"].loc["2024-01-02", "BETA"]), 200.0)
+            # Point-in-time rank masking test (300 ranks: indices 100..249 kept)
+            idx = pd.date_range("2024-01-01", periods=30, freq="B").strftime("%Y-%m-%d")
+            mcap = pd.DataFrame({f"C{i:03d}": np.full(len(idx), 1000.0 - i) for i in range(320)}, index=idx)
+            mask = build_point_in_time_midcap150_mask(mcap, min_stocks_for_pit=300)
+            self.assertFalse(bool(mask.iloc[-1]["C000"]))  # Large cap Rank 1 excluded
+            self.assertTrue(bool(mask.iloc[-1]["C150"]))   # Midcap Rank 151 included
+            self.assertFalse(bool(mask.iloc[-1]["C280"]))  # Small cap Rank 281 excluded
 
 
 if __name__ == "__main__":
