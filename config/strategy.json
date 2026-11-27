@@ -1,13 +1,13 @@
 {
-  "name": "DIY Nifty Midcap 150 Momentum Index (F2 Recommended)",
-  "version": "1.0.0",
-  "primary_strategy": "F2_9m_6M_DD12_Sh75_GoldLiq50",
-  "runner_up_strategy": "F7_NormZ_9m_6M_DD12_Sh75_GoldLiq50",
+  "name": "DIY Nifty Midcap 150 Momentum Index (R2 Risk-Adj DD15 Recommended)",
+  "version": "2.0.0",
+  "primary_strategy": "R2_Risk9m_6M_DD15_Sh75_GoldLiq50",
+  "runner_up_strategy": "R7_NormZ_Risk9m_6M_DD15_Sh75_GoldLiq50",
   "basket": {
     "universe": "NIFTY_MIDCAP_150",
     "sleeves": [
-      {"name": "Raw20", "score_key": "raw_9m", "lookback_days": 189, "skip_days": 21, "top_n": 20, "alloc": 0.50, "weighting": "equal"},
-      {"name": "Raw30", "score_key": "raw_9m", "lookback_days": 189, "skip_days": 21, "top_n": 30, "alloc": 0.50, "weighting": "equal"}
+      {"name": "Risk20", "score_key": "risk_9m", "lookback_days": 189, "skip_days": 21, "top_n": 20, "alloc": 0.50, "weighting": "equal"},
+      {"name": "Risk30", "score_key": "risk_9m", "lookback_days": 189, "skip_days": 21, "top_n": 30, "alloc": 0.50, "weighting": "equal"}
     ],
     "effective_top_1_20_weight": 0.04166667,
     "effective_top_21_30_weight": 0.01666667
@@ -22,8 +22,8 @@
   },
   "regime": {
     "signal": "ew_index_drawdown_from_252d_peak",
-    "trigger_dd_pct": -12.0,
-    "reenter_dd_pct": -7.2,
+    "trigger_dd_pct": -15.0,
+    "reenter_dd_pct": -9.0,
     "reenter_above_ma_days": 50,
     "defensive_shift_pct": 75.0,
     "equity_floor_pct": 25.0,
@@ -46,8 +46,28 @@
     }
   },
   "presets": {
+    "R2_Risk9m_6M_DD15_Sh75_GoldLiq50": {
+      "label": "R2 Upgraded Default (EW 50/50 Risk-Adj 9M · 6M Rebal · DD>15% Sh75%)",
+      "weighting": "equal",
+      "score_key": "risk_9m",
+      "rebalance_days": 126,
+      "dd_thresh": 0.15,
+      "defensive_shift": 0.75,
+      "defensive_asset": "GOLD_50_LIQUID_50",
+      "trim_mode": "weakest_first"
+    },
+    "R7_NormZ_Risk9m_6M_DD15_Sh75_GoldLiq50": {
+      "label": "R7 High-Conviction (NormZ 50/50 Risk-Adj 9M · 6M Rebal · DD>15% Sh75%)",
+      "weighting": "norm_z",
+      "score_key": "risk_9m",
+      "rebalance_days": 126,
+      "dd_thresh": 0.15,
+      "defensive_shift": 0.75,
+      "defensive_asset": "GOLD_50_LIQUID_50",
+      "trim_mode": "weakest_first"
+    },
     "F2_9m_6M_DD12_Sh75_GoldLiq50": {
-      "label": "F2 Recommended (EW 50/50 Top20+30 · 9M · 6M Rebal · DD>12% Sh75%)",
+      "label": "F2 Raw Baseline (EW 50/50 Raw 9M · 6M Rebal · DD>12% Sh75%)",
       "weighting": "equal",
       "score_key": "raw_9m",
       "rebalance_days": 126,
@@ -57,7 +77,7 @@
       "trim_mode": "weakest_first"
     },
     "F7_NormZ_9m_6M_DD12_Sh75_GoldLiq50": {
-      "label": "F7 Runner-Up (NormZ 50/50 Top20+30 · 9M · 6M Rebal · DD>12% Sh75%)",
+      "label": "F7 Raw NormZ (NormZ 50/50 Raw 9M · 6M Rebal · DD>12% Sh75%)",
       "weighting": "norm_z",
       "score_key": "raw_9m",
       "rebalance_days": 126,
@@ -67,7 +87,7 @@
       "trim_mode": "weakest_first"
     },
     "F1_9m_6M_DD12_Sh50_GoldLiq50": {
-      "label": "F1 Conservative Churn (EW 50/50 Top20+30 · 9M · 6M Rebal · DD>12% Sh50%)",
+      "label": "F1 Conservative Churn (EW 50/50 Raw 9M · 6M Rebal · DD>12% Sh50%)",
       "weighting": "equal",
       "score_key": "raw_9m",
       "rebalance_days": 126,
@@ -77,7 +97,7 @@
       "trim_mode": "weakest_first"
     },
     "F4_12m_12M_DD12_Sh50_GoldLiq50": {
-      "label": "F4 Tax-Optimized (>₹5L · EW 50/50 · 12M Lookback · 12M Rebal · DD>12% Sh50%)",
+      "label": "F4 Tax-Optimized (>₹5L · EW 50/50 Raw 12M · 12M Rebal · DD>12% Sh50%)",
       "weighting": "equal",
       "score_key": "raw_12m",
       "rebalance_days": 252,

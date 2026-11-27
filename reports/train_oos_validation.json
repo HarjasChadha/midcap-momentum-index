@@ -18,9 +18,9 @@
     "oos_turnover":231.0,
     "sharpe_ratio_oos_is":1.96,
     "is_sharpe_rank":96,
-    "is_calmar_rank":110,
-    "oos_sharpe_rank":137,
-    "oos_calmar_rank":114
+    "is_calmar_rank":115,
+    "oos_sharpe_rank":135,
+    "oos_calmar_rank":118
   },
   {
     "config_id":"Raw_6M_5050_EQ | 3M | DD10_Sh50_GL50",
@@ -40,10 +40,10 @@
     "oos_sortino":1.43,
     "oos_turnover":288.1,
     "sharpe_ratio_oos_is":1.8,
-    "is_sharpe_rank":102,
-    "is_calmar_rank":60,
-    "oos_sharpe_rank":150,
-    "oos_calmar_rank":87
+    "is_sharpe_rank":101,
+    "is_calmar_rank":66,
+    "oos_sharpe_rank":148,
+    "oos_calmar_rank":88
   },
   {
     "config_id":"Raw_6M_5050_EQ | 3M | DD12_Sh50_GL50",
@@ -63,10 +63,10 @@
     "oos_sortino":1.53,
     "oos_turnover":296.4,
     "sharpe_ratio_oos_is":1.84,
-    "is_sharpe_rank":83,
-    "is_calmar_rank":42,
-    "oos_sharpe_rank":142,
-    "oos_calmar_rank":66
+    "is_sharpe_rank":85,
+    "is_calmar_rank":46,
+    "oos_sharpe_rank":140,
+    "oos_calmar_rank":68
   },
   {
     "config_id":"Raw_6M_5050_EQ | 3M | DD12_Sh75_GL50",
@@ -86,10 +86,10 @@
     "oos_sortino":1.46,
     "oos_turnover":328.9,
     "sharpe_ratio_oos_is":2.16,
-    "is_sharpe_rank":133,
-    "is_calmar_rank":64,
-    "oos_sharpe_rank":148,
-    "oos_calmar_rank":68
+    "is_sharpe_rank":132,
+    "is_calmar_rank":71,
+    "oos_sharpe_rank":146,
+    "oos_calmar_rank":71
   },
   {
     "config_id":"Raw_6M_5050_EQ | 3M | DD12_Sh75_GOL",
@@ -110,9 +110,9 @@
     "oos_turnover":329.0,
     "sharpe_ratio_oos_is":2.1,
     "is_sharpe_rank":119,
-    "is_calmar_rank":39,
-    "oos_sharpe_rank":140,
-    "oos_calmar_rank":61
+    "is_calmar_rank":42,
+    "oos_sharpe_rank":138,
+    "oos_calmar_rank":62
   },
   {
     "config_id":"Raw_6M_5050_EQ | 3M | DD12_Sh75_Gold",
@@ -133,7 +133,7 @@
     "oos_turnover":329.3,
     "sharpe_ratio_oos_is":2.23,
     "is_sharpe_rank":123,
-    "is_calmar_rank":52,
+    "is_calmar_rank":57,
     "oos_sharpe_rank":131,
     "oos_calmar_rank":53
   },
@@ -156,32 +156,32 @@
     "oos_turnover":283.0,
     "sharpe_ratio_oos_is":2.08,
     "is_sharpe_rank":119,
-    "is_calmar_rank":46,
-    "oos_sharpe_rank":142,
-    "oos_calmar_rank":108
+    "is_calmar_rank":50,
+    "oos_sharpe_rank":140,
+    "oos_calmar_rank":111
   },
   {
     "config_id":"Raw_6M_5050_EQ | 3M | MA200Band_Sh60_GL50",
     "basket":"Raw_6M_5050_EQ",
     "reb":"3M",
     "regime":"MA200Band_Sh60_GL50",
-    "is_cagr":20.25,
-    "is_max_dd":-33.83,
-    "is_calmar":0.6,
-    "is_sharpe":0.67,
-    "is_sortino":0.82,
-    "is_turnover":212.5,
-    "oos_cagr":33.2,
-    "oos_max_dd":-23.12,
-    "oos_calmar":1.44,
-    "oos_sharpe":1.31,
-    "oos_sortino":1.6,
-    "oos_turnover":231.0,
-    "sharpe_ratio_oos_is":1.96,
-    "is_sharpe_rank":96,
-    "is_calmar_rank":110,
-    "oos_sharpe_rank":137,
-    "oos_calmar_rank":114
+    "is_cagr":17.35,
+    "is_max_dd":-23.26,
+    "is_calmar":0.75,
+    "is_sharpe":0.64,
+    "is_sortino":0.79,
+    "is_turnover":366.7,
+    "oos_cagr":28.48,
+    "oos_max_dd":-20.57,
+    "oos_calmar":1.38,
+    "oos_sharpe":1.16,
+    "oos_sortino":1.39,
+    "oos_turnover":325.6,
+    "sharpe_ratio_oos_is":1.81,
+    "is_sharpe_rank":110,
+    "is_calmar_rank":50,
+    "oos_sharpe_rank":150,
+    "oos_calmar_rank":131
   },
   {
     "config_id":"Raw_6M_5050_EQ | 3M | Breadth35_Sh50_GOL",
@@ -201,10 +201,10 @@
     "oos_sortino":1.4,
     "oos_turnover":363.7,
     "sharpe_ratio_oos_is":1.86,
-    "is_sharpe_rank":107,
-    "is_calmar_rank":74,
-    "oos_sharpe_rank":149,
-    "oos_calmar_rank":131
+    "is_sharpe_rank":106,
+    "is_calmar_rank":81,
+    "oos_sharpe_rank":147,
+    "oos_calmar_rank":133
   },
   {
     "config_id":"Raw_6M_5050_EQ | 3M | VIX24_Sh50_GOL",
@@ -224,10 +224,10 @@
     "oos_sortino":1.57,
     "oos_turnover":277.8,
     "sharpe_ratio_oos_is":2.38,
-    "is_sharpe_rank":141,
-    "is_calmar_rank":82,
-    "oos_sharpe_rank":144,
-    "oos_calmar_rank":132
+    "is_sharpe_rank":140,
+    "is_calmar_rank":88,
+    "oos_sharpe_rank":142,
+    "oos_calmar_rank":134
   },
   {
     "config_id":"Raw_6M_5050_EQ | 6M | Unhedged",
@@ -248,9 +248,9 @@
     "oos_turnover":154.9,
     "sharpe_ratio_oos_is":1.76,
     "is_sharpe_rank":50,
-    "is_calmar_rank":82,
+    "is_calmar_rank":88,
     "oos_sharpe_rank":131,
-    "oos_calmar_rank":117
+    "oos_calmar_rank":120
   },
   {
     "config_id":"Raw_6M_5050_EQ | 6M | DD10_Sh50_GL50",
@@ -271,9 +271,9 @@
     "oos_turnover":228.5,
     "sharpe_ratio_oos_is":1.65,
     "is_sharpe_rank":55,
-    "is_calmar_rank":46,
-    "oos_sharpe_rank":146,
-    "oos_calmar_rank":89
+    "is_calmar_rank":50,
+    "oos_sharpe_rank":144,
+    "oos_calmar_rank":90
   },
   {
     "config_id":"Raw_6M_5050_EQ | 6M | DD12_Sh50_GL50",
@@ -294,9 +294,9 @@
     "oos_turnover":228.8,
     "sharpe_ratio_oos_is":1.69,
     "is_sharpe_rank":40,
-    "is_calmar_rank":27,
-    "oos_sharpe_rank":135,
-    "oos_calmar_rank":78
+    "is_calmar_rank":28,
+    "oos_sharpe_rank":134,
+    "oos_calmar_rank":80
   },
   {
     "config_id":"Raw_6M_5050_EQ | 6M | DD12_Sh75_GL50",
@@ -316,9 +316,9 @@
     "oos_sortino":1.44,
     "oos_turnover":264.5,
     "sharpe_ratio_oos_is":1.75,
-    "is_sharpe_rank":75,
+    "is_sharpe_rank":76,
     "is_calmar_rank":18,
-    "oos_sharpe_rank":146,
+    "oos_sharpe_rank":144,
     "oos_calmar_rank":52
   },
   {
@@ -341,7 +341,7 @@
     "sharpe_ratio_oos_is":1.72,
     "is_sharpe_rank":55,
     "is_calmar_rank":16,
-    "oos_sharpe_rank":139,
+    "oos_sharpe_rank":137,
     "oos_calmar_rank":49
   },
   {
@@ -362,7 +362,7 @@
     "oos_sortino":1.59,
     "oos_turnover":264.9,
     "sharpe_ratio_oos_is":1.85,
-    "is_sharpe_rank":61,
+    "is_sharpe_rank":62,
     "is_calmar_rank":23,
     "oos_sharpe_rank":129,
     "oos_calmar_rank":43
@@ -385,33 +385,33 @@
     "oos_sortino":1.5,
     "oos_turnover":207.5,
     "sharpe_ratio_oos_is":1.8,
-    "is_sharpe_rank":75,
-    "is_calmar_rank":25,
-    "oos_sharpe_rank":140,
-    "oos_calmar_rank":114
+    "is_sharpe_rank":76,
+    "is_calmar_rank":26,
+    "oos_sharpe_rank":138,
+    "oos_calmar_rank":118
   },
   {
     "config_id":"Raw_6M_5050_EQ | 6M | MA200Band_Sh60_GL50",
     "basket":"Raw_6M_5050_EQ",
     "reb":"6M",
     "regime":"MA200Band_Sh60_GL50",
-    "is_cagr":22.2,
-    "is_max_dd":-33.82,
-    "is_calmar":0.66,
-    "is_sharpe":0.76,
-    "is_sortino":0.95,
-    "is_turnover":139.6,
-    "oos_cagr":34.74,
-    "oos_max_dd":-24.43,
-    "oos_calmar":1.42,
-    "oos_sharpe":1.34,
-    "oos_sortino":1.6,
-    "oos_turnover":154.9,
-    "sharpe_ratio_oos_is":1.76,
-    "is_sharpe_rank":50,
-    "is_calmar_rank":82,
-    "oos_sharpe_rank":131,
-    "oos_calmar_rank":117
+    "is_cagr":19.49,
+    "is_max_dd":-25.68,
+    "is_calmar":0.76,
+    "is_sharpe":0.77,
+    "is_sortino":0.97,
+    "is_turnover":302.4,
+    "oos_cagr":29.61,
+    "oos_max_dd":-22.32,
+    "oos_calmar":1.33,
+    "oos_sharpe":1.19,
+    "oos_sortino":1.38,
+    "oos_turnover":267.7,
+    "sharpe_ratio_oos_is":1.55,
+    "is_sharpe_rank":45,
+    "is_calmar_rank":46,
+    "oos_sharpe_rank":148,
+    "oos_calmar_rank":141
   },
   {
     "config_id":"Raw_6M_5050_EQ | 6M | Breadth35_Sh50_GOL",
@@ -432,9 +432,9 @@
     "oos_turnover":302.6,
     "sharpe_ratio_oos_is":1.62,
     "is_sharpe_rank":40,
-    "is_calmar_rank":39,
-    "oos_sharpe_rank":144,
-    "oos_calmar_rank":110
+    "is_calmar_rank":42,
+    "oos_sharpe_rank":142,
+    "oos_calmar_rank":114
   },
   {
     "config_id":"Raw_6M_5050_EQ | 6M | VIX24_Sh50_GOL",
@@ -454,10 +454,10 @@
     "oos_sortino":1.64,
     "oos_turnover":203.4,
     "sharpe_ratio_oos_is":1.9,
-    "is_sharpe_rank":80,
+    "is_sharpe_rank":81,
     "is_calmar_rank":21,
-    "oos_sharpe_rank":134,
-    "oos_calmar_rank":132
+    "oos_sharpe_rank":133,
+    "oos_calmar_rank":134
   },
   {
     "config_id":"Raw_6M_5050_EQ | 12M | Unhedged",
@@ -478,9 +478,9 @@
     "oos_turnover":82.3,
     "sharpe_ratio_oos_is":1.78,
     "is_sharpe_rank":18,
-    "is_calmar_rank":60,
-    "oos_sharpe_rank":77,
-    "oos_calmar_rank":122
+    "is_calmar_rank":66,
+    "oos_sharpe_rank":76,
+    "oos_calmar_rank":123
   },
   {
     "config_id":"Raw_6M_5050_EQ | 12M | DD10_Sh50_GL50",
@@ -501,9 +501,9 @@
     "oos_turnover":166.2,
     "sharpe_ratio_oos_is":1.75,
     "is_sharpe_rank":26,
-    "is_calmar_rank":33,
-    "oos_sharpe_rank":111,
-    "oos_calmar_rank":86
+    "is_calmar_rank":35,
+    "oos_sharpe_rank":110,
+    "oos_calmar_rank":87
   },
   {
     "config_id":"Raw_6M_5050_EQ | 12M | DD12_Sh50_GL50",
@@ -525,8 +525,8 @@
     "sharpe_ratio_oos_is":1.72,
     "is_sharpe_rank":10,
     "is_calmar_rank":15,
-    "oos_sharpe_rank":86,
-    "oos_calmar_rank":71
+    "oos_sharpe_rank":84,
+    "oos_calmar_rank":74
   },
   {
     "config_id":"Raw_6M_5050_EQ | 12M | DD12_Sh75_GL50",
@@ -548,7 +548,7 @@
     "sharpe_ratio_oos_is":1.79,
     "is_sharpe_rank":23,
     "is_calmar_rank":13,
-    "oos_sharpe_rank":96,
+    "oos_sharpe_rank":93,
     "oos_calmar_rank":50
   },
   {
@@ -571,7 +571,7 @@
     "sharpe_ratio_oos_is":1.76,
     "is_sharpe_rank":14,
     "is_calmar_rank":6,
-    "oos_sharpe_rank":77,
+    "oos_sharpe_rank":76,
     "oos_calmar_rank":40
   },
   {
@@ -594,7 +594,7 @@
     "sharpe_ratio_oos_is":1.89,
     "is_sharpe_rank":20,
     "is_calmar_rank":11,
-    "oos_sharpe_rank":64,
+    "oos_sharpe_rank":62,
     "oos_calmar_rank":28
   },
   {
@@ -618,30 +618,30 @@
     "is_sharpe_rank":14,
     "is_calmar_rank":8,
     "oos_sharpe_rank":123,
-    "oos_calmar_rank":135
+    "oos_calmar_rank":137
   },
   {
     "config_id":"Raw_6M_5050_EQ | 12M | MA200Band_Sh60_GL50",
     "basket":"Raw_6M_5050_EQ",
     "reb":"12M",
     "regime":"MA200Band_Sh60_GL50",
-    "is_cagr":24.22,
-    "is_max_dd":-33.82,
-    "is_calmar":0.72,
-    "is_sharpe":0.87,
-    "is_sortino":1.07,
-    "is_turnover":74.4,
-    "oos_cagr":37.22,
-    "oos_max_dd":-26.37,
+    "is_cagr":21.16,
+    "is_max_dd":-25.14,
+    "is_calmar":0.84,
+    "is_sharpe":0.88,
+    "is_sortino":1.11,
+    "is_turnover":243.6,
+    "oos_cagr":31.52,
+    "oos_max_dd":-22.42,
     "oos_calmar":1.41,
-    "oos_sharpe":1.55,
-    "oos_sortino":1.98,
-    "oos_turnover":82.3,
-    "sharpe_ratio_oos_is":1.78,
-    "is_sharpe_rank":18,
-    "is_calmar_rank":60,
-    "oos_sharpe_rank":77,
-    "oos_calmar_rank":122
+    "oos_sharpe":1.41,
+    "oos_sortino":1.76,
+    "oos_turnover":209.8,
+    "sharpe_ratio_oos_is":1.6,
+    "is_sharpe_rank":14,
+    "is_calmar_rank":23,
+    "oos_sharpe_rank":119,
+    "oos_calmar_rank":123
   },
   {
     "config_id":"Raw_6M_5050_EQ | 12M | Breadth35_Sh50_GOL",
@@ -662,9 +662,9 @@
     "oos_turnover":241.0,
     "sharpe_ratio_oos_is":1.74,
     "is_sharpe_rank":45,
-    "is_calmar_rank":52,
+    "is_calmar_rank":57,
     "oos_sharpe_rank":131,
-    "oos_calmar_rank":130
+    "oos_calmar_rank":131
   },
   {
     "config_id":"Raw_6M_5050_EQ | 12M | VIX24_Sh50_GOL",
@@ -684,10 +684,10 @@
     "oos_sortino":1.9,
     "oos_turnover":130.9,
     "sharpe_ratio_oos_is":1.97,
-    "is_sharpe_rank":58,
-    "is_calmar_rank":33,
-    "oos_sharpe_rank":109,
-    "oos_calmar_rank":140
+    "is_sharpe_rank":59,
+    "is_calmar_rank":35,
+    "oos_sharpe_rank":107,
+    "oos_calmar_rank":142
   },
   {
     "config_id":"Raw_9M_5050_EQ | 3M | Unhedged",
@@ -708,9 +708,9 @@
     "oos_turnover":190.1,
     "sharpe_ratio_oos_is":2.28,
     "is_sharpe_rank":96,
-    "is_calmar_rank":133,
-    "oos_sharpe_rank":86,
-    "oos_calmar_rank":127
+    "is_calmar_rank":134,
+    "oos_sharpe_rank":84,
+    "oos_calmar_rank":128
   },
   {
     "config_id":"Raw_9M_5050_EQ | 3M | DD10_Sh50_GL50",
@@ -730,9 +730,9 @@
     "oos_sortino":1.82,
     "oos_turnover":252.2,
     "sharpe_ratio_oos_is":2.23,
-    "is_sharpe_rank":83,
-    "is_calmar_rank":82,
-    "oos_sharpe_rank":81,
+    "is_sharpe_rank":85,
+    "is_calmar_rank":88,
+    "oos_sharpe_rank":80,
     "oos_calmar_rank":58
   },
   {
@@ -753,9 +753,9 @@
     "oos_sortino":1.89,
     "oos_turnover":260.7,
     "sharpe_ratio_oos_is":2.25,
-    "is_sharpe_rank":75,
-    "is_calmar_rank":74,
-    "oos_sharpe_rank":66,
+    "is_sharpe_rank":76,
+    "is_calmar_rank":81,
+    "oos_sharpe_rank":64,
     "oos_calmar_rank":53
   },
   {
@@ -776,9 +776,9 @@
     "oos_sortino":1.81,
     "oos_turnover":296.9,
     "sharpe_ratio_oos_is":2.09,
-    "is_sharpe_rank":58,
-    "is_calmar_rank":60,
-    "oos_sharpe_rank":77,
+    "is_sharpe_rank":59,
+    "is_calmar_rank":66,
+    "oos_sharpe_rank":76,
     "oos_calmar_rank":33
   },
   {
@@ -800,8 +800,8 @@
     "oos_turnover":297.0,
     "sharpe_ratio_oos_is":2.04,
     "is_sharpe_rank":40,
-    "is_calmar_rank":33,
-    "oos_sharpe_rank":67,
+    "is_calmar_rank":35,
+    "oos_sharpe_rank":65,
     "oos_calmar_rank":24
   },
   {
@@ -823,8 +823,8 @@
     "oos_turnover":297.3,
     "sharpe_ratio_oos_is":2.18,
     "is_sharpe_rank":50,
-    "is_calmar_rank":46,
-    "oos_sharpe_rank":53,
+    "is_calmar_rank":50,
+    "oos_sharpe_rank":51,
     "oos_calmar_rank":17
   },
   {
@@ -846,32 +846,32 @@
     "oos_turnover":242.3,
     "sharpe_ratio_oos_is":1.99,
     "is_sharpe_rank":55,
-    "is_calmar_rank":33,
-    "oos_sharpe_rank":100,
-    "oos_calmar_rank":102
+    "is_calmar_rank":35,
+    "oos_sharpe_rank":97,
+    "oos_calmar_rank":105
   },
   {
     "config_id":"Raw_9M_5050_EQ | 3M | MA200Band_Sh60_GL50",
     "basket":"Raw_9M_5050_EQ",
     "reb":"3M",
     "regime":"MA200Band_Sh60_GL50",
-    "is_cagr":20.37,
-    "is_max_dd":-37.87,
-    "is_calmar":0.54,
-    "is_sharpe":0.67,
-    "is_sortino":0.79,
-    "is_turnover":170.8,
-    "oos_cagr":38.98,
-    "oos_max_dd":-28.03,
-    "oos_calmar":1.39,
-    "oos_sharpe":1.53,
-    "oos_sortino":1.85,
-    "oos_turnover":190.1,
-    "sharpe_ratio_oos_is":2.28,
-    "is_sharpe_rank":96,
-    "is_calmar_rank":133,
-    "oos_sharpe_rank":86,
-    "oos_calmar_rank":127
+    "is_cagr":17.9,
+    "is_max_dd":-25.32,
+    "is_calmar":0.71,
+    "is_sharpe":0.69,
+    "is_sortino":0.85,
+    "is_turnover":331.7,
+    "oos_cagr":35.36,
+    "oos_max_dd":-23.64,
+    "oos_calmar":1.5,
+    "oos_sharpe":1.48,
+    "oos_sortino":1.73,
+    "oos_turnover":290.6,
+    "sharpe_ratio_oos_is":2.14,
+    "is_sharpe_rank":85,
+    "is_calmar_rank":71,
+    "oos_sharpe_rank":101,
+    "oos_calmar_rank":107
   },
   {
     "config_id":"Raw_9M_5050_EQ | 3M | Breadth35_Sh50_GOL",
@@ -891,10 +891,10 @@
     "oos_sortino":1.66,
     "oos_turnover":326.6,
     "sharpe_ratio_oos_is":2.04,
-    "is_sharpe_rank":75,
-    "is_calmar_rank":89,
-    "oos_sharpe_rank":111,
-    "oos_calmar_rank":89
+    "is_sharpe_rank":76,
+    "is_calmar_rank":94,
+    "oos_sharpe_rank":110,
+    "oos_calmar_rank":90
   },
   {
     "config_id":"Raw_9M_5050_EQ | 3M | VIX24_Sh50_GOL",
@@ -914,10 +914,10 @@
     "oos_sortino":1.89,
     "oos_turnover":236.7,
     "sharpe_ratio_oos_is":2.4,
-    "is_sharpe_rank":114,
-    "is_calmar_rank":110,
-    "oos_sharpe_rank":93,
-    "oos_calmar_rank":138
+    "is_sharpe_rank":113,
+    "is_calmar_rank":115,
+    "oos_sharpe_rank":90,
+    "oos_calmar_rank":139
   },
   {
     "config_id":"Raw_9M_5050_EQ | 6M | Unhedged",
@@ -937,10 +937,10 @@
     "oos_sortino":2.15,
     "oos_turnover":116.9,
     "sharpe_ratio_oos_is":2.59,
-    "is_sharpe_rank":88,
-    "is_calmar_rank":129,
-    "oos_sharpe_rank":32,
-    "oos_calmar_rank":95
+    "is_sharpe_rank":90,
+    "is_calmar_rank":131,
+    "oos_sharpe_rank":28,
+    "oos_calmar_rank":97
   },
   {
     "config_id":"Raw_9M_5050_EQ | 6M | DD10_Sh50_GL50",
@@ -960,9 +960,9 @@
     "oos_sortino":2.12,
     "oos_turnover":189.3,
     "sharpe_ratio_oos_is":2.74,
-    "is_sharpe_rank":107,
-    "is_calmar_rank":121,
-    "oos_sharpe_rank":25,
+    "is_sharpe_rank":106,
+    "is_calmar_rank":125,
+    "oos_sharpe_rank":24,
     "oos_calmar_rank":31
   },
   {
@@ -983,9 +983,9 @@
     "oos_sortino":2.26,
     "oos_turnover":189.8,
     "sharpe_ratio_oos_is":2.83,
-    "is_sharpe_rank":102,
-    "is_calmar_rank":94,
-    "oos_sharpe_rank":10,
+    "is_sharpe_rank":101,
+    "is_calmar_rank":99,
+    "oos_sharpe_rank":9,
     "oos_calmar_rank":22
   },
   {
@@ -1006,9 +1006,9 @@
     "oos_sortino":2.14,
     "oos_turnover":226.7,
     "sharpe_ratio_oos_is":2.65,
-    "is_sharpe_rank":88,
-    "is_calmar_rank":60,
-    "oos_sharpe_rank":21,
+    "is_sharpe_rank":90,
+    "is_calmar_rank":66,
+    "oos_sharpe_rank":19,
     "oos_calmar_rank":11
   },
   {
@@ -1029,9 +1029,9 @@
     "oos_sortino":2.2,
     "oos_turnover":226.9,
     "sharpe_ratio_oos_is":2.56,
-    "is_sharpe_rank":67,
-    "is_calmar_rank":33,
-    "oos_sharpe_rank":16,
+    "is_sharpe_rank":68,
+    "is_calmar_rank":35,
+    "oos_sharpe_rank":14,
     "oos_calmar_rank":7
   },
   {
@@ -1052,8 +1052,8 @@
     "oos_sortino":2.32,
     "oos_turnover":227.0,
     "sharpe_ratio_oos_is":2.73,
-    "is_sharpe_rank":80,
-    "is_calmar_rank":52,
+    "is_sharpe_rank":81,
+    "is_calmar_rank":57,
     "oos_sharpe_rank":3,
     "oos_calmar_rank":3
   },
@@ -1076,32 +1076,32 @@
     "oos_turnover":169.0,
     "sharpe_ratio_oos_is":2.54,
     "is_sharpe_rank":96,
-    "is_calmar_rank":52,
-    "oos_sharpe_rank":44,
-    "oos_calmar_rank":81
+    "is_calmar_rank":57,
+    "oos_sharpe_rank":41,
+    "oos_calmar_rank":82
   },
   {
     "config_id":"Raw_9M_5050_EQ | 6M | MA200Band_Sh60_GL50",
     "basket":"Raw_9M_5050_EQ",
     "reb":"6M",
     "regime":"MA200Band_Sh60_GL50",
-    "is_cagr":20.72,
-    "is_max_dd":-37.85,
-    "is_calmar":0.55,
-    "is_sharpe":0.68,
-    "is_sortino":0.81,
-    "is_turnover":114.0,
-    "oos_cagr":44.69,
-    "oos_max_dd":-28.13,
-    "oos_calmar":1.59,
-    "oos_sharpe":1.76,
-    "oos_sortino":2.15,
-    "oos_turnover":116.9,
-    "sharpe_ratio_oos_is":2.59,
-    "is_sharpe_rank":88,
-    "is_calmar_rank":129,
-    "oos_sharpe_rank":32,
-    "oos_calmar_rank":95
+    "is_cagr":18.1,
+    "is_max_dd":-29.13,
+    "is_calmar":0.62,
+    "is_sharpe":0.69,
+    "is_sortino":0.88,
+    "is_turnover":281.2,
+    "oos_cagr":40.31,
+    "oos_max_dd":-23.67,
+    "oos_calmar":1.7,
+    "oos_sharpe":1.69,
+    "oos_sortino":2.0,
+    "oos_turnover":229.7,
+    "sharpe_ratio_oos_is":2.45,
+    "is_sharpe_rank":85,
+    "is_calmar_rank":107,
+    "oos_sharpe_rank":44,
+    "oos_calmar_rank":82
   },
   {
     "config_id":"Raw_9M_5050_EQ | 6M | Breadth35_Sh50_GOL",
@@ -1122,9 +1122,9 @@
     "oos_turnover":263.3,
     "sharpe_ratio_oos_is":2.63,
     "is_sharpe_rank":116,
-    "is_calmar_rank":129,
-    "oos_sharpe_rank":59,
-    "oos_calmar_rank":63
+    "is_calmar_rank":131,
+    "oos_sharpe_rank":57,
+    "oos_calmar_rank":65
   },
   {
     "config_id":"Raw_9M_5050_EQ | 6M | VIX24_Sh50_GOL",
@@ -1145,9 +1145,9 @@
     "oos_turnover":164.5,
     "sharpe_ratio_oos_is":2.93,
     "is_sharpe_rank":126,
-    "is_calmar_rank":102,
-    "oos_sharpe_rank":37,
-    "oos_calmar_rank":100
+    "is_calmar_rank":107,
+    "oos_sharpe_rank":34,
+    "oos_calmar_rank":102
   },
   {
     "config_id":"Raw_9M_5050_EQ | 12M | Unhedged",
@@ -1168,9 +1168,9 @@
     "oos_turnover":79.0,
     "sharpe_ratio_oos_is":2.4,
     "is_sharpe_rank":45,
-    "is_calmar_rank":110,
-    "oos_sharpe_rank":13,
-    "oos_calmar_rank":71
+    "is_calmar_rank":115,
+    "oos_sharpe_rank":12,
+    "oos_calmar_rank":74
   },
   {
     "config_id":"Raw_9M_5050_EQ | 12M | DD10_Sh50_GL50",
@@ -1190,9 +1190,9 @@
     "oos_sortino":2.13,
     "oos_turnover":162.3,
     "sharpe_ratio_oos_is":2.49,
-    "is_sharpe_rank":67,
-    "is_calmar_rank":94,
-    "oos_sharpe_rank":23,
+    "is_sharpe_rank":68,
+    "is_calmar_rank":99,
+    "oos_sharpe_rank":22,
     "oos_calmar_rank":44
   },
   {
@@ -1213,9 +1213,9 @@
     "oos_sortino":2.21,
     "oos_turnover":162.3,
     "sharpe_ratio_oos_is":2.61,
-    "is_sharpe_rank":75,
-    "is_calmar_rank":82,
-    "oos_sharpe_rank":13,
+    "is_sharpe_rank":76,
+    "is_calmar_rank":88,
+    "oos_sharpe_rank":12,
     "oos_calmar_rank":34
   },
   {
@@ -1236,9 +1236,9 @@
     "oos_sortino":2.18,
     "oos_turnover":201.9,
     "sharpe_ratio_oos_is":2.72,
-    "is_sharpe_rank":88,
-    "is_calmar_rank":82,
-    "oos_sharpe_rank":13,
+    "is_sharpe_rank":90,
+    "is_calmar_rank":88,
+    "oos_sharpe_rank":12,
     "oos_calmar_rank":14
   },
   {
@@ -1259,9 +1259,9 @@
     "oos_sortino":2.24,
     "oos_turnover":202.1,
     "sharpe_ratio_oos_is":2.62,
-    "is_sharpe_rank":67,
-    "is_calmar_rank":66,
-    "oos_sharpe_rank":8,
+    "is_sharpe_rank":68,
+    "is_calmar_rank":74,
+    "oos_sharpe_rank":7,
     "oos_calmar_rank":7
   },
   {
@@ -1282,8 +1282,8 @@
     "oos_sortino":2.36,
     "oos_turnover":202.2,
     "sharpe_ratio_oos_is":2.79,
-    "is_sharpe_rank":80,
-    "is_calmar_rank":89,
+    "is_sharpe_rank":81,
+    "is_calmar_rank":94,
     "oos_sharpe_rank":2,
     "oos_calmar_rank":3
   },
@@ -1306,32 +1306,32 @@
     "oos_turnover":130.8,
     "sharpe_ratio_oos_is":2.25,
     "is_sharpe_rank":50,
-    "is_calmar_rank":39,
-    "oos_sharpe_rank":40,
-    "oos_calmar_rank":92
+    "is_calmar_rank":42,
+    "oos_sharpe_rank":37,
+    "oos_calmar_rank":93
   },
   {
     "config_id":"Raw_9M_5050_EQ | 12M | MA200Band_Sh60_GL50",
     "basket":"Raw_9M_5050_EQ",
     "reb":"12M",
     "regime":"MA200Band_Sh60_GL50",
-    "is_cagr":22.58,
-    "is_max_dd":-37.89,
-    "is_calmar":0.6,
-    "is_sharpe":0.77,
-    "is_sortino":0.92,
-    "is_turnover":74.5,
-    "oos_cagr":45.64,
-    "oos_max_dd":-26.19,
-    "oos_calmar":1.74,
-    "oos_sharpe":1.85,
-    "oos_sortino":2.25,
-    "oos_turnover":79.0,
-    "sharpe_ratio_oos_is":2.4,
-    "is_sharpe_rank":45,
-    "is_calmar_rank":110,
-    "oos_sharpe_rank":13,
-    "oos_calmar_rank":71
+    "is_cagr":18.81,
+    "is_max_dd":-30.05,
+    "is_calmar":0.63,
+    "is_sharpe":0.74,
+    "is_sortino":0.94,
+    "is_turnover":243.7,
+    "oos_cagr":40.7,
+    "oos_max_dd":-22.37,
+    "oos_calmar":1.82,
+    "oos_sharpe":1.75,
+    "oos_sortino":2.07,
+    "oos_turnover":206.2,
+    "sharpe_ratio_oos_is":2.36,
+    "is_sharpe_rank":59,
+    "is_calmar_rank":103,
+    "oos_sharpe_rank":30,
+    "oos_calmar_rank":60
   },
   {
     "config_id":"Raw_9M_5050_EQ | 12M | Breadth35_Sh50_GOL",
@@ -1351,10 +1351,10 @@
     "oos_sortino":1.95,
     "oos_turnover":236.9,
     "sharpe_ratio_oos_is":2.67,
-    "is_sharpe_rank":114,
+    "is_sharpe_rank":113,
     "is_calmar_rank":139,
-    "oos_sharpe_rank":49,
-    "oos_calmar_rank":75
+    "oos_sharpe_rank":47,
+    "oos_calmar_rank":77
   },
   {
     "config_id":"Raw_9M_5050_EQ | 12M | VIX24_Sh50_GOL",
@@ -1375,9 +1375,9 @@
     "oos_turnover":126.7,
     "sharpe_ratio_oos_is":2.95,
     "is_sharpe_rank":123,
-    "is_calmar_rank":118,
-    "oos_sharpe_rank":28,
-    "oos_calmar_rank":87
+    "is_calmar_rank":122,
+    "oos_sharpe_rank":26,
+    "oos_calmar_rank":88
   },
   {
     "config_id":"Raw_12M_5050_EQ | 3M | Unhedged",
@@ -1398,9 +1398,9 @@
     "oos_turnover":157.0,
     "sharpe_ratio_oos_is":2.94,
     "is_sharpe_rank":145,
-    "is_calmar_rank":149,
-    "oos_sharpe_rank":106,
-    "oos_calmar_rank":135
+    "is_calmar_rank":150,
+    "oos_sharpe_rank":104,
+    "oos_calmar_rank":137
   },
   {
     "config_id":"Raw_12M_5050_EQ | 3M | DD10_Sh50_GL50",
@@ -1422,8 +1422,8 @@
     "sharpe_ratio_oos_is":2.87,
     "is_sharpe_rank":142,
     "is_calmar_rank":137,
-    "oos_sharpe_rank":100,
-    "oos_calmar_rank":63
+    "oos_sharpe_rank":97,
+    "oos_calmar_rank":65
   },
   {
     "config_id":"Raw_12M_5050_EQ | 3M | DD12_Sh50_GL50",
@@ -1444,8 +1444,8 @@
     "oos_turnover":228.3,
     "sharpe_ratio_oos_is":3.0,
     "is_sharpe_rank":143,
-    "is_calmar_rank":135,
-    "oos_sharpe_rank":86,
+    "is_calmar_rank":136,
+    "oos_sharpe_rank":84,
     "oos_calmar_rank":58
   },
   {
@@ -1467,8 +1467,8 @@
     "oos_turnover":265.7,
     "sharpe_ratio_oos_is":3.02,
     "is_sharpe_rank":143,
-    "is_calmar_rank":105,
-    "oos_sharpe_rank":81,
+    "is_calmar_rank":111,
+    "oos_sharpe_rank":80,
     "oos_calmar_rank":28
   },
   {
@@ -1489,9 +1489,9 @@
     "oos_sortino":1.88,
     "oos_turnover":265.8,
     "sharpe_ratio_oos_is":2.82,
-    "is_sharpe_rank":136,
-    "is_calmar_rank":94,
-    "oos_sharpe_rank":68,
+    "is_sharpe_rank":135,
+    "is_calmar_rank":99,
+    "oos_sharpe_rank":67,
     "oos_calmar_rank":25
   },
   {
@@ -1512,9 +1512,9 @@
     "oos_sortino":2.0,
     "oos_turnover":266.0,
     "sharpe_ratio_oos_is":3.04,
-    "is_sharpe_rank":139,
-    "is_calmar_rank":102,
-    "oos_sharpe_rank":57,
+    "is_sharpe_rank":138,
+    "is_calmar_rank":107,
+    "oos_sharpe_rank":55,
     "oos_calmar_rank":18
   },
   {
@@ -1536,32 +1536,32 @@
     "oos_turnover":209.3,
     "sharpe_ratio_oos_is":2.39,
     "is_sharpe_rank":126,
-    "is_calmar_rank":89,
+    "is_calmar_rank":94,
     "oos_sharpe_rank":119,
-    "oos_calmar_rank":112
+    "oos_calmar_rank":116
   },
   {
     "config_id":"Raw_12M_5050_EQ | 3M | MA200Band_Sh60_GL50",
     "basket":"Raw_12M_5050_EQ",
     "reb":"3M",
     "regime":"MA200Band_Sh60_GL50",
-    "is_cagr":16.88,
-    "is_max_dd":-38.09,
-    "is_calmar":0.44,
-    "is_sharpe":0.5,
-    "is_sortino":0.59,
-    "is_turnover":150.9,
-    "oos_cagr":38.0,
-    "oos_max_dd":-28.08,
-    "oos_calmar":1.35,
+    "is_cagr":13.9,
+    "is_max_dd":-29.38,
+    "is_calmar":0.47,
+    "is_sharpe":0.45,
+    "is_sortino":0.56,
+    "is_turnover":307.9,
+    "oos_cagr":35.56,
+    "oos_max_dd":-22.18,
+    "oos_calmar":1.6,
     "oos_sharpe":1.47,
-    "oos_sortino":1.8,
-    "oos_turnover":157.0,
-    "sharpe_ratio_oos_is":2.94,
-    "is_sharpe_rank":145,
-    "is_calmar_rank":149,
-    "oos_sharpe_rank":106,
-    "oos_calmar_rank":135
+    "oos_sortino":1.75,
+    "oos_turnover":261.9,
+    "sharpe_ratio_oos_is":3.27,
+    "is_sharpe_rank":148,
+    "is_calmar_rank":146,
+    "oos_sharpe_rank":104,
+    "oos_calmar_rank":96
   },
   {
     "config_id":"Raw_12M_5050_EQ | 3M | Breadth35_Sh50_GOL",
@@ -1581,10 +1581,10 @@
     "oos_sortino":1.62,
     "oos_turnover":299.3,
     "sharpe_ratio_oos_is":3.11,
-    "is_sharpe_rank":149,
-    "is_calmar_rank":147,
+    "is_sharpe_rank":148,
+    "is_calmar_rank":148,
     "oos_sharpe_rank":121,
-    "oos_calmar_rank":122
+    "oos_calmar_rank":123
   },
   {
     "config_id":"Raw_12M_5050_EQ | 3M | VIX24_Sh50_GOL",
@@ -1605,9 +1605,9 @@
     "oos_turnover":203.9,
     "sharpe_ratio_oos_is":3.72,
     "is_sharpe_rank":150,
-    "is_calmar_rank":145,
-    "oos_sharpe_rank":111,
-    "oos_calmar_rank":143
+    "is_calmar_rank":146,
+    "oos_sharpe_rank":110,
+    "oos_calmar_rank":144
   },
   {
     "config_id":"Raw_12M_5050_EQ | 6M | Unhedged",
@@ -1630,7 +1630,7 @@
     "is_sharpe_rank":126,
     "is_calmar_rank":142,
     "oos_sharpe_rank":121,
-    "oos_calmar_rank":143
+    "oos_calmar_rank":144
   },
   {
     "config_id":"Raw_12M_5050_EQ | 6M | DD10_Sh50_GL50",
@@ -1650,10 +1650,10 @@
     "oos_sortino":1.76,
     "oos_turnover":187.2,
     "sharpe_ratio_oos_is":2.53,
-    "is_sharpe_rank":133,
+    "is_sharpe_rank":132,
     "is_calmar_rank":139,
-    "oos_sharpe_rank":114,
-    "oos_calmar_rank":66
+    "oos_sharpe_rank":113,
+    "oos_calmar_rank":68
   },
   {
     "config_id":"Raw_12M_5050_EQ | 6M | DD12_Sh50_GL50",
@@ -1673,9 +1673,9 @@
     "oos_sortino":1.84,
     "oos_turnover":187.6,
     "sharpe_ratio_oos_is":2.57,
-    "is_sharpe_rank":130,
-    "is_calmar_rank":121,
-    "oos_sharpe_rank":100,
+    "is_sharpe_rank":129,
+    "is_calmar_rank":125,
+    "oos_sharpe_rank":97,
     "oos_calmar_rank":58
   },
   {
@@ -1696,9 +1696,9 @@
     "oos_sortino":1.79,
     "oos_turnover":223.1,
     "sharpe_ratio_oos_is":2.64,
-    "is_sharpe_rank":136,
-    "is_calmar_rank":94,
-    "oos_sharpe_rank":103,
+    "is_sharpe_rank":135,
+    "is_calmar_rank":99,
+    "oos_sharpe_rank":101,
     "oos_calmar_rank":46
   },
   {
@@ -1720,8 +1720,8 @@
     "oos_turnover":223.3,
     "sharpe_ratio_oos_is":2.53,
     "is_sharpe_rank":123,
-    "is_calmar_rank":76,
-    "oos_sharpe_rank":91,
+    "is_calmar_rank":83,
+    "oos_sharpe_rank":88,
     "oos_calmar_rank":42
   },
   {
@@ -1742,9 +1742,9 @@
     "oos_sortino":1.96,
     "oos_turnover":223.4,
     "sharpe_ratio_oos_is":2.72,
-    "is_sharpe_rank":130,
-    "is_calmar_rank":94,
-    "oos_sharpe_rank":68,
+    "is_sharpe_rank":129,
+    "is_calmar_rank":99,
+    "oos_sharpe_rank":67,
     "oos_calmar_rank":31
   },
   {
@@ -1765,33 +1765,33 @@
     "oos_sortino":1.67,
     "oos_turnover":163.5,
     "sharpe_ratio_oos_is":2.06,
-    "is_sharpe_rank":102,
-    "is_calmar_rank":66,
+    "is_sharpe_rank":101,
+    "is_calmar_rank":74,
     "oos_sharpe_rank":127,
-    "oos_calmar_rank":127
+    "oos_calmar_rank":128
   },
   {
     "config_id":"Raw_12M_5050_EQ | 6M | MA200Band_Sh60_GL50",
     "basket":"Raw_12M_5050_EQ",
     "reb":"6M",
     "regime":"MA200Band_Sh60_GL50",
-    "is_cagr":18.89,
-    "is_max_dd":-38.09,
+    "is_cagr":15.2,
+    "is_max_dd":-30.11,
     "is_calmar":0.5,
-    "is_sharpe":0.59,
-    "is_sortino":0.71,
-    "is_turnover":104.0,
-    "oos_cagr":36.39,
-    "oos_max_dd":-28.09,
-    "oos_calmar":1.3,
-    "oos_sharpe":1.4,
-    "oos_sortino":1.75,
-    "oos_turnover":111.3,
-    "sharpe_ratio_oos_is":2.37,
-    "is_sharpe_rank":126,
+    "is_sharpe":0.53,
+    "is_sortino":0.67,
+    "is_turnover":268.5,
+    "oos_cagr":34.23,
+    "oos_max_dd":-22.34,
+    "oos_calmar":1.53,
+    "oos_sharpe":1.42,
+    "oos_sortino":1.72,
+    "oos_turnover":227.3,
+    "sharpe_ratio_oos_is":2.68,
+    "is_sharpe_rank":140,
     "is_calmar_rank":142,
-    "oos_sharpe_rank":121,
-    "oos_calmar_rank":143
+    "oos_sharpe_rank":116,
+    "oos_calmar_rank":103
   },
   {
     "config_id":"Raw_12M_5050_EQ | 6M | Breadth35_Sh50_GOL",
@@ -1811,10 +1811,10 @@
     "oos_sortino":1.61,
     "oos_turnover":260.3,
     "sharpe_ratio_oos_is":2.89,
-    "is_sharpe_rank":148,
-    "is_calmar_rank":147,
+    "is_sharpe_rank":147,
+    "is_calmar_rank":148,
     "oos_sharpe_rank":127,
-    "oos_calmar_rank":110
+    "oos_calmar_rank":114
   },
   {
     "config_id":"Raw_12M_5050_EQ | 6M | VIX24_Sh50_GOL",
@@ -1834,8 +1834,8 @@
     "oos_sortino":1.76,
     "oos_turnover":159.0,
     "sharpe_ratio_oos_is":2.54,
-    "is_sharpe_rank":139,
-    "is_calmar_rank":118,
+    "is_sharpe_rank":138,
+    "is_calmar_rank":122,
     "oos_sharpe_rank":125,
     "oos_calmar_rank":149
   },
@@ -1857,10 +1857,10 @@
     "oos_sortino":2.09,
     "oos_turnover":81.1,
     "sharpe_ratio_oos_is":2.66,
-    "is_sharpe_rank":111,
+    "is_sharpe_rank":110,
     "is_calmar_rank":137,
-    "oos_sharpe_rank":44,
-    "oos_calmar_rank":122
+    "oos_sharpe_rank":41,
+    "oos_calmar_rank":123
   },
   {
     "config_id":"Raw_12M_5050_EQ | 12M | DD10_Sh50_GL50",
@@ -1881,9 +1881,9 @@
     "oos_turnover":166.0,
     "sharpe_ratio_oos_is":2.48,
     "is_sharpe_rank":96,
-    "is_calmar_rank":121,
-    "oos_sharpe_rank":53,
-    "oos_calmar_rank":82
+    "is_calmar_rank":125,
+    "oos_sharpe_rank":51,
+    "oos_calmar_rank":84
   },
   {
     "config_id":"Raw_12M_5050_EQ | 12M | DD12_Sh50_GL50",
@@ -1903,10 +1903,10 @@
     "oos_sortino":2.11,
     "oos_turnover":166.3,
     "sharpe_ratio_oos_is":2.66,
-    "is_sharpe_rank":107,
-    "is_calmar_rank":110,
-    "oos_sharpe_rank":37,
-    "oos_calmar_rank":68
+    "is_sharpe_rank":106,
+    "is_calmar_rank":115,
+    "oos_sharpe_rank":34,
+    "oos_calmar_rank":71
   },
   {
     "config_id":"Raw_12M_5050_EQ | 12M | DD12_Sh75_GL50",
@@ -1926,9 +1926,9 @@
     "oos_sortino":2.04,
     "oos_turnover":205.3,
     "sharpe_ratio_oos_is":2.93,
-    "is_sharpe_rank":130,
-    "is_calmar_rank":125,
-    "oos_sharpe_rank":44,
+    "is_sharpe_rank":129,
+    "is_calmar_rank":128,
+    "oos_sharpe_rank":41,
     "oos_calmar_rank":40
   },
   {
@@ -1950,8 +1950,8 @@
     "oos_turnover":205.5,
     "sharpe_ratio_oos_is":2.81,
     "is_sharpe_rank":116,
-    "is_calmar_rank":110,
-    "oos_sharpe_rank":34,
+    "is_calmar_rank":115,
+    "oos_sharpe_rank":31,
     "oos_calmar_rank":25
   },
   {
@@ -1973,8 +1973,8 @@
     "oos_turnover":205.6,
     "sharpe_ratio_oos_is":2.97,
     "is_sharpe_rank":119,
-    "is_calmar_rank":129,
-    "oos_sharpe_rank":19,
+    "is_calmar_rank":131,
+    "oos_sharpe_rank":17,
     "oos_calmar_rank":19
   },
   {
@@ -1996,32 +1996,32 @@
     "oos_turnover":135.0,
     "sharpe_ratio_oos_is":2.33,
     "is_sharpe_rank":96,
-    "is_calmar_rank":66,
-    "oos_sharpe_rank":74,
-    "oos_calmar_rank":138
+    "is_calmar_rank":74,
+    "oos_sharpe_rank":73,
+    "oos_calmar_rank":139
   },
   {
     "config_id":"Raw_12M_5050_EQ | 12M | MA200Band_Sh60_GL50",
     "basket":"Raw_12M_5050_EQ",
     "reb":"12M",
     "regime":"MA200Band_Sh60_GL50",
-    "is_cagr":19.97,
-    "is_max_dd":-38.1,
-    "is_calmar":0.52,
-    "is_sharpe":0.64,
-    "is_sortino":0.76,
-    "is_turnover":73.9,
-    "oos_cagr":42.42,
-    "oos_max_dd":-30.02,
-    "oos_calmar":1.41,
-    "oos_sharpe":1.7,
-    "oos_sortino":2.09,
-    "oos_turnover":81.1,
-    "sharpe_ratio_oos_is":2.66,
-    "is_sharpe_rank":111,
-    "is_calmar_rank":137,
-    "oos_sharpe_rank":44,
-    "oos_calmar_rank":122
+    "is_cagr":16.91,
+    "is_max_dd":-31.07,
+    "is_calmar":0.54,
+    "is_sharpe":0.63,
+    "is_sortino":0.79,
+    "is_turnover":242.7,
+    "oos_cagr":36.3,
+    "oos_max_dd":-26.38,
+    "oos_calmar":1.38,
+    "oos_sharpe":1.55,
+    "oos_sortino":1.84,
+    "oos_turnover":209.8,
+    "sharpe_ratio_oos_is":2.46,
+    "is_sharpe_rank":113,
+    "is_calmar_rank":134,
+    "oos_sharpe_rank":76,
+    "oos_calmar_rank":131
   },
   {
     "config_id":"Raw_12M_5050_EQ | 12M | Breadth35_Sh50_GOL",
@@ -2041,10 +2041,10 @@
     "oos_sortino":1.9,
     "oos_turnover":239.9,
     "sharpe_ratio_oos_is":2.79,
-    "is_sharpe_rank":130,
+    "is_sharpe_rank":129,
     "is_calmar_rank":144,
-    "oos_sharpe_rank":62,
-    "oos_calmar_rank":106
+    "oos_sharpe_rank":60,
+    "oos_calmar_rank":109
   },
   {
     "config_id":"Raw_12M_5050_EQ | 12M | VIX24_Sh50_GOL",
@@ -2064,10 +2064,10 @@
     "oos_sortino":1.97,
     "oos_turnover":128.5,
     "sharpe_ratio_oos_is":3.27,
-    "is_sharpe_rank":147,
+    "is_sharpe_rank":146,
     "is_calmar_rank":142,
-    "oos_sharpe_rank":71,
-    "oos_calmar_rank":145
+    "oos_sharpe_rank":70,
+    "oos_calmar_rank":146
   },
   {
     "config_id":"Raw_9M_5050_NZ | 3M | Unhedged",
@@ -2087,10 +2087,10 @@
     "oos_sortino":1.9,
     "oos_turnover":187.2,
     "sharpe_ratio_oos_is":2.25,
-    "is_sharpe_rank":88,
-    "is_calmar_rank":125,
-    "oos_sharpe_rank":86,
-    "oos_calmar_rank":122
+    "is_sharpe_rank":90,
+    "is_calmar_rank":128,
+    "oos_sharpe_rank":84,
+    "oos_calmar_rank":123
   },
   {
     "config_id":"Raw_9M_5050_NZ | 3M | DD10_Sh50_GL50",
@@ -2110,10 +2110,10 @@
     "oos_sortino":1.82,
     "oos_turnover":252.1,
     "sharpe_ratio_oos_is":2.31,
-    "is_sharpe_rank":107,
-    "is_calmar_rank":82,
-    "oos_sharpe_rank":96,
-    "oos_calmar_rank":78
+    "is_sharpe_rank":106,
+    "is_calmar_rank":88,
+    "oos_sharpe_rank":93,
+    "oos_calmar_rank":80
   },
   {
     "config_id":"Raw_9M_5050_NZ | 3M | DD12_Sh50_GL50",
@@ -2133,10 +2133,10 @@
     "oos_sortino":1.89,
     "oos_turnover":259.7,
     "sharpe_ratio_oos_is":2.17,
-    "is_sharpe_rank":75,
-    "is_calmar_rank":60,
-    "oos_sharpe_rank":81,
-    "oos_calmar_rank":63
+    "is_sharpe_rank":76,
+    "is_calmar_rank":66,
+    "oos_sharpe_rank":80,
+    "oos_calmar_rank":65
   },
   {
     "config_id":"Raw_9M_5050_NZ | 3M | DD12_Sh75_GL50",
@@ -2157,8 +2157,8 @@
     "oos_turnover":294.8,
     "sharpe_ratio_oos_is":2.04,
     "is_sharpe_rank":55,
-    "is_calmar_rank":52,
-    "oos_sharpe_rank":86,
+    "is_calmar_rank":57,
+    "oos_sharpe_rank":84,
     "oos_calmar_rank":31
   },
   {
@@ -2180,8 +2180,8 @@
     "oos_turnover":295.0,
     "sharpe_ratio_oos_is":2.01,
     "is_sharpe_rank":40,
-    "is_calmar_rank":28,
-    "oos_sharpe_rank":71,
+    "is_calmar_rank":30,
+    "oos_sharpe_rank":70,
     "oos_calmar_rank":20
   },
   {
@@ -2203,8 +2203,8 @@
     "oos_turnover":295.2,
     "sharpe_ratio_oos_is":2.12,
     "is_sharpe_rank":45,
-    "is_calmar_rank":33,
-    "oos_sharpe_rank":59,
+    "is_calmar_rank":35,
+    "oos_sharpe_rank":57,
     "oos_calmar_rank":15
   },
   {
@@ -2226,32 +2226,32 @@
     "oos_turnover":239.6,
     "sharpe_ratio_oos_is":1.93,
     "is_sharpe_rank":50,
-    "is_calmar_rank":39,
-    "oos_sharpe_rank":106,
-    "oos_calmar_rank":102
+    "is_calmar_rank":42,
+    "oos_sharpe_rank":104,
+    "oos_calmar_rank":105
   },
   {
     "config_id":"Raw_9M_5050_NZ | 3M | MA200Band_Sh60_GL50",
     "basket":"Raw_9M_5050_NZ",
     "reb":"3M",
     "regime":"MA200Band_Sh60_GL50",
-    "is_cagr":20.95,
-    "is_max_dd":-37.46,
-    "is_calmar":0.56,
-    "is_sharpe":0.68,
-    "is_sortino":0.81,
-    "is_turnover":171.3,
-    "oos_cagr":40.17,
-    "oos_max_dd":-28.52,
-    "oos_calmar":1.41,
-    "oos_sharpe":1.53,
-    "oos_sortino":1.9,
-    "oos_turnover":187.2,
-    "sharpe_ratio_oos_is":2.25,
-    "is_sharpe_rank":88,
-    "is_calmar_rank":125,
-    "oos_sharpe_rank":86,
-    "oos_calmar_rank":122
+    "is_cagr":18.81,
+    "is_max_dd":-25.75,
+    "is_calmar":0.73,
+    "is_sharpe":0.71,
+    "is_sortino":0.9,
+    "is_turnover":334.6,
+    "oos_cagr":35.89,
+    "oos_max_dd":-24.42,
+    "oos_calmar":1.47,
+    "oos_sharpe":1.45,
+    "oos_sortino":1.75,
+    "oos_turnover":290.4,
+    "sharpe_ratio_oos_is":2.04,
+    "is_sharpe_rank":76,
+    "is_calmar_rank":61,
+    "oos_sharpe_rank":110,
+    "oos_calmar_rank":111
   },
   {
     "config_id":"Raw_9M_5050_NZ | 3M | Breadth35_Sh50_GOL",
@@ -2271,10 +2271,10 @@
     "oos_sortino":1.7,
     "oos_turnover":329.0,
     "sharpe_ratio_oos_is":2.23,
-    "is_sharpe_rank":111,
-    "is_calmar_rank":102,
-    "oos_sharpe_rank":115,
-    "oos_calmar_rank":114
+    "is_sharpe_rank":110,
+    "is_calmar_rank":107,
+    "oos_sharpe_rank":114,
+    "oos_calmar_rank":118
   },
   {
     "config_id":"Raw_9M_5050_NZ | 3M | VIX24_Sh50_GOL",
@@ -2295,9 +2295,9 @@
     "oos_turnover":235.7,
     "sharpe_ratio_oos_is":2.46,
     "is_sharpe_rank":119,
-    "is_calmar_rank":110,
-    "oos_sharpe_rank":96,
-    "oos_calmar_rank":135
+    "is_calmar_rank":115,
+    "oos_sharpe_rank":93,
+    "oos_calmar_rank":137
   },
   {
     "config_id":"Raw_9M_5050_NZ | 6M | Unhedged",
@@ -2317,10 +2317,10 @@
     "oos_sortino":2.22,
     "oos_turnover":116.4,
     "sharpe_ratio_oos_is":2.46,
-    "is_sharpe_rank":67,
-    "is_calmar_rank":115,
-    "oos_sharpe_rank":28,
-    "oos_calmar_rank":84
+    "is_sharpe_rank":68,
+    "is_calmar_rank":120,
+    "oos_sharpe_rank":26,
+    "oos_calmar_rank":86
   },
   {
     "config_id":"Raw_9M_5050_NZ | 6M | DD10_Sh50_GL50",
@@ -2340,9 +2340,9 @@
     "oos_sortino":2.1,
     "oos_turnover":191.6,
     "sharpe_ratio_oos_is":2.39,
-    "is_sharpe_rank":67,
-    "is_calmar_rank":82,
-    "oos_sharpe_rank":39,
+    "is_sharpe_rank":68,
+    "is_calmar_rank":88,
+    "oos_sharpe_rank":36,
     "oos_calmar_rank":48
   },
   {
@@ -2364,8 +2364,8 @@
     "oos_turnover":192.1,
     "sharpe_ratio_oos_is":2.38,
     "is_sharpe_rank":50,
-    "is_calmar_rank":46,
-    "oos_sharpe_rank":19,
+    "is_calmar_rank":50,
+    "oos_sharpe_rank":17,
     "oos_calmar_rank":37
   },
   {
@@ -2386,9 +2386,9 @@
     "oos_sortino":2.17,
     "oos_turnover":228.3,
     "sharpe_ratio_oos_is":2.27,
-    "is_sharpe_rank":37,
-    "is_calmar_rank":24,
-    "oos_sharpe_rank":23,
+    "is_sharpe_rank":36,
+    "is_calmar_rank":25,
+    "oos_sharpe_rank":22,
     "oos_calmar_rank":10
   },
   {
@@ -2411,7 +2411,7 @@
     "sharpe_ratio_oos_is":2.2,
     "is_sharpe_rank":26,
     "is_calmar_rank":13,
-    "oos_sharpe_rank":18,
+    "oos_sharpe_rank":16,
     "oos_calmar_rank":5
   },
   {
@@ -2455,33 +2455,33 @@
     "oos_sortino":2.09,
     "oos_turnover":168.6,
     "sharpe_ratio_oos_is":2.15,
-    "is_sharpe_rank":37,
+    "is_sharpe_rank":36,
     "is_calmar_rank":18,
-    "oos_sharpe_rank":44,
-    "oos_calmar_rank":71
+    "oos_sharpe_rank":41,
+    "oos_calmar_rank":74
   },
   {
     "config_id":"Raw_9M_5050_NZ | 6M | MA200Band_Sh60_GL50",
     "basket":"Raw_9M_5050_NZ",
     "reb":"6M",
     "regime":"MA200Band_Sh60_GL50",
-    "is_cagr":22.05,
-    "is_max_dd":-37.45,
-    "is_calmar":0.59,
-    "is_sharpe":0.72,
-    "is_sortino":0.87,
-    "is_turnover":117.8,
-    "oos_cagr":46.5,
-    "oos_max_dd":-28.12,
-    "oos_calmar":1.65,
-    "oos_sharpe":1.77,
-    "oos_sortino":2.22,
-    "oos_turnover":116.4,
-    "sharpe_ratio_oos_is":2.46,
-    "is_sharpe_rank":67,
-    "is_calmar_rank":115,
-    "oos_sharpe_rank":28,
-    "oos_calmar_rank":84
+    "is_cagr":19.76,
+    "is_max_dd":-27.58,
+    "is_calmar":0.72,
+    "is_sharpe":0.76,
+    "is_sortino":0.97,
+    "is_turnover":287.3,
+    "oos_cagr":41.35,
+    "oos_max_dd":-23.9,
+    "oos_calmar":1.73,
+    "oos_sharpe":1.68,
+    "oos_sortino":2.04,
+    "oos_turnover":231.9,
+    "sharpe_ratio_oos_is":2.21,
+    "is_sharpe_rank":50,
+    "is_calmar_rank":66,
+    "oos_sharpe_rank":47,
+    "oos_calmar_rank":77
   },
   {
     "config_id":"Raw_9M_5050_NZ | 6M | Breadth35_Sh50_GOL",
@@ -2501,10 +2501,10 @@
     "oos_sortino":1.95,
     "oos_turnover":264.7,
     "sharpe_ratio_oos_is":2.59,
-    "is_sharpe_rank":114,
-    "is_calmar_rank":118,
-    "oos_sharpe_rank":59,
-    "oos_calmar_rank":66
+    "is_sharpe_rank":113,
+    "is_calmar_rank":122,
+    "oos_sharpe_rank":57,
+    "oos_calmar_rank":68
   },
   {
     "config_id":"Raw_9M_5050_NZ | 6M | VIX24_Sh50_GOL",
@@ -2524,10 +2524,10 @@
     "oos_sortino":2.24,
     "oos_turnover":165.9,
     "sharpe_ratio_oos_is":2.68,
-    "is_sharpe_rank":107,
-    "is_calmar_rank":102,
-    "oos_sharpe_rank":34,
-    "oos_calmar_rank":92
+    "is_sharpe_rank":106,
+    "is_calmar_rank":107,
+    "oos_sharpe_rank":31,
+    "oos_calmar_rank":93
   },
   {
     "config_id":"Raw_9M_5050_NZ | 12M | Unhedged",
@@ -2547,10 +2547,10 @@
     "oos_sortino":2.34,
     "oos_turnover":79.0,
     "sharpe_ratio_oos_is":2.78,
-    "is_sharpe_rank":88,
-    "is_calmar_rank":125,
-    "oos_sharpe_rank":8,
-    "oos_calmar_rank":75
+    "is_sharpe_rank":90,
+    "is_calmar_rank":128,
+    "oos_sharpe_rank":7,
+    "oos_calmar_rank":77
   },
   {
     "config_id":"Raw_9M_5050_NZ | 12M | DD10_Sh50_GL50",
@@ -2570,9 +2570,9 @@
     "oos_sortino":2.24,
     "oos_turnover":163.5,
     "sharpe_ratio_oos_is":2.79,
-    "is_sharpe_rank":102,
-    "is_calmar_rank":110,
-    "oos_sharpe_rank":16,
+    "is_sharpe_rank":101,
+    "is_calmar_rank":115,
+    "oos_sharpe_rank":14,
     "oos_calmar_rank":37
   },
   {
@@ -2594,7 +2594,7 @@
     "oos_turnover":163.5,
     "sharpe_ratio_oos_is":2.84,
     "is_sharpe_rank":96,
-    "is_calmar_rank":99,
+    "is_calmar_rank":103,
     "oos_sharpe_rank":5,
     "oos_calmar_rank":28
   },
@@ -2616,9 +2616,9 @@
     "oos_sortino":2.28,
     "oos_turnover":202.8,
     "sharpe_ratio_oos_is":2.67,
-    "is_sharpe_rank":80,
-    "is_calmar_rank":70,
-    "oos_sharpe_rank":10,
+    "is_sharpe_rank":81,
+    "is_calmar_rank":78,
+    "oos_sharpe_rank":9,
     "oos_calmar_rank":13
   },
   {
@@ -2639,8 +2639,8 @@
     "oos_sortino":2.33,
     "oos_turnover":203.0,
     "sharpe_ratio_oos_is":2.62,
-    "is_sharpe_rank":61,
-    "is_calmar_rank":52,
+    "is_sharpe_rank":62,
+    "is_calmar_rank":57,
     "oos_sharpe_rank":3,
     "oos_calmar_rank":5
   },
@@ -2662,8 +2662,8 @@
     "oos_sortino":2.45,
     "oos_turnover":203.1,
     "sharpe_ratio_oos_is":2.74,
-    "is_sharpe_rank":67,
-    "is_calmar_rank":76,
+    "is_sharpe_rank":68,
+    "is_calmar_rank":83,
     "oos_sharpe_rank":1,
     "oos_calmar_rank":1
   },
@@ -2686,32 +2686,32 @@
     "oos_turnover":131.6,
     "sharpe_ratio_oos_is":2.22,
     "is_sharpe_rank":45,
-    "is_calmar_rank":42,
-    "oos_sharpe_rank":40,
-    "oos_calmar_rank":97
+    "is_calmar_rank":46,
+    "oos_sharpe_rank":37,
+    "oos_calmar_rank":99
   },
   {
     "config_id":"Raw_9M_5050_NZ | 12M | MA200Band_Sh60_GL50",
     "basket":"Raw_9M_5050_NZ",
     "reb":"12M",
     "regime":"MA200Band_Sh60_GL50",
-    "is_cagr":21.12,
-    "is_max_dd":-37.48,
-    "is_calmar":0.56,
+    "is_cagr":18.11,
+    "is_max_dd":-30.38,
+    "is_calmar":0.6,
     "is_sharpe":0.68,
-    "is_sortino":0.82,
-    "is_turnover":76.4,
-    "oos_cagr":48.11,
-    "oos_max_dd":-27.85,
-    "oos_calmar":1.73,
-    "oos_sharpe":1.89,
-    "oos_sortino":2.34,
-    "oos_turnover":79.0,
-    "sharpe_ratio_oos_is":2.78,
-    "is_sharpe_rank":88,
-    "is_calmar_rank":125,
-    "oos_sharpe_rank":8,
-    "oos_calmar_rank":75
+    "is_sortino":0.86,
+    "is_turnover":246.8,
+    "oos_cagr":42.94,
+    "oos_max_dd":-23.68,
+    "oos_calmar":1.81,
+    "oos_sharpe":1.79,
+    "oos_sortino":2.17,
+    "oos_turnover":207.6,
+    "sharpe_ratio_oos_is":2.63,
+    "is_sharpe_rank":90,
+    "is_calmar_rank":115,
+    "oos_sharpe_rank":22,
+    "oos_calmar_rank":62
   },
   {
     "config_id":"Raw_9M_5050_NZ | 12M | Breadth35_Sh50_GOL",
@@ -2731,9 +2731,9 @@
     "oos_sortino":2.02,
     "oos_turnover":238.0,
     "sharpe_ratio_oos_is":3.11,
-    "is_sharpe_rank":139,
-    "is_calmar_rank":145,
-    "oos_sharpe_rank":49,
+    "is_sharpe_rank":138,
+    "is_calmar_rank":146,
+    "oos_sharpe_rank":47,
     "oos_calmar_rank":60
   },
   {
@@ -2754,10 +2754,10 @@
     "oos_sortino":2.29,
     "oos_turnover":129.6,
     "sharpe_ratio_oos_is":3.21,
-    "is_sharpe_rank":136,
-    "is_calmar_rank":133,
-    "oos_sharpe_rank":21,
-    "oos_calmar_rank":92
+    "is_sharpe_rank":135,
+    "is_calmar_rank":134,
+    "oos_sharpe_rank":19,
+    "oos_calmar_rank":93
   },
   {
     "config_id":"Risk_9M_5050_EQ | 3M | Unhedged",
@@ -2777,10 +2777,10 @@
     "oos_sortino":1.78,
     "oos_turnover":195.9,
     "sharpe_ratio_oos_is":1.78,
-    "is_sharpe_rank":34,
-    "is_calmar_rank":94,
-    "oos_sharpe_rank":117,
-    "oos_calmar_rank":146
+    "is_sharpe_rank":33,
+    "is_calmar_rank":99,
+    "oos_sharpe_rank":116,
+    "oos_calmar_rank":147
   },
   {
     "config_id":"Risk_9M_5050_EQ | 3M | DD10_Sh50_GL50",
@@ -2801,9 +2801,9 @@
     "oos_turnover":258.3,
     "sharpe_ratio_oos_is":1.75,
     "is_sharpe_rank":31,
-    "is_calmar_rank":46,
-    "oos_sharpe_rank":117,
-    "oos_calmar_rank":92
+    "is_calmar_rank":50,
+    "oos_sharpe_rank":116,
+    "oos_calmar_rank":93
   },
   {
     "config_id":"Risk_9M_5050_EQ | 3M | DD12_Sh50_GL50",
@@ -2824,9 +2824,9 @@
     "oos_turnover":263.2,
     "sharpe_ratio_oos_is":1.8,
     "is_sharpe_rank":29,
-    "is_calmar_rank":33,
-    "oos_sharpe_rank":103,
-    "oos_calmar_rank":82
+    "is_calmar_rank":35,
+    "oos_sharpe_rank":101,
+    "oos_calmar_rank":84
   },
   {
     "config_id":"Risk_9M_5050_EQ | 3M | DD12_Sh75_GL50",
@@ -2848,7 +2848,7 @@
     "sharpe_ratio_oos_is":1.65,
     "is_sharpe_rank":14,
     "is_calmar_rank":18,
-    "oos_sharpe_rank":111,
+    "oos_sharpe_rank":110,
     "oos_calmar_rank":55
   },
   {
@@ -2871,7 +2871,7 @@
     "sharpe_ratio_oos_is":1.64,
     "is_sharpe_rank":6,
     "is_calmar_rank":8,
-    "oos_sharpe_rank":100,
+    "oos_sharpe_rank":97,
     "oos_calmar_rank":45
   },
   {
@@ -2894,7 +2894,7 @@
     "sharpe_ratio_oos_is":1.75,
     "is_sharpe_rank":10,
     "is_calmar_rank":11,
-    "oos_sharpe_rank":74,
+    "oos_sharpe_rank":73,
     "oos_calmar_rank":35
   },
   {
@@ -2925,23 +2925,23 @@
     "basket":"Risk_9M_5050_EQ",
     "reb":"3M",
     "regime":"MA200Band_Sh60_GL50",
-    "is_cagr":22.45,
-    "is_max_dd":-35.17,
-    "is_calmar":0.64,
-    "is_sharpe":0.8,
-    "is_sortino":0.95,
-    "is_turnover":172.3,
-    "oos_cagr":34.37,
-    "oos_max_dd":-27.09,
-    "oos_calmar":1.27,
-    "oos_sharpe":1.42,
-    "oos_sortino":1.78,
-    "oos_turnover":195.9,
+    "is_cagr":19.28,
+    "is_max_dd":-23.69,
+    "is_calmar":0.81,
+    "is_sharpe":0.79,
+    "is_sortino":0.99,
+    "is_turnover":333.3,
+    "oos_cagr":31.66,
+    "oos_max_dd":-22.57,
+    "oos_calmar":1.4,
+    "oos_sharpe":1.41,
+    "oos_sortino":1.7,
+    "oos_turnover":295.2,
     "sharpe_ratio_oos_is":1.78,
-    "is_sharpe_rank":34,
-    "is_calmar_rank":94,
-    "oos_sharpe_rank":117,
-    "oos_calmar_rank":146
+    "is_sharpe_rank":36,
+    "is_calmar_rank":28,
+    "oos_sharpe_rank":119,
+    "oos_calmar_rank":126
   },
   {
     "config_id":"Risk_9M_5050_EQ | 3M | Breadth35_Sh50_GOL",
@@ -2961,10 +2961,10 @@
     "oos_sortino":1.54,
     "oos_turnover":329.8,
     "sharpe_ratio_oos_is":1.66,
-    "is_sharpe_rank":37,
-    "is_calmar_rank":70,
-    "oos_sharpe_rank":137,
-    "oos_calmar_rank":140
+    "is_sharpe_rank":36,
+    "is_calmar_rank":78,
+    "oos_sharpe_rank":135,
+    "oos_calmar_rank":142
   },
   {
     "config_id":"Risk_9M_5050_EQ | 3M | VIX24_Sh50_GOL",
@@ -2984,8 +2984,8 @@
     "oos_sortino":1.77,
     "oos_turnover":242.9,
     "sharpe_ratio_oos_is":1.93,
-    "is_sharpe_rank":67,
-    "is_calmar_rank":66,
+    "is_sharpe_rank":68,
+    "is_calmar_rank":74,
     "oos_sharpe_rank":123,
     "oos_calmar_rank":150
   },
@@ -3008,9 +3008,9 @@
     "oos_turnover":126.1,
     "sharpe_ratio_oos_is":1.91,
     "is_sharpe_rank":29,
-    "is_calmar_rank":82,
-    "oos_sharpe_rank":71,
-    "oos_calmar_rank":106
+    "is_calmar_rank":88,
+    "oos_sharpe_rank":70,
+    "oos_calmar_rank":109
   },
   {
     "config_id":"Risk_9M_5050_EQ | 6M | DD10_Sh50_GL50",
@@ -3031,8 +3031,8 @@
     "oos_turnover":201.2,
     "sharpe_ratio_oos_is":1.94,
     "is_sharpe_rank":26,
-    "is_calmar_rank":60,
-    "oos_sharpe_rank":64,
+    "is_calmar_rank":66,
+    "oos_sharpe_rank":62,
     "oos_calmar_rank":47
   },
   {
@@ -3054,8 +3054,8 @@
     "oos_turnover":201.6,
     "sharpe_ratio_oos_is":1.99,
     "is_sharpe_rank":23,
-    "is_calmar_rank":52,
-    "oos_sharpe_rank":51,
+    "is_calmar_rank":57,
+    "oos_sharpe_rank":49,
     "oos_calmar_rank":40
   },
   {
@@ -3078,7 +3078,7 @@
     "sharpe_ratio_oos_is":1.74,
     "is_sharpe_rank":4,
     "is_calmar_rank":3,
-    "oos_sharpe_rank":62,
+    "oos_sharpe_rank":60,
     "oos_calmar_rank":23
   },
   {
@@ -3101,7 +3101,7 @@
     "sharpe_ratio_oos_is":1.73,
     "is_sharpe_rank":2,
     "is_calmar_rank":1,
-    "oos_sharpe_rank":53,
+    "oos_sharpe_rank":51,
     "oos_calmar_rank":12
   },
   {
@@ -3124,7 +3124,7 @@
     "sharpe_ratio_oos_is":1.84,
     "is_sharpe_rank":3,
     "is_calmar_rank":6,
-    "oos_sharpe_rank":37,
+    "oos_sharpe_rank":34,
     "oos_calmar_rank":9
   },
   {
@@ -3147,31 +3147,31 @@
     "sharpe_ratio_oos_is":1.62,
     "is_sharpe_rank":4,
     "is_calmar_rank":3,
-    "oos_sharpe_rank":93,
-    "oos_calmar_rank":104
+    "oos_sharpe_rank":90,
+    "oos_calmar_rank":108
   },
   {
     "config_id":"Risk_9M_5050_EQ | 6M | MA200Band_Sh60_GL50",
     "basket":"Risk_9M_5050_EQ",
     "reb":"6M",
     "regime":"MA200Band_Sh60_GL50",
-    "is_cagr":23.11,
-    "is_max_dd":-35.23,
-    "is_calmar":0.66,
-    "is_sharpe":0.82,
-    "is_sortino":0.99,
-    "is_turnover":110.9,
-    "oos_cagr":38.13,
-    "oos_max_dd":-25.77,
-    "oos_calmar":1.48,
-    "oos_sharpe":1.57,
-    "oos_sortino":1.96,
-    "oos_turnover":126.1,
-    "sharpe_ratio_oos_is":1.91,
-    "is_sharpe_rank":29,
-    "is_calmar_rank":82,
-    "oos_sharpe_rank":71,
-    "oos_calmar_rank":106
+    "is_cagr":20.77,
+    "is_max_dd":-26.51,
+    "is_calmar":0.78,
+    "is_sharpe":0.87,
+    "is_sortino":1.1,
+    "is_turnover":278.0,
+    "oos_cagr":35.8,
+    "oos_max_dd":-20.39,
+    "oos_calmar":1.76,
+    "oos_sharpe":1.59,
+    "oos_sortino":1.92,
+    "oos_turnover":239.4,
+    "sharpe_ratio_oos_is":1.83,
+    "is_sharpe_rank":18,
+    "is_calmar_rank":35,
+    "oos_sharpe_rank":65,
+    "oos_calmar_rank":70
   },
   {
     "config_id":"Risk_9M_5050_EQ | 6M | Breadth35_Sh50_GOL",
@@ -3191,10 +3191,10 @@
     "oos_sortino":1.74,
     "oos_turnover":273.3,
     "sharpe_ratio_oos_is":1.84,
-    "is_sharpe_rank":34,
-    "is_calmar_rank":94,
-    "oos_sharpe_rank":106,
-    "oos_calmar_rank":97
+    "is_sharpe_rank":33,
+    "is_calmar_rank":99,
+    "oos_sharpe_rank":104,
+    "oos_calmar_rank":99
   },
   {
     "config_id":"Risk_9M_5050_EQ | 6M | VIX24_Sh50_GOL",
@@ -3214,10 +3214,10 @@
     "oos_sortino":1.94,
     "oos_turnover":174.7,
     "sharpe_ratio_oos_is":2.11,
-    "is_sharpe_rank":67,
-    "is_calmar_rank":56,
-    "oos_sharpe_rank":91,
-    "oos_calmar_rank":127
+    "is_sharpe_rank":68,
+    "is_calmar_rank":61,
+    "oos_sharpe_rank":88,
+    "oos_calmar_rank":128
   },
   {
     "config_id":"Risk_9M_5050_EQ | 12M | Unhedged",
@@ -3238,9 +3238,9 @@
     "oos_turnover":80.2,
     "sharpe_ratio_oos_is":2.01,
     "is_sharpe_rank":14,
-    "is_calmar_rank":70,
-    "oos_sharpe_rank":28,
-    "oos_calmar_rank":78
+    "is_calmar_rank":78,
+    "oos_sharpe_rank":26,
+    "oos_calmar_rank":80
   },
   {
     "config_id":"Risk_9M_5050_EQ | 12M | DD10_Sh50_GL50",
@@ -3261,8 +3261,8 @@
     "oos_turnover":164.3,
     "sharpe_ratio_oos_is":1.94,
     "is_sharpe_rank":23,
-    "is_calmar_rank":39,
-    "oos_sharpe_rank":59,
+    "is_calmar_rank":42,
+    "oos_sharpe_rank":57,
     "oos_calmar_rank":56
   },
   {
@@ -3284,8 +3284,8 @@
     "oos_turnover":164.3,
     "sharpe_ratio_oos_is":1.99,
     "is_sharpe_rank":20,
-    "is_calmar_rank":29,
-    "oos_sharpe_rank":48,
+    "is_calmar_rank":31,
+    "oos_sharpe_rank":44,
     "oos_calmar_rank":51
   },
   {
@@ -3308,7 +3308,7 @@
     "sharpe_ratio_oos_is":1.88,
     "is_sharpe_rank":14,
     "is_calmar_rank":21,
-    "oos_sharpe_rank":55,
+    "oos_sharpe_rank":53,
     "oos_calmar_rank":37
   },
   {
@@ -3331,7 +3331,7 @@
     "sharpe_ratio_oos_is":1.87,
     "is_sharpe_rank":6,
     "is_calmar_rank":10,
-    "oos_sharpe_rank":44,
+    "oos_sharpe_rank":41,
     "oos_calmar_rank":21
   },
   {
@@ -3353,8 +3353,8 @@
     "oos_turnover":204.1,
     "sharpe_ratio_oos_is":1.98,
     "is_sharpe_rank":10,
-    "is_calmar_rank":25,
-    "oos_sharpe_rank":32,
+    "is_calmar_rank":26,
+    "oos_sharpe_rank":28,
     "oos_calmar_rank":16
   },
   {
@@ -3377,31 +3377,31 @@
     "sharpe_ratio_oos_is":1.53,
     "is_sharpe_rank":1,
     "is_calmar_rank":2,
-    "oos_sharpe_rank":86,
-    "oos_calmar_rank":110
+    "oos_sharpe_rank":84,
+    "oos_calmar_rank":114
   },
   {
     "config_id":"Risk_9M_5050_EQ | 12M | MA200Band_Sh60_GL50",
     "basket":"Risk_9M_5050_EQ",
     "reb":"12M",
     "regime":"MA200Band_Sh60_GL50",
-    "is_cagr":24.19,
-    "is_max_dd":-35.16,
-    "is_calmar":0.69,
-    "is_sharpe":0.88,
+    "is_cagr":19.89,
+    "is_max_dd":-27.9,
+    "is_calmar":0.71,
+    "is_sharpe":0.83,
     "is_sortino":1.06,
-    "is_turnover":70.9,
-    "oos_cagr":40.86,
-    "oos_max_dd":-23.81,
-    "oos_calmar":1.72,
-    "oos_sharpe":1.77,
-    "oos_sortino":2.15,
-    "oos_turnover":80.2,
-    "sharpe_ratio_oos_is":2.01,
-    "is_sharpe_rank":14,
-    "is_calmar_rank":70,
-    "oos_sharpe_rank":28,
-    "oos_calmar_rank":78
+    "is_turnover":244.1,
+    "oos_cagr":34.27,
+    "oos_max_dd":-21.59,
+    "oos_calmar":1.59,
+    "oos_sharpe":1.56,
+    "oos_sortino":1.85,
+    "oos_turnover":208.5,
+    "sharpe_ratio_oos_is":1.88,
+    "is_sharpe_rank":26,
+    "is_calmar_rank":71,
+    "oos_sharpe_rank":73,
+    "oos_calmar_rank":97
   },
   {
     "config_id":"Risk_9M_5050_EQ | 12M | Breadth35_Sh50_GOL",
@@ -3421,10 +3421,10 @@
     "oos_sortino":1.74,
     "oos_turnover":238.6,
     "sharpe_ratio_oos_is":2.05,
-    "is_sharpe_rank":61,
-    "is_calmar_rank":102,
-    "oos_sharpe_rank":96,
-    "oos_calmar_rank":102
+    "is_sharpe_rank":62,
+    "is_calmar_rank":107,
+    "oos_sharpe_rank":93,
+    "oos_calmar_rank":105
   },
   {
     "config_id":"Risk_9M_5050_EQ | 12M | VIX24_Sh50_GOL",
@@ -3444,9 +3444,9 @@
     "oos_sortino":2.08,
     "oos_turnover":128.8,
     "sharpe_ratio_oos_is":2.29,
-    "is_sharpe_rank":67,
-    "is_calmar_rank":74,
-    "oos_sharpe_rank":55,
-    "oos_calmar_rank":99
+    "is_sharpe_rank":68,
+    "is_calmar_rank":81,
+    "oos_sharpe_rank":53,
+    "oos_calmar_rank":101
   }
 ]

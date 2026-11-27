@@ -13,6 +13,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from src.backtester import BacktestConfig, compute_metrics, run_backtest  # noqa: E402
 from src.data_loader import _repair_transient_glitches  # noqa: E402
 from src.momentum import combine_sleeves, compute_score_matrix, normalize_z_pdf, select_affordable_blend, select_sleeve_weights  # noqa: E402
+from src.nse_archive_loader import parse_bc_purpose_factor  # noqa: E402
 from src.nse_mcp import CMMKT_MCP_URL, NseMcpClient  # noqa: E402
 from src.prowess_loader import build_point_in_time_midcap150_mask, load_prowess_file, prowess_to_panels  # noqa: E402
 from src.regime import build_defensive_series, build_regime_features, compute_equity_allocation_series  # noqa: E402
@@ -148,7 +149,7 @@ class EngineTests(unittest.TestCase):
 
     def test_live_state_and_config_strict_json(self):
         cfg = json.loads((REPO_ROOT / "config" / "strategy.json").read_text())
-        self.assertEqual(cfg["primary_strategy"], "F2_9m_6M_DD12_Sh75_GoldLiq50")
+        self.assertEqual(cfg["primary_strategy"], "R2_Risk9m_6M_DD15_Sh75_GoldLiq50")
         live_path = REPO_ROOT / "data" / "live_state.json"
         if live_path.exists():
             def _reject_nan(val):
@@ -157,7 +158,9 @@ class EngineTests(unittest.TestCase):
             self.assertEqual(data["universe_count"], 150)
             self.assertIn(data["regime"]["state"], {"RISK_ON", "DEFENSIVE"})
             self.assertGreaterEqual(len(data["rankings_top60"]), 50)
+            self.assertEqual(data["orders_1L"]["R2_Risk9M_SlotCap_LiqSweep"]["held_count"], 30)
             self.assertEqual(data["orders_1L"]["F2_SlotCap_LiqSweep"]["held_count"], 30)
+            self.assertIn("rk9", data["universe_scores"][0])
 
     def test_prowess_loader_and_point_in_time_mask(self):
         import tempfile
@@ -182,6 +185,14 @@ class EngineTests(unittest.TestCase):
             self.assertFalse(bool(mask.iloc[-1]["C000"]))  # Large cap Rank 1 excluded
             self.assertTrue(bool(mask.iloc[-1]["C150"]))   # Midcap Rank 151 included
             self.assertFalse(bool(mask.iloc[-1]["C280"]))  # Small cap Rank 281 excluded
+
+    def test_nse_bc_corporate_action_factor_parser(self):
+        self.assertAlmostEqual(parse_bc_purpose_factor("FV SPLT FRM RS 10 TO RS 2")[0], 0.2)
+        self.assertAlmostEqual(parse_bc_purpose_factor("BONUS 3:1")[0], 0.25)
+        self.assertAlmostEqual(parse_bc_purpose_factor("BON 1:2/SPLIT RS.10TORS.2")[0], (2.0 / 3.0) * 0.2)
+        self.assertAlmostEqual(parse_bc_purpose_factor("AGM/DIV-FINRS 22+SPLRS 10")[0], 1.0)
+        self.assertAlmostEqual(parse_bc_purpose_factor("DIV- FIN RS.6.5+SPL RS.60")[0], 1.0)
+        self.assertAlmostEqual(parse_bc_purpose_factor("SCH OF AGMT-BONUS DEB 1:1")[0], 1.0)
 
 
 if __name__ == "__main__":

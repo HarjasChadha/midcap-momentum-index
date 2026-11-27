@@ -6,9 +6,11 @@ import numpy as np
 import pandas as pd
 
 
-def build_ew_index(adj_df: pd.DataFrame, base: float = 100.0) -> pd.Series:
-    """Equal-weighted daily index of active Nifty Midcap 150 constituents (survivorship-aware on IPO dates)."""
+def build_ew_index(adj_df: pd.DataFrame, base: float = 100.0, mask: pd.DataFrame | None = None) -> pd.Series:
+    """Equal-weighted daily index of active Nifty Midcap 150 constituents (survivorship-aware on IPO/mask dates)."""
     daily_rets = adj_df.pct_change(fill_method=None)
+    if mask is not None:
+        daily_rets = daily_rets.where(mask.reindex_like(daily_rets).fillna(False))
     ew_ret = daily_rets.mean(axis=1, skipna=True).fillna(0.0)
     return base * (1.0 + ew_ret).cumprod()
 
@@ -62,18 +64,18 @@ def build_defensive_series(bench_df: pd.DataFrame, liquid_annual_rate: float = 0
     return out
 
 
-def build_regime_features(adj_df: pd.DataFrame, bench_df: pd.DataFrame) -> pd.DataFrame:
+def build_regime_features(adj_df: pd.DataFrame, bench_df: pd.DataFrame, mask: pd.DataFrame | None = None) -> pd.DataFrame:
     """Compute universe breadth, index trend/drawdown, and VIX features aligned at close t."""
     feat = pd.DataFrame(index=adj_df.index)
 
-    # Equal-weight Midcap 150 universe index (full 10y coverage)
-    ew = build_ew_index(adj_df)
+    # Equal-weight Midcap 150 universe index
+    ew = build_ew_index(adj_df, mask=mask)
     feat["ew_index"] = ew
     for lb in (20, 50, 100, 150, 200):
         feat[f"ew_ma{lb}"] = ew.rolling(lb, min_periods=max(10, lb // 2)).mean()
     feat["ew_dd252"] = ew / ew.rolling(252, min_periods=20).max() - 1.0
 
-    # Official index where available (2019+)
+    # Official index where available
     if "NIFTY_MIDCAP_150" in bench_df.columns:
         idx_s = bench_df["NIFTY_MIDCAP_150"].ffill()
         feat["idx_price"] = idx_s
@@ -81,11 +83,15 @@ def build_regime_features(adj_df: pd.DataFrame, bench_df: pd.DataFrame) -> pd.Da
         feat["idx_ma200"] = idx_s.rolling(200, min_periods=50).mean()
         feat["idx_dd252"] = idx_s / idx_s.rolling(252, min_periods=20).max() - 1.0
 
-    # Universe Breadth: % of active Midcap 150 constituents above their 50-DMA & 200-DMA
+    # Universe Breadth: % of active constituents above their 50-DMA & 200-DMA
     ma50_stocks = adj_df.rolling(50, min_periods=35).mean()
     ma200_stocks = adj_df.rolling(200, min_periods=120).mean()
     active_50 = (adj_df.notna() & ma50_stocks.notna())
     active_200 = (adj_df.notna() & ma200_stocks.notna())
+    if mask is not None:
+        m_aligned = mask.reindex_like(adj_df).fillna(False)
+        active_50 = active_50 & m_aligned
+        active_200 = active_200 & m_aligned
 
     b50 = (adj_df > ma50_stocks).where(active_50).mean(axis=1)
     b200 = (adj_df > ma200_stocks).where(active_200).mean(axis=1)

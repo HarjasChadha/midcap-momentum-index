@@ -89,9 +89,10 @@ def main() -> None:
             assert page.locator("#triggersTable tbody tr").count() >= 10
             page.screenshot(path=str(ARTIFACT_DIR / "midcap_dashboard_charts.png"), full_page=False)
 
-            # 6) Switch to Research tab & verify matrix
+            # 6) Switch to Research tab & verify both 16Y PIT matrix and clean 2018-26 matrix
             page.click('button[data-tab="research"]')
             page.wait_for_timeout(200)
+            assert page.locator("#pitResearchTable tbody tr").count() >= 15
             assert page.locator("#researchTable tbody tr").count() >= 25
 
             # 7) Switch to Rankings tab & test filter

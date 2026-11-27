@@ -27,9 +27,9 @@ def _eval_grid(adj_df, raw_df, scores, def_df, feat, stock_ma50, start_dt: str, 
         "DD12_Sh75_GOL": (compute_equity_allocation_series(feat, "index_dd", {"dd_thresh": 0.12, "reenter_ma": 50, "defensive_shift": 0.75}), "GOLD_OR_LIQUID", "weakest_first"),
         "DD12_Sh75_Gold": (compute_equity_allocation_series(feat, "index_dd", {"dd_thresh": 0.12, "reenter_ma": 50, "defensive_shift": 0.75}), "GOLDBEES", "weakest_first"),
         "DD15_Sh75_GL50": (compute_equity_allocation_series(feat, "index_dd", {"dd_thresh": 0.15, "reenter_ma": 50, "defensive_shift": 0.75}), "GOLD_50_LIQUID_50", "weakest_first"),
-        "MA200Band_Sh60_GL50": (compute_equity_allocation_series(feat, "index_ma_band", {"ma_len": 200, "exit_band": 0.03, "enter_band": 0.01, "defensive_shift": 0.60}), "GOLD_50_LIQUID_50", "weakest_first"),
+        "MA200Band_Sh60_GL50": (compute_equity_allocation_series(feat, "index_ma_band", {"ma_len": 200, "exit_band": 0.97, "enter_band": 1.01, "defensive_shift": 0.60}), "GOLD_50_LIQUID_50", "weakest_first"),
         "Breadth35_Sh50_GOL": (compute_equity_allocation_series(feat, "breadth_hysteresis", {"col": "breadth_50_sma10", "exit_below": 0.35, "enter_above": 0.50, "defensive_shift": 0.50}), "GOLD_OR_LIQUID", "weakest_first"),
-        "VIX24_Sh50_GOL": (compute_equity_allocation_series(feat, "vix_filter", {"exit_above": 24.0, "enter_below": 20.0, "defensive_shift": 0.50}), "GOLD_OR_LIQUID", "weakest_first"),
+        "VIX24_Sh50_GOL": (compute_equity_allocation_series(feat, "vix_filter", {"vix_exit": 24.0, "vix_enter": 20.0, "defensive_shift": 0.50}), "GOLD_OR_LIQUID", "weakest_first"),
     }
 
     baskets = [

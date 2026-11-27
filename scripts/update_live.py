@@ -254,6 +254,7 @@ def build_live_state() -> dict[str, Any]:
     presets_summary: dict[str, Any] = {}
     nav_curves: dict[str, pd.Series] = {}
 
+    reg_dd15 = compute_equity_allocation_series(feat, "index_dd", {"dd_thresh": 0.15, "reenter_ma": 50, "defensive_shift": 0.75})
     reg_dd75 = compute_equity_allocation_series(feat, "index_dd", {"dd_thresh": 0.12, "reenter_ma": 50, "defensive_shift": 0.75})
     reg_dd50 = compute_equity_allocation_series(feat, "index_dd", {"dd_thresh": 0.12, "reenter_ma": 50, "defensive_shift": 0.50})
     reg_none = compute_equity_allocation_series(feat, "none", {})
@@ -262,6 +263,9 @@ def build_live_state() -> dict[str, Any]:
         return [{"score_key": key, "top_n": 20, "alloc": 0.5, "weighting": wt}, {"score_key": key, "top_n": 30, "alloc": 0.5, "weighting": wt}]
 
     curve_specs = {
+        "R2_Risk9m_6M_DD15_Sh75_GoldLiq50": (_slv("risk_9m", "equal"), 126, reg_dd15, "GOLD_50_LIQUID_50", "weakest_first", False, False),
+        "R2_Disc1L_SlotCap": (_slv("risk_9m", "equal"), 126, reg_dd15, "GOLD_50_LIQUID_50", "weakest_first", True, True),
+        "R7_NormZ_Risk9m_6M_DD15_Sh75_GoldLiq50": (_slv("risk_9m", "norm_z"), 126, reg_dd15, "GOLD_50_LIQUID_50", "weakest_first", False, False),
         "F2_9m_6M_DD12_Sh75_GoldLiq50": (_slv("raw_9m", "equal"), 126, reg_dd75, "GOLD_50_LIQUID_50", "weakest_first", False, False),
         "F2_Disc1L_SlotCap": (_slv("raw_9m", "equal"), 126, reg_dd75, "GOLD_50_LIQUID_50", "weakest_first", True, True),
         "F7_NormZ_9m_6M_DD12_Sh75_GoldLiq50": (_slv("raw_9m", "norm_z"), 126, reg_dd75, "GOLD_50_LIQUID_50", "weakest_first", False, False),
@@ -306,17 +310,16 @@ def build_live_state() -> dict[str, Any]:
     nav_curves["GOLD_50_LIQUID_50"] = gold50_series / float(gold50_series.iloc[0]) * 100_000.0
     presets_summary["GOLD_50_LIQUID_50"] = compute_metrics(nav_curves["GOLD_50_LIQUID_50"])
 
-    # Compute current live posture under F2 (Note: compute_equity_allocation_series is shifted +1d for T+1 execution; evaluate instantaneous EOD state cleanly using unshifted ew_dd252/ew_ma50 + latest shifted regime)
+    # Compute current live posture under primary R2 (DD > 15%, Sh75%, re-enter >50DMA & DD > -9.0%)
     ew_cur = float(feat["ew_index"].iloc[-1])
     ew_peak252 = float(feat["ew_index"].iloc[max(0, len(feat) - 252) :].max())
     ew_dd_now = ew_cur / ew_peak252 - 1.0 if ew_peak252 > 0 else 0.0
     ew_ma50_now = float(feat["ew_ma50"].iloc[-1])
     ew_ma200_now = float(feat["ew_ma200"].iloc[-1])
-    active_eq_frac = float(reg_dd75.iloc[-1])
-    # Update active_eq_frac on today's EOD close for tomorrow's T+1 posture
-    if active_eq_frac > 0.5 and ew_dd_now < -0.12:
+    active_eq_frac = float(reg_dd15.iloc[-1])
+    if active_eq_frac > 0.5 and ew_dd_now < -0.15:
         t1_eq_frac = 0.25
-    elif active_eq_frac < 0.99 and ew_cur > ew_ma50_now and ew_dd_now > -0.072:
+    elif active_eq_frac < 0.99 and ew_cur > ew_ma50_now and ew_dd_now > -0.09:
         t1_eq_frac = 1.0
     else:
         t1_eq_frac = active_eq_frac
@@ -336,43 +339,49 @@ def build_live_state() -> dict[str, Any]:
             mpk = float(ms.iloc[max(0, len(ms) - 252) :].max())
             midcap_idx_dd252 = (float(ms.iloc[-1]) / mpk - 1.0) * 100.0
 
-    # Top 50 rankings (both raw_9m and raw_12m included for client-side dynamic calculator!)
-    ranked_9m = s9.dropna().sort_values(ascending=False)
-    w20_eq = select_sleeve_weights(s9, 20, "equal")
-    w30_eq = select_sleeve_weights(s9, 30, "equal")
-    w_blend_eq = combine_sleeves([(0.5, w20_eq), (0.5, w30_eq)])
-    w_blend_slotcap = select_affordable_blend({"raw_9m": s9}, _slv("raw_9m", "equal"), raw_last, 100_000.0)
+    # Top 60 rankings + Risk-Adj & Raw weights for client-side dynamic calculator
+    ranked_raw9 = s9.dropna().sort_values(ascending=False)
+    ranked_risk9 = sr9.dropna().sort_values(ascending=False)
+    w_raw_eq = combine_sleeves([(0.5, select_sleeve_weights(s9, 20, "equal")), (0.5, select_sleeve_weights(s9, 30, "equal"))])
+    w_raw_slotcap = select_affordable_blend({"raw_9m": s9}, _slv("raw_9m", "equal"), raw_last, 100_000.0)
+    w_risk_eq = combine_sleeves([(0.5, select_sleeve_weights(sr9, 20, "equal")), (0.5, select_sleeve_weights(sr9, 30, "equal"))])
+    w_risk_slotcap = select_affordable_blend({"risk_9m": sr9}, _slv("risk_9m", "equal"), raw_last, 100_000.0)
+    w_risk_nz = combine_sleeves([(0.5, select_sleeve_weights(sr9, 20, "norm_z")), (0.5, select_sleeve_weights(sr9, 30, "norm_z"))])
+    w_risk_nz_slotcap = select_affordable_blend({"risk_9m": sr9}, _slv("risk_9m", "norm_z"), raw_last, 100_000.0)
     w_blend_nz = combine_sleeves([(0.5, select_sleeve_weights(s9, 20, "norm_z")), (0.5, select_sleeve_weights(s9, 30, "norm_z"))])
-    w_blend_nz_slotcap = select_affordable_blend({"raw_9m": s9}, _slv("raw_9m", "norm_z"), raw_last, 100_000.0)
-
     w_blend_12m_eq = combine_sleeves([(0.5, select_sleeve_weights(s12, 20, "equal")), (0.5, select_sleeve_weights(s12, 30, "equal"))])
 
+    rank_raw9_map = {sym: r for r, sym in enumerate(ranked_raw9.index, start=1)}
     rank12_map = {sym: r for r, sym in enumerate(s12.dropna().sort_values(ascending=False).index, start=1)}
     adj_live = adj_df.ffill(limit=2)
     rankings_top60 = []
-    for r, sym in enumerate(ranked_9m.index[:60], start=1):
+    for r_risk, sym in enumerate(ranked_risk9.index[:60], start=1):
         px = float(raw_last.get(sym, np.nan))
         adx = float(adj_live.loc[last_dt, sym]) if pd.notna(adj_live.loc[last_dt, sym]) else float("nan")
         m50 = float(ma50_last.get(sym, np.nan))
         rankings_top60.append(
             {
-                "rank_9m": r,
+                "rank_risk9m": r_risk,
+                "rank_9m": rank_raw9_map.get(sym),
                 "rank_12m": rank12_map.get(sym),
                 "symbol": sym,
                 "price": px,
-                "raw_9m_pct": float(s9[sym] * 100.0),
+                "risk_9m": float(sr9[sym]),
+                "raw_9m_pct": float(s9[sym] * 100.0) if pd.notna(s9.get(sym)) else None,
                 "raw_12m_pct": float(s12.get(sym, np.nan) * 100.0) if pd.notna(s12.get(sym)) else None,
-                "risk_9m": float(sr9.get(sym, np.nan)) if pd.notna(sr9.get(sym)) else None,
                 "above_ma50": bool(math.isfinite(adx) and math.isfinite(m50) and adx > m50),
-                "ew_5050_wt_pct": round(w_blend_eq.get(sym, 0.0) * 100.0, 2),
+                "risk_ew_5050_wt_pct": round(w_risk_eq.get(sym, 0.0) * 100.0, 2),
+                "risk_nz_5050_wt_pct": round(w_risk_nz.get(sym, 0.0) * 100.0, 2),
+                "risk_affordable_slotcap_1l": sym in w_risk_slotcap,
+                "ew_5050_wt_pct": round(w_raw_eq.get(sym, 0.0) * 100.0, 2),
                 "nz_5050_wt_pct": round(w_blend_nz.get(sym, 0.0) * 100.0, 2),
-                "affordable_slotcap_1l": sym in w_blend_slotcap,
+                "affordable_slotcap_1l": sym in w_raw_slotcap,
             }
         )
 
-    # Full 150 scored list (compact for dynamic client-side preset switching between 9M/12M & Equal/NormZ)
+    # Full 150 scored list (compact for client-side dynamic preset switching: Risk9M / Raw9M / Raw12M & Equal / NormZ)
     universe_scores = []
-    for r, sym in enumerate(ranked_9m.index, start=1):
+    for sym in ranked_risk9.index:
         px = float(raw_last.get(sym, np.nan))
         if not math.isfinite(px) or px <= 0:
             continue
@@ -380,13 +389,14 @@ def build_live_state() -> dict[str, Any]:
             {
                 "sym": sym,
                 "px": round(px, 2),
-                "r9": round(float(s9[sym]) * 100.0, 2),
+                "rk9": round(float(sr9[sym]), 4),
+                "r9": round(float(s9[sym]) * 100.0, 2) if pd.notna(s9.get(sym)) else None,
                 "r12": round(float(s12[sym]) * 100.0, 2) if pd.notna(s12.get(sym)) else None,
                 "ma50": bool(pd.notna(ma50_last.get(sym)) and adj_live.loc[last_dt, sym] > ma50_last.get(sym)),
             }
         )
 
-    # Downsample chart series cleanly to weekly (Fri / every 5 trading days + latest point) for ultra-fast browser load
+    # Downsample chart series cleanly to weekly (every 3 trading days + latest point) for fast browser load
     nav_df = pd.DataFrame(nav_curves).loc[clean_start:]
     sample_idx = list(range(0, len(nav_df), 3))
     if sample_idx[-1] != len(nav_df) - 1:
@@ -395,9 +405,60 @@ def build_live_state() -> dict[str, Any]:
     dd_sub = (nav_df / nav_df.cummax() - 1.0).iloc[sample_idx] * 100.0
     ew_dd_sub = feat["ew_dd252"].reindex(nav_sub.index) * 100.0
 
-    # Load compact research summary highlights from clean_verification + phase2_plateau if present
     clean_ver_path = REPO_ROOT / "reports" / "clean_verification.json"
     clean_ver = json.loads(clean_ver_path.read_text()) if clean_ver_path.exists() else []
+
+    # Compact 16-year Zero-Survivorship Point-in-Time vs Current summary from official NSE archives (2011-2026)
+    pit_validation_16yr: list[dict[str, Any]] = []
+    pit_path = REPO_ROOT / "reports" / "nse_17yr_train_val_oos.json"
+    if pit_path.exists():
+        pit_json = json.loads(pit_path.read_text())
+        bms = pit_json.get("benchmarks", {})
+        for u_key, b_key, lbl in [
+            ("PIT Zero-Survivorship (787 Stocks)", "PIT", "Passive Midcap 150 EW Proxy (Ranks 81-230)"),
+            ("Current-2026 Constituents (Biased)", "CURR", "Passive Midcap 150 EW Universe"),
+        ]:
+            bm = bms.get(b_key, {})
+            if bm:
+                pit_validation_16yr.append(
+                    {
+                        "universe": u_key,
+                        "strategy": lbl,
+                        "p1_cagr": bm.get("P1_Train_2011_16", {}).get("cagr_pct"),
+                        "p2_cagr": bm.get("P2_Val1_2016_21", {}).get("cagr_pct"),
+                        "p3_cagr": bm.get("P3_Val2_2021_26", {}).get("cagr_pct"),
+                        "full_cagr": bm.get("FULL_2011_26", {}).get("cagr_pct"),
+                        "full_dd": bm.get("FULL_2011_26", {}).get("max_dd_pct"),
+                        "full_sh": bm.get("FULL_2011_26", {}).get("sharpe"),
+                    }
+                )
+        want_cids = {
+            "Risk_9M_EW | 6M | DD15_Sh75_GL50": "R2 Upgraded (Risk9M EW · 6M · DD>15%)",
+            "Hybrid_9M_EW | 6M | DD15_Sh75_GL50": "Hybrid 50/50 (Raw+Risk · 6M · DD>15%)",
+            "Raw_9M_NormZ | 6M | DD15_Sh75_GL50": "Raw9M NormZ · 6M · DD>15%",
+            "Raw_9M_EW | 6M | DD15_Sh75_GL50": "Raw9M EW · 6M · DD>15%",
+            "Risk_9M_EW | 6M | DD12_Sh75_GL50": "Risk9M EW · 6M · DD>12%",
+            "Raw_9M_EW | 6M | DD12_Sh75_GL50": "F2 Legacy (Raw9M EW · 6M · DD>12%)",
+            "Risk_9M_EW | 6M | MA200Band_Sh75_GL50": "Risk9M EW · 6M · MA200 Band",
+            "Raw_9M_EW | 6M | Unhedged": "Unhedged Raw9M EW · 6M",
+        }
+        rec_map = {(r["universe"], r["config_id"]): r for r in pit_json.get("records", [])}
+        for u_raw, u_lbl in [("PIT_NO_SURVIVOR_150", "PIT Zero-Survivorship (787 Stocks)"), ("CURRENT_2026_150", "Current-2026 Constituents (Biased)")]:
+            for cid, disp in want_cids.items():
+                r = rec_map.get((u_raw, cid))
+                if r:
+                    pit_validation_16yr.append(
+                        {
+                            "universe": u_lbl,
+                            "strategy": disp,
+                            "p1_cagr": r["P1_Train_2011_16_cagr"],
+                            "p2_cagr": r["P2_Val1_2016_21_cagr"],
+                            "p3_cagr": r["P3_Val2_2021_26_cagr"],
+                            "full_cagr": r["FULL_2011_26_cagr"],
+                            "full_dd": r["FULL_2011_26_dd"],
+                            "full_sh": r["FULL_2011_26_sh"],
+                        }
+                    )
 
     payload = {
         "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -421,8 +482,8 @@ def build_live_state() -> dict[str, Any]:
             "ew_ma50": round(ew_ma50_now, 2),
             "ew_ma200": round(ew_ma200_now, 2),
             "ew_dd252_pct": round(ew_dd_now * 100.0, 2),
-            "trigger_dd_pct": -12.0,
-            "reenter_dd_pct": -7.2,
+            "trigger_dd_pct": -15.0,
+            "reenter_dd_pct": -9.0,
             "midcap150_index": midcap_idx_now,
             "midcap150_dd252_pct": round(midcap_idx_dd252, 2) if midcap_idx_dd252 is not None else None,
             "breadth_50_sma10_pct": round(float(feat["breadth_50_sma10"].iloc[-1]) * 100.0, 2),
@@ -433,12 +494,14 @@ def build_live_state() -> dict[str, Any]:
                 "EBBETF0431": {"price": float(bench_df["EBBETF0431"].dropna().iloc[-1]) if "EBBETF0431" in bench_df.columns else None},
                 "LTGILTBEES": {"price": float(bench_df["LTGILTBEES"].dropna().iloc[-1]) if "LTGILTBEES" in bench_df.columns else None},
             },
-            "historical_triggers": _extract_regime_triggers(feat.loc[clean_start:], reg_dd75.loc[clean_start:]),
+            "historical_triggers": _extract_regime_triggers(feat.loc[clean_start:], reg_dd15.loc[clean_start:]),
         },
         "orders_1L": {
-            "F2_SlotCap_LiqSweep": _build_discrete_orders(w_blend_slotcap, raw_last, s9, s12, 100_000.0, liquidcase_px),
-            "F2_NoCap": _build_discrete_orders(w_blend_eq, raw_last, s9, s12, 100_000.0, liquidcase_px),
-            "F7_NormZ_SlotCap_LiqSweep": _build_discrete_orders(w_blend_nz_slotcap, raw_last, s9, s12, 100_000.0, liquidcase_px),
+            "R2_Risk9M_SlotCap_LiqSweep": _build_discrete_orders(w_risk_slotcap, raw_last, s9, s12, 100_000.0, liquidcase_px),
+            "R2_Risk9M_NoCap": _build_discrete_orders(w_risk_eq, raw_last, s9, s12, 100_000.0, liquidcase_px),
+            "R7_Risk9M_NormZ_SlotCap": _build_discrete_orders(w_risk_nz_slotcap, raw_last, s9, s12, 100_000.0, liquidcase_px),
+            "F2_SlotCap_LiqSweep": _build_discrete_orders(w_raw_slotcap, raw_last, s9, s12, 100_000.0, liquidcase_px),
+            "F2_NoCap": _build_discrete_orders(w_raw_eq, raw_last, s9, s12, 100_000.0, liquidcase_px),
             "F4_12M_NoCap": _build_discrete_orders(w_blend_12m_eq, raw_last, s9, s12, 100_000.0, liquidcase_px),
         },
         "rankings_top60": rankings_top60,
@@ -451,6 +514,7 @@ def build_live_state() -> dict[str, Any]:
             "ew_dd252_pct": [round(float(x), 2) for x in ew_dd_sub.values],
         },
         "clean_verification": clean_ver,
+        "pit_validation_16yr": pit_validation_16yr,
     }
 
     safe_payload = sanitize_for_json(payload)

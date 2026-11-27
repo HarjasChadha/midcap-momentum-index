@@ -128,6 +128,7 @@ def run_backtest(
     eq_alloc_series: pd.Series,
     cfg: BacktestConfig,
     stock_ma50: pd.DataFrame | None = None,
+    vol_63: pd.DataFrame | None = None,
 ) -> dict[str, Any]:
     """Run daily zero-look-ahead backtest across cfg.start_date..cfg.end_date."""
     mask = (adj_df.index >= cfg.start_date) & (adj_df.index <= cfg.end_date)
@@ -141,7 +142,12 @@ def run_backtest(
     sweep_col = cfg.sweep_asset if cfg.sweep_asset in def_df.columns else cfg.defensive_asset
     sweep_series = def_df[sweep_col].reindex(dates).ffill().bfill(limit=5)
     eq_alloc = eq_alloc_series.reindex(dates).fillna(1.0).clip(0.0, 1.0)
-    vol_63 = adj_df.pct_change(fill_method=None).rolling(63, min_periods=20).std().reindex(dates) * math.sqrt(252.0)
+    sleeves_cfg = cfg.sleeves or [{"score_key": "raw_9m", "top_n": 30, "alloc": 1.0, "weighting": "equal"}]
+    need_vol = any(s.get("weighting") == "inv_vol" for s in sleeves_cfg)
+    if vol_63 is None:
+        vol_63 = (adj_df.pct_change(fill_method=None).rolling(63, min_periods=20).std().reindex(dates) * math.sqrt(252.0)) if need_vol else pd.DataFrame(index=dates)
+    else:
+        vol_63 = vol_63.reindex(dates)
 
     first_idx_pos = adj_df.index.get_loc(dates[0])
     first_prev_date = str(adj_df.index[first_idx_pos - 1]) if isinstance(first_idx_pos, int) and first_idx_pos > 0 else dates[0]

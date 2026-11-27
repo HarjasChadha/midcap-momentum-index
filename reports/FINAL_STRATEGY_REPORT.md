@@ -1,88 +1,50 @@
-# DIY Nifty Midcap 150 Momentum Index — Research & Strategy Specification
+# DIY Nifty Midcap 150 Momentum Index — 16-Year Zero-Survivorship & Multi-Period Research Specification
 
-**Repository:** `HarjasChadha/midcap-momentum-index` · **Data Window:** `2016-11-28` to `2026-11-26` (150 Nifty Midcap 150 constituents, 2,471 NSE trading days) · **Clean Comparison Window (100% Warm 9M & 12M Lookbacks):** `2018-01-02` to `2026-11-26`.
-
----
-
-## Executive Recommendation
-
-| Role | Strategy Configuration | Clean `2018–26` Post-Tax (`15bps`) | Defensive Taxed (`TaxDef`) | `₹1L` Discrete (`SlotCap + LiqSweep`) | Max DD / Calmar |
-|---|---|---:|---:|---:|---:|
-| **#1 Recommended Overall (`F2`)** | **50% Raw20 + 50% Raw30 · 9M LB (1M Skip) · Equal-Wt · 6M Rebal · Index `DD>12%` Shift `75%` Weakest-First → `50/50 Gold+Liquid`** | **25.78% CAGR** (`1.06` Sharpe) | **25.22%** (`1.03` Sharpe) | **25.69% CAGR** (`1.09` Sharpe, **81.9%** avg eq) | **-24.57%** (`1.05`) |
-| **Runner-Up Concentrated (`F7`)** | Same as `F2` with **PDF `NormZ` weighting** (`1+z` / `(1-z)^-1`) | **28.34% CAGR** (`1.15` Sharpe) | **27.75%** (`1.12` Sharpe) | **28.08% CAGR** (`1.17` Sharpe) | **-24.25%** (`1.17`) |
-| **Low-Turnover Alternative (`F1`)** | Same as `F2` with **`50%` defensive shift** (`214.5%` TO vs `260.3%`) | **26.19% CAGR** (`1.05` Sharpe) | **25.82%** (`1.03` Sharpe) | **25.93% CAGR** (`1.07` Sharpe) | **-27.96%** (`0.94`) |
-| **Large-Capital Tax-Opt (`F4`, >₹5L)** | 50/50 Raw20+30 · **12M LB (1M Skip) · 12M Rebal** · `DD>12%` Sh50% → `Gold50/Liq50` | **28.12% CAGR** (`1.14` Sharpe, `168%` TO) | — | — | **-29.06%** (`0.97`) |
-| **Unhedged Momentum Baseline (`B0`)** | 50/50 Raw20+30 · 9M LB · 6M Rebal · Always 100% Equity | **28.28% CAGR** (`1.03` Sharpe) | — | — | **-37.85%** (`0.75`) |
-| **Equal-Weight Midcap 150 Universe** | Passive 150-stock EW benchmark (`MIDCAP EW`) | **22.10% CAGR** (`0.89` Sharpe) | — | — | **-36.97%** (`0.60`) |
-
-> **Important Realism Haircut (`-6%` to `-10%` p.a. live expectation):** Because historical point-in-time constituent lists back to 2016 are not publicly archived, tests use the current (2026) 150 constituents (creating an observed **+8.0% to +8.8% p.a.** survivorship/EW gap vs `NIFTYMIDCAP150` / `MIDCAPIETF` TRI in `2019–2026`), and early-year returns on `₹1,00,000` benefit from India's `₹1.25L` annual LTCG exemption (`~1.5%–2.0%` extra tax drag at `₹1Cr`). Live net CAGR expectations are lower than headline backtests, while all **relative strategy advantages** hold across clean walk-forward windows.
+**Repository:** `HarjasChadha/midcap-momentum-index` · **Data Sources:** Official **NSE `PR` Archives (`2010-01-04` to `2026-11-26`, `4,171` trading days × `4,047` equities, `1,305+` corporate actions)** + **NSE MCP live quotes** + `2018–26` current-150 live panel.
 
 ---
 
-## 1. Rebalancing Intervals, Holding Periods & Indian Tax Drag (`EXP2`)
+## Executive Summary: Why Multi-Period + Zero-Survivorship Validation Upgraded `F2` → `R2`
 
-Indian short-term gains (`< 365 days`, `20%` STCG) severely penalize rapid rotation:
+Testing only a single time window or only the current 150 survivors misses two major statistical traps: (1) **survivorship bias (`+8.54%` p.a.)**, and (2) **single-period parameter overfitting**. After constructing a **Zero-Survivorship Point-in-Time Midcap Proxy** (`PIT_NO_SURVIVOR_150`, `787` distinct liquid midcaps ranked 81–230 by trailing 126d median NSE rupee turnover) and evaluating every strategy strictly across **three non-overlapping regimes (`2011–16 Train → 2016–21 Val #1 → 2021–26 Val #2`)** plus an independent **`2018–22 Train → 2022–26 OOS`** grid (150 configs):
 
-- **Monthly (`1M`) rebalancing (`Raw_6M_Top25`):** `30.34%` pre-tax drops **-4.92% p.a.** to `25.42%` post-tax with `398.0%` annual turnover.
-- **Quarterly (`3M`):** `31.39%` pre-tax drops **-3.54% p.a.** to `27.85%` post-tax (`217.3%` turnover).
-- **Semi-Annual (`6M`) — Recommended Execution Balance:** `30.15%` → `27.91%` for 6M lookback (`150.0%` TO) and `33.49%` → **`32.18%`** for `Raw_9M_Top25_Reb6M` (`116.3%` TO; only `-1.31%` tax+cost spread). Keeps momentum fresh twice per year while allowing long-term winners kept across multiple cycles to cross 365 days into 12.5% LTCG (`₹1.25L` exempt).
-- **Annual (`12M`):** Lowest friction/tax drag (`70.4%` TO unhedged 50/50 12M: **`29.84%`** net CAGR from clean `2018-01-02`, paying only `₹23,616` total tax on ₹1L vs `₹37,294` for 9M/6M). Best once capital exceeds **₹5,00,000** where STCG hurts more. Note: an initial experiment audit uncovered a `2017-12-01` warm-up bug where `12m+1m` lookback (`273` days needed vs `253` available) stayed 0% equity during 2018 — aligning to `2018-01-02` removed that illusion completely.
-
----
-
-## 2. Portfolio Split (`₹50k Raw Top 20 + ₹50k Raw Top 30`) & Weighting
-
-- **Blend Algebra:** Putting `₹50,000` into Raw Top 20 (`2.50%` weight per stock in sleeve) and `₹50,000` into Raw Top 30 (`1.667%` per stock in sleeve) creates a clean **30-stock tiered index**:
-  - **Ranks 1–20:** `4.167%` each (`₹4,167` at ₹1L, holding 83.3% of capital in core momentum leaders)
-  - **Ranks 21–30:** `1.667%` each (`₹1,667` at ₹1L, diversifying tail exposure across 10 secondary qualifiers)
-- **Weighting Choice (`Equal` vs `NormZ`):**
-  - **Equal-Weight (`F2`)** caps any individual stock at `4.17%`, yields tightest start-date stability (`1.60%` clean spread across Jan/Feb/Mar 2018 entry dates), and survives `WF1` (2018–20: `11.08%`, `-23.74%` DD), `WF2` (2021–23: `48.63%`, `-24.18%` DD), and `WF3` (2024–26: `28.95%`, `-17.06%` DD, `1.70` Calmar).
-  - **PDF Normalized Z-Score (`F7`)** raises clean CAGR by `+2.56%` (`28.34%` vs `25.78%`), at the cost of `9.9%–12.35%` single-stock spikes and higher `START_OFFSET` sensitivity (`3.76%` spread).
-- **Staggered vs Synchronized:** Splitting 6M into two staggered `3M`-offset ₹50k sleeves adds operational complexity (~41 holdings at ₹1L, worsening share-rounding efficiency) without beating single 6M rebalance.
-
----
-
-## 3. Detecting Market Falls Across 30 Separate Stocks (`EXP4` & `DD_PLATEAU`)
-
-You cannot trade a single portfolio price cleanly without distortions from cash flows and stock churn — instead, the **Equal-Weight Midcap 150 Universe Index (`ew_index`)** serves as the objective aggregate gauge (`50k Raw20+30 9M 6M`, 15bps, post-tax, 2017–26 baseline `31.93%` / `-37.86%` DD / `0.84` Calmar):
-
-| Market-Fall Signal | Post-Tax CAGR | Max DD | Calmar | Ann. Turnover | Verdict |
+| Strategy Configuration (`15bps` Cost + Indian STCG/LTCG Tax) | 16Y PIT Frac (`2011–26`) | 16Y PIT `₹1L` SlotCap (`End NAV`) | 16Y Current (`2011–26`) | Clean Warm (`2018–26`) | Blind P1 → P2 → P3 CAGR (PIT) |
 |---|---:|---:|---:|---:|---|
-| **Index `DD > 12%` (Re-enter `>50DMA & DD>-7.2%`, `Sh75%` Gold/Liq50)** | **29.96%** *(25.78% clean 18–26)* | **-24.22%** *(-24.57%)* | **1.24** *(1.05)* | **254.9%** | **Plateau Winner** (only ~9 switches in 9 yrs) |
-| **Index `DD > 14%` (`Sh75%` Gold/Liq50)** | **29.63%** | **-25.32%** | **1.17** | **208.0%** | Confirms smooth `12%–15%` plateau |
-| **MA200 Band (`-3%/+1%`, `Sh60%` Gold/Liq50)** | **28.65%** | **-25.94%** | **1.10** | **255.4%** | Solid #2 trend-only trigger |
-| **Daily `< 200DMA` (unbanded)** | 25.59% | — | — | **674.4%** | Severe boundary whipsaw + STCG drag |
-| **India VIX (`>24 / <20`, `Sh50%`)** | 28.20% | -27.80% | 1.01 | 201.0% | Misses grinding low-vol bear markets (2018, 2024–25) |
-| **Composite 4-Score Tiered** | 26.05%–26.54% | -25.91% | 1.01 | **625–636%** | Excessive tax churn |
-| **Stock Breadth50 (`<35% / >50%`, `Sh100%`)** | 24.91% | -32.19% | 0.77 | 451.9% | Too noisy for regime timing |
-| **Per-Stock Trailing Stop 20%** | **23.77%** | **-22.87%** | 1.04 | 291.8% | Lowest DD, but loses `-8.2%` CAGR to premature stop-outs |
+| **Upgraded #1 Recommended (`R2`: Risk-Adj 9M EW · 6M · `DD>15%` Sh75%)** | **19.17%** (`-27.80%` DD, **0.77 Sh**) | **18.56%** (`-27.83%` DD, **`₹14,10,801`**) | **26.01%** (`1.23` Sh) | **27.11%** (`26.71%` ₹1L, `1.14` Sh) | `12.90% → 31.43% → 17.63%` |
+| **Upgraded #2 Concentrated (`R7`: NormZ Risk-Adj 9M · 6M · `DD>15%`)** | **20.46%** (`-28.74%` DD, **0.82 Sh**) | **20.23%** (`-28.75%` DD, **`₹17,53,097`**) | — | **28.15%** (`-27.51%` DD, `1.17` Sh) | `12.93% → 42.36% → 21.80%` |
+| **Hybrid 50/50 (`Raw + Risk Z · 6M · DD>15% Sh75%`)** | **18.38%** (**-27.68%** DD, `0.69` Sh) | **17.56%** (**-26.87%** DD, `₹12,37,050`) | **25.81%** (`1.17` Sh) | **27.03%** (`26.93%` ₹1L, `1.10` Sh) | `10.41% → 31.14% → 18.04%` |
+| **Raw 9M EW + Widened `DD>15%` (`6M`)** | 18.02% (`-30.81%` DD, `0.64` Sh) | 16.76% (`₹11,12,434`) | 25.20% | — | `10.94% → 30.14% → 16.15%` |
+| **Risk-Adj 9M EW + `DD>12%` (`6M`)** | 17.38% (`-32.24%` DD, `0.69` Sh) | 17.09% (`₹11,61,294`) | 24.42% (`1.17` Sh) | 26.78% (`26.11%` ₹1L, `-21.44%`) | `10.27% → 31.41% → 14.72%` |
+| **Legacy V1 (`F2`: Raw 9M EW · 6M · `DD>12%` Sh75%)** | 16.27% (`-33.16%` DD, `0.57` Sh) | 15.62% (`-32.60%` DD, `₹9,54,524`) | 24.32% (`1.08` Sh) | 25.78% (`25.69%` ₹1L, `1.06` Sh) | `8.63% → 31.24% → 10.95%` |
+| **Unhedged Raw 9M EW (`6M`)** | 18.13% (`-39.26%` DD, `0.53` Sh) | — | 27.47% | 28.28% (`-37.85%` DD) | `9.84% → 26.72% → 19.36%` |
+| **Passive Equal-Weight Midcap 150 Benchmark** | **11.61%** (**-51.84%** DD, `0.27` Sh) | — | **20.15%** (`-38.96%` DD, `0.82` Sh) | **22.10%** (`-36.97%` DD, `0.89` Sh) | `2.49% → 17.24% → 15.99%` |
 
 ---
 
-## 4. Gold vs Alternative Defensive Assets, Shift % & Trim Order (`EXP5`)
+## 1. Corporate Action Verification & Survivorship Gap Quantification
 
-1. **Why Pure `GOLDBEES` Alone Is Risky Today (`2026-11-26` Proof):**
-   - `GOLDBEES` peaked at `₹146.53` on `2026-01-29` and dropped **`-31.68%`** to `₹100.11` by `2026-11-25` (`₹100.96` latest).
-   - `SILVERBEES` collapsed **`-60.67%`** in 2026 (`₹351.91 → ₹138.40`), yielding a catastrophic **`9.80%` CAGR / `-51.77%` MaxDD** inside `2022–26` backtests.
-   - US Equities (`MON100`: `-55.08%` in-strategy DD) and Large-Cap Nifty (`NIFTYBEES`: `-35.38%` DD) correlate downward with Midcap crashes and fail as crash buffers.
-2. **Winner Defensive Anchor — `50% GOLDBEES + 50% LIQUIDCASE` (`GOLD_50_LIQUID_50`):**
-   - Standalone `2018–26` stats: **`11.70%` CAGR, `-14.50%` MaxDD, `0.81` Calmar, `0.65` Sharpe** — cutting pure gold volatility and crash risk in half while staying liquid (`₹100.96` & `₹117.10` per ETF unit — ideal for `₹1L` accounts, unlike `EBBETF0431` at `₹1,441` or `LIQUIDBEES` fractional dividend units). Note `EBBETF0431` (`26.58%` CAGR, `-23.28%` DD in `2022–26`) is a strong fixed-income substitute once capital exceeds `₹5L`.
-3. **Shift Size (`75%` vs `50%`):** Shifting **`100%`** performs worst (`24.91%` in `EXP5`, `-25.08%` to `-32.19%` DD, highest STCG tax). Keeping **`25%` equity core (`75%` shift)** or **`50%` (`F1`)** keeps top momentum leaders compounding cleanly.
-4. **What to Sell — `Weakest-First` Beats `Pro-Rata`:** Liquidating lower-ranked holdings (`Ranks 16–30`) first rather than cutting all 30 proportionally avoids `1 → 0` odd-lot truncation at `₹1L`, halves DP sell fees (`~₹20/ISIN`), lets Top-15 winners cross 365 days into LTCG, and reduced total backtest tax paid by **17%–30%** in `EXP5`.
+- **Official NSE `PR` + `Bc` + MCP Pipeline (`src/nse_archive_loader.py`):** Back-adjusted `4,171` daily bhavcopies (`2010–2026`) by parsing `1,305+` Exchange Book-Closure (`Bc`) corporate action notices (`SPLIT`, `BONUS`, combined `BON + SPL`, 12-day duplicate suppression, postponed split suppression like `SUNILHITEC`, `SCHEME OF ARRANGEMENT`/demergers <= 1.05, plus post-2021 `NseMcpClient` split actions). Residual extreme single-day liquid glitches across 16.8M stock-days dropped from `417 → 13` genuine restructurings (`YESBANK`, `GTL`, `MAJESCO`, `INFIBEAM`, etc.), while `GOLDBEES` (2019 100:1 split), `BANKBARODA`, `RELAXO`, and `MOTILALOFS` audited cleanly (`1.15%` to `12.52%` max adj move).
+- **Exact Survivorship Gap Measured (`+8.54%` p.a.):** Passive EW Midcap 150 returned **`11.61%`** CAGR (`-51.84%` DD, `0.27` Sharpe) on actual rolling point-in-time midcaps vs **`20.15%`** CAGR (`-38.96%` DD, `0.82` Sharpe) when backtesting 2026 survivors backwards. Live momentum returns after eliminating hindsight should therefore be anchored to the **`18.5%–20.5%`** PIT range (less scale tax drag above `₹1.25L` LTCG exemption), NOT unadjusted `26%–28%` survivor headlines.
 
 ---
 
-## 5. Practical `₹1,00,000` Integer-Share Execution Rule (`Sequential-SlotCap`)
+## 2. Two Blind-Validated Upgrades (`Train → Val #1 → Val #2`)
 
-With Midcap 150 stock prices rising steeply (`APARINDS` `₹14,200`, `OFSS` `₹9,291`, `FLUOROCHEM` `₹4,781`, `RADICO` `₹4,671`), blind rounding on `2026-11-26` deploys only **`66.59%`** (`22/30` stocks, `₹33,408` idle cash).
-Applying **Sequential-SlotCap + LIQUIDCASE Sweep** (implemented in `src/momentum.py` and the live dashboard):
-1. Iteratively skip any symbol whose price exceeds its `₹` target slot (`₹4,167` for Top 20; `₹1,667` for Ranks 21–30), shifting affordable `#21+` names (`BHARATFORG ₹1,744`, `LGEINDIA ₹1,758`) into freed `₹4,167` slots and `#31–#41` (`ASTERDM`, `APLAPOLLO`, `GROWW`, `MEDANTA`, `NAM-INDIA`, `PETRONET`) into `#21–30` until **`30/30` slots** are held (`87.55%` equity deployed on `2026-11-26`).
-2. Sweep residual cash (`₹12,448`) into **106 units of `LIQUIDCASE`** (`₹117.10`) for **`99.96%` total capital utilization** (`₹35.78` cash leftover).
-3. In clean `2018–26` backtests, `Sequential-SlotCap + LiquidSweep` outperforms naive `NoCap` by **+111 bps p.a.** (`25.69%` vs `24.58%` for `F2`). Once your portfolio crosses **`₹3.5L–₹5L`**, disable SlotCap so high-priced leaders like `APARINDS`/`OFSS` fit directly into 1+ shares.
+1. **Factor Upgrade — `Risk-Adj 9M` (`return / ann_vol`) Over Pure `Raw 9M`:**
+   - **Spearman Rank Skill (`PIT 2011–16 → 2016–21`):** `Sharpe rho = 0.484` / `Calmar rho = 0.457` (genuine persistence across blind regimes).
+   - **Blind Selection:** On `2018–22 Train`, `Risk_9M_EW` averaged **`0.80` IS Calmar** (`#1` basket) and **`1.56` OOS Sharpe** in `2022–26`. On `2011–16 PIT Train`, `R2` finished **`#5` out of 96 configs (`12.90%`, `0.46` Calmar)** while passive PIT Midcap made `2.49%` (`-47.66%` DD), then went on to rank **`#1` hedged in P2 (`31.43%`, `1.22` Cal)** and **`19.17%` / `-27.80%` DD (`0.77` Sh)** over all 16 years.
+   - **Practical Continuity (`29/30` Overlap):** On `2026-11-26`, `Risk_9M` holds **29 of the same 30 stocks** as `Raw_9M` (`LAURUSLABS`, `APARINDS`, `LENSKART`, `RADICO`, `AUROPHARMA`, `BHEL`, `LLOYDSME`, `ANTHEM`, `FEDERALBNK`, `IPCALAB`), simply promoting steadier trends inside Core Top-20 (`4.17%` weight) over fragile high-beta spikes and reducing 2018–26 turnover from **`260.3%` → `198.9%`**.
+2. **Regime Upgrade — Widening Drawdown Trigger from `DD > 12%` → `DD > 15%`:**
+   - Across `2011–16` and `2021–26`, `-12%` triggered premature exits during routine bull corrections (`2012`, `2015`, `2024–25`), missing snapback rallies (`F2` made `10.95%` in P3 vs `17.63%` for `R2`, and `8.63%` in P1 vs `12.90%` for `R2`).
+   - Across all 6 baskets on 16y PIT, **`DD15_Sh75_GL50`** ranked **`#1` overall (`18.77%` mean CAGR, `-31.00%` DD, `0.70` Sharpe)** vs `17.34%` / `-32.73%` for `DD12_Sh75_GL50`, and **`#1` regime family on `2018–22` IS Calmar (`0.81`)**. Re-entry remains `> 50-DMA & DD > -9.0%` (`-0.6 × 15%`).
 
 ---
 
-## 6. Live State Snapshot (`2026-11-26`, Verified via NSE MCP)
+## 3. Core Architecture Kept Intact (`EXP2`–`EXP5` & `₹1L SlotCap`)
 
-- **Regime Posture:** **`RISK_ON` (`100%` Equity / `0%` Defensive)** — `EW Index = 846.80` (`DD252 = -4.38%` vs `-12.0%` exit trigger; `>50DMA 827.70`), `Nifty Midcap 150 = 22,650.0` (`DD252 = -3.78%`), `India VIX = 16.84`, `Breadth>50DMA = 59.07%`.
-- **Execution Discipline:** Generate orders from EOD signal (`T`), place limit/MIT orders `T+1` during **`15:10–15:25 IST`**, skip tiny drifts **`< ₹500`** to save DP/STT charges, and defer non-emergency sells aged **`330–364` days** until day 365 to capture `12.5%` LTCG (`₹1.25L` exemption) instead of `20%` STCG.
+- **50/50 Top-20 + Top-30 Split:** `₹50k Top-20` (`4.167%` per rank 1–20) + `₹50k Top-30` (`1.667%` per rank 21–30). Optional **`R7` NormZ** (`8.46%` max single-stock weight on `2026-11-26`) raises 16y PIT `₹1L` CAGR to **`20.23%`** (`₹17,53,097` ending NAV).
+- **Semi-Annual (`6M`) Rebalancing:** Cuts `398%` monthly STCG churn in half; `12M` optional above `₹5L`.
+- **50% `GOLDBEES` + 50% `LIQUIDCASE` (`Sh75%` Weakest-First):** Protects against `GOLDBEES`' `-31.68%` 2026 drawdown and `SILVERBEES`' `-60.67%` crash while cutting STCG tax `17%–30%` by trimming Ranks 16–30 first.
+- **`₹1,00,000` Sequential-SlotCap + `LIQUIDCASE` Sweep (`2026-11-26` Live Snapshot):**
+  - **Regime Posture:** **`RISK_ON` (`100%` Equity)** — `EW Index = 846.80` (`DD252 = -4.38%` vs `-15.0%` exit trigger · `50DMA = 827.70`), `Nifty Midcap 150 = 22,650.0` (`-3.78%`), `India VIX = 16.84`, `Breadth>50DMA = 59.07%`.
+  - **Live `R2` `₹1L` Allocation:** Holds **`30/30` stocks** (`86.86%` equity deployed) + **`112` units `LIQUIDCASE` (`₹13,115.20`)** = **`₹26.33` uninvested cash (`99.97%` deployed)**. Execute `T+1` between **`15:10–15:25 IST`**, skip drifts `< ₹500`, and defer non-emergency sells aged `330–364` days until day 365 for `12.5%` LTCG.

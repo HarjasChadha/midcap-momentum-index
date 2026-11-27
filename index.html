@@ -190,7 +190,7 @@
 <div class="topbar">
   <div class="brand">
     <h1>DIY Midcap 150 Momentum Index</h1>
-    <span class="pill pill-accent" id="strategyBadge">F2 · 50/50 Raw Top20+30 · 9M</span>
+    <span class="pill pill-accent" id="strategyBadge">R2 · 50/50 Risk-Adj Top20+30 · 9M · DD&gt;15%</span>
     <span class="pill pill-blue" id="nseBadge">NSE MCP Connecting...</span>
   </div>
   <div class="meta-right">
@@ -256,17 +256,19 @@
         <div class="ctrl">
           <label for="presetSelect">Strategy Preset</label>
           <select id="presetSelect">
-            <option value="F2">F2 Recommended: EW 50/50 Top20+30 · 9M · 6M Rebal · DD&gt;12% Sh75%</option>
-            <option value="F7">F7 Runner-Up: NormZ 50/50 Top20+30 · 9M · 6M Rebal · DD&gt;12% Sh75%</option>
-            <option value="F1">F1 Lower Churn: EW 50/50 Top20+30 · 9M · 6M Rebal · DD&gt;12% Sh50%</option>
-            <option value="F4">F4 Large Capital (&gt;₹5L): EW 50/50 · 12M Lookback · 12M Rebal · DD&gt;12% Sh50%</option>
+            <option value="R2">R2 Upgraded Default: EW 50/50 Risk-Adj 9M · 6M Rebal · DD&gt;15% Sh75%</option>
+            <option value="R7">R7 Concentrated: NormZ 50/50 Risk-Adj 9M · 6M Rebal · DD&gt;15% Sh75%</option>
+            <option value="F2">F2 Raw Baseline: EW 50/50 Raw 9M · 6M Rebal · DD&gt;12% Sh75%</option>
+            <option value="F7">F7 Raw NormZ: NormZ 50/50 Raw 9M · 6M Rebal · DD&gt;12% Sh75%</option>
+            <option value="F1">F1 Lower Churn: EW 50/50 Raw 9M · 6M Rebal · DD&gt;12% Sh50%</option>
+            <option value="F4">F4 Large Capital (&gt;₹5L): EW 50/50 Raw 12M · 12M Rebal · DD&gt;12% Sh50%</option>
           </select>
         </div>
         <div class="ctrl">
           <label for="postureOverride">Posture View</label>
           <select id="postureOverride">
             <option value="LIVE">Live Signal Today</option>
-            <option value="SIM_CRASH">Simulate Crash (DD &gt; 12% Triggered)</option>
+            <option value="SIM_CRASH">Simulate Crash (DD &gt; 15% Triggered)</option>
           </select>
         </div>
       </div>
@@ -337,7 +339,7 @@
 
     <div class="two-col">
       <div class="card">
-        <h2><span>Drawdown Underwater Curve vs -12% Crash Trigger</span></h2>
+        <h2><span>Drawdown Underwater Curve vs -15% Crash Trigger</span></h2>
         <div class="chart-box"><canvas id="ddChart"></canvas></div>
       </div>
       <div class="card">
@@ -347,7 +349,7 @@
     </div>
 
     <div class="card">
-      <h2><span>Historical DD &gt; 12% Regime Switches (2018–2026)</span></h2>
+      <h2><span>Historical DD &gt; 15% Regime Switches (2018–2026)</span></h2>
       <div class="table-wrap">
         <table id="triggersTable">
           <thead><tr><th>Date</th><th>Signal Event</th><th class="num">EW Index DD252</th><th class="num">Target Equity</th></tr></thead>
@@ -360,29 +362,50 @@
   <!-- TAB 3: RESEARCH MATRIX -->
   <div class="tab-panel" id="tab-research">
     <div class="warn-box">
-      <strong>Survivorship &amp; Scale Haircut Reality Check:</strong> Backtests use the current (2026) Nifty Midcap 150 constituent list back to 2016–18 (creating an observed <strong>~8% p.a.</strong> survivorship/equal-weight gap over investable <code>NIFTYMIDCAP150</code> TRI), and ₹1L accounts shelter LTCG under India's ₹1.25L/yr exemption. Expect <strong>6%–10% p.a. lower net CAGR in live deployment at larger capital</strong> than clean 2018–26 headline numbers — while the <em>relative</em> advantages (9M &gt; monthly churn, DD&gt;12% tail protection, 50/50 Gold+Liquid, weakest-first trimming) hold consistently across walk-forward windows.
+      <strong>16-Year Zero-Survivorship Audit (Official NSE PR Archives 2010–2026):</strong> Rolling point-in-time liquid Midcap Ranks 81–230 (787 stocks) passively earned <strong>11.61% CAGR</strong> (<code>-51.84%</code> DD) vs <strong>20.15%</strong> on current-2026 stocks — proving an <strong>+8.54% p.a. survivorship gap</strong>. Across 3 blind walk-forward regimes (<code>2011–16 Train → 2016–21 Val #1 → 2021–26 Val #2</code>), upgraded <strong>R2 (Risk-Adj 9M + DD&gt;15%)</strong> earned <strong>19.17% CAGR</strong> (<code>18.56%</code> ₹1L discrete, <code>-27.80%</code> DD, <code>0.77</code> Sharpe), outperforming legacy Raw F2 (<code>16.27%</code> / <code>-33.16%</code> DD) by <strong>+2.90% p.a.</strong> with <strong>-5.36%</strong> shallower drawdown.
     </div>
     <div class="card">
-      <h2><span>Key Strategy Decisions Answered Empirically</span></h2>
+      <h2><span>Key Strategy Decisions Answered Across 16 Years &amp; 3 Blind Periods</span></h2>
       <div class="qa-item">
         <h3>1. Optimal Rebalancing Cadence &amp; Holding Period: 6 Months (or 12M for &gt;₹5L)</h3>
-        <p>Monthly rebalancing cuts CAGR from 30.3% down to ~25.4% due to 398% turnover and 20% STCG. Semi-annual (6M, ~117%–260% turnover) captures fresh momentum without missing multi-month factor rotations while allowing partial holdings to cross 365 days into 12.5% LTCG. Clean warm-baseline 12M/12M adds ~1.6% net tax efficiency (<code>29.84%</code> vs <code>28.28%</code> unhedged) for large tax-sensitive accounts.</p>
+        <p>Monthly rebalancing cuts CAGR from 30.3% down to ~25.4% due to 398% turnover and 20% STCG. Semi-annual (6M) captures fresh momentum without missing multi-month factor rotations while allowing partial winners to cross 365 days into 12.5% LTCG. For large accounts (&gt;₹5L), 12M/12M minimizes STCG drag.</p>
       </div>
       <div class="qa-item">
-        <h3>2. Portfolio Split &amp; Weighting: 50/50 Raw Top 20 + Raw Top 30</h3>
-        <p>Combining ₹50k Raw Top 20 + ₹50k Raw Top 30 assigns <code>4.17%</code> each to Ranks 1–20 and <code>1.67%</code> each to Ranks 21–30 (30 total names). Equal-weight caps max stock exposure at 4.17%, whereas PDF <code>NormZ</code> adds ~2–3% CAGR (<code>28.69%</code> clean in F6 / <code>28.34%</code> in F7) at the cost of 9–12% top-stock concentration.</p>
+        <h3>2. Portfolio Split &amp; Factor Upgrade: 50/50 Risk-Adj Top 20 + Top 30 (`return / ann_vol`)</h3>
+        <p>Ranking by <strong>volatility-adjusted 9M return</strong> while keeping <code>50% Top-20 + 50% Top-30</code> (<code>4.17%</code> / <code>1.67%</code> weights) shares 29/30 stocks with Raw 9M today while ranking steadier compounders higher inside Core Top-20. Over 16 survivorship-free years, <strong>Risk-Adj 9M EW</strong> leads every basket (<code>19.17%</code> vs <code>16.27%</code> Raw F2), and <strong>R7 NormZ</strong> pushes 16y ₹1L discrete to <code>20.23%</code> CAGR (<code>₹17.53L</code> ending NAV vs <code>₹9.55L</code> Raw DD12).</p>
       </div>
       <div class="qa-item">
-        <h3>3. How to Detect Market Falls Across 30 Separate Stocks: Midcap EW Index Drawdown &gt; 12%</h3>
-        <p>Tracking an Equal-Weight Midcap 150 index (published daily on this dashboard) cleanly beats noisy 200-DMA whipsaws (674% turnover) and Stock Breadth50 (452% TO, -32.2% DD). A broad <strong>-12% to -15% drawdown threshold</strong> (re-enter when &gt; 50-DMA &amp; DD &gt; -7.2%) fired only 9 times in 9 years, cutting max drawdown from <strong>-37.85% down to -24.57%</strong> (Calmar 0.75 → 1.05).</p>
+        <h3>3. Detecting Market Falls Across 30 Stocks: Midcap EW Index DD &gt; 15% (Re-enter &gt;50DMA &amp; DD &gt; -9.0%)</h3>
+        <p>Across 16 years (2011–2026), tightening triggers to <code>-12%</code> whipsawed out during routine `-12%..-14%` bull pullbacks (2012, 2015, late-2024/25). Widening the circuit breaker to <strong>-15.0% drawdown</strong> from 252d peak captures severe structural breaks (2011, 2018–19, COVID 2020, 2022) while cutting regime whipsaws (`18.77%` avg CAGR across all baskets vs `17.34%` for DD12).</p>
       </div>
       <div class="qa-item">
         <h3>4. Defensive Asset, Shift Sizing &amp; Sell Order: 50/50 GOLDBEES + LIQUIDCASE, Shift 75%, Weakest-First</h3>
-        <p><code>SILVERBEES</code> (-60.7% DD in 2026, -51.8% in-strategy) and <code>MON100</code> (-55.1% DD) fail during crashes; even pure <code>GOLDBEES</code> fell <strong>-31.68%</strong> in 2026 (₹146.53 → ₹100.11). Splitting defensives <strong>50% GOLDBEES + 50% LIQUIDCASE</strong> keeps defensive drawdown at -14.5%. Shifting <strong>75%</strong> weakest-first preserves Top momentum winners toward LTCG and cuts taxes paid by 17%–30% vs pro-rata.</p>
+        <p><code>SILVERBEES</code> (-60.7% DD in 2026) and <code>MON100</code> (-55.1% DD) fail during crashes; even pure <code>GOLDBEES</code> fell <strong>-31.68%</strong> in 2026. Splitting defensives <strong>50% GOLDBEES + 50% LIQUIDCASE</strong> keeps defensive drawdown at -14.5%. Shifting <strong>75%</strong> weakest-first preserves Top-15 winners toward LTCG and cuts taxes paid by 17%–30% vs pro-rata.</p>
       </div>
       <div class="qa-item">
         <h3>5. Fixing the ₹1,00,000 Expensive-Stock Bottleneck: Sequential-SlotCap + LIQUIDCASE Sweep</h3>
-        <p>On Nov 26, 2026, stocks like <code>APARINDS</code> (₹14,200), <code>OFSS</code> (₹9,291), <code>RADICO</code> (₹4,671) leave 33.4% cash idle under blind integer rounding. Sequentially substituting unaffordable top ranks lifts ₹1L equity deployment from <strong>66.6% → 87.6%</strong> (30/30 held) and sweeps residual cash into <code>LIQUIDCASE</code> (₹117.10/u) for <strong>99.96% capital deployment</strong> and +111 bps clean backtest CAGR.</p>
+        <p>Expensive midcaps (<code>APARINDS</code>, <code>OFSS</code>, <code>RADICO</code>) exceed a `₹4,167` or `₹1,667` slot at `₹1L`. Sequentially substituting unaffordable top ranks lifts ₹1L equity deployment to <strong>30/30 held stocks</strong> and sweeps residual cash into <code>LIQUIDCASE</code> (~99.9% total utilization), lifting clean backtest CAGR by +111 bps at ₹1L.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span>16-Year Multi-Period Blind Validation: Zero-Survivorship PIT vs Current 150 (Official NSE PR 2011–2026)</span></h2>
+      <div class="table-wrap">
+        <table id="pitResearchTable">
+          <thead>
+            <tr>
+              <th>Universe</th>
+              <th>Strategy</th>
+              <th class="num">P1 Train 11–16</th>
+              <th class="num">P2 Val1 16–21</th>
+              <th class="num">P3 Val2 21–26</th>
+              <th class="num">Full 16Y CAGR</th>
+              <th class="num">16Y MaxDD</th>
+              <th class="num">16Y Sharpe</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
     </div>
 
@@ -414,22 +437,23 @@
   <div class="tab-panel" id="tab-rankings">
     <div class="card">
       <h2>
-        <span>Top 60 Nifty Midcap 150 Momentum Rankings</span>
+        <span>Top 60 Nifty Midcap 150 Momentum Rankings (Primary Risk-Adj 9M + Raw 9M/12M)</span>
         <input type="text" id="rankSearch" placeholder="Filter ticker (e.g. LAURUS)..." style="max-width:240px; background:var(--bg); color:var(--text); border:1px solid var(--border); padding:6px 10px; border-radius:8px;">
       </h2>
       <div class="table-wrap" style="max-height: 600px; overflow-y: auto;">
         <table id="rankingsTable">
           <thead>
             <tr>
-              <th>9M Rank</th>
-              <th>12M Rank</th>
+              <th>Risk9M #</th>
+              <th>Raw9M #</th>
+              <th>12M #</th>
               <th>Symbol</th>
               <th class="num">LTP (₹)</th>
-              <th class="num">9M Mom %</th>
-              <th class="num">12M Mom %</th>
+              <th class="num">Risk 9M</th>
+              <th class="num">Raw 9M %</th>
               <th class="num">&gt;50DMA</th>
-              <th class="num">EW 50/50%</th>
-              <th class="num">NormZ%</th>
+              <th class="num">R2 EW%</th>
+              <th class="num">R7 NormZ%</th>
               <th>₹1L SlotCap</th>
             </tr>
           </thead>
@@ -455,6 +479,7 @@ async function init() {
   STATE = await res.json();
   renderHeaderAndRegime();
   renderPortfolioCalculator();
+  renderPitResearchTable();
   renderResearchTable();
   renderRankingsTable();
   renderTriggersTable();
@@ -483,10 +508,12 @@ function renderHeaderAndRegime() {
   pill.className = isRiskOn ? 'pill pill-green' : 'pill pill-amber';
   pill.textContent = isRiskOn ? 'RISK-ON' : 'DEFENSIVE 75%';
 
+  const trigPct = r.trigger_dd_pct != null ? r.trigger_dd_pct : -15.0;
+  const reentPct = r.reenter_dd_pct != null ? r.reenter_dd_pct : -9.0;
   const sb = mood?.stock_breadth;
   const ad = (sb && sb.up != null && sb.down != null) ? ` · NSE Adv ${sb.up}/${sb.down} Dec (${sb.up_pct}%)` : '';
   document.getElementById('regimeSubtitle').textContent =
-    `EW Index ${r.ew_index} (DD252: ${fmtPct(r.ew_dd252_pct)} vs -12.0% trigger · 50DMA: ${r.ew_ma50})` +
+    `EW Index ${r.ew_index} (DD252: ${fmtPct(r.ew_dd252_pct)} vs ${trigPct}% trigger · 50DMA: ${r.ew_ma50})` +
     (r.midcap150_index ? ` · Midcap 150: ${r.midcap150_index.toLocaleString('en-IN')} (${fmtPct(r.midcap150_dd252_pct)})` : '') +
     ` · VIX: ${fmtNum(r.india_vix, 2)} · Breadth>50DMA: ${fmtPct(r.breadth_50_sma10_pct, 1)}${ad}`;
 
@@ -497,15 +524,16 @@ function renderHeaderAndRegime() {
   document.getElementById('barGold').style.width = `${r.target_goldbees_pct}%`;
   document.getElementById('barLiq').style.width = `${r.target_liquidcase_pct}%`;
 
+  const r2 = STATE.performance_summary.R2_Risk9m_6M_DD15_Sh75_GoldLiq50 || STATE.performance_summary.F2_9m_6M_DD12_Sh75_GoldLiq50 || {};
+  const r2d = STATE.performance_summary.R2_Disc1L_SlotCap || STATE.performance_summary.F2_Disc1L_SlotCap || {};
   const f2 = STATE.performance_summary.F2_9m_6M_DD12_Sh75_GoldLiq50 || {};
-  const f2d = STATE.performance_summary.F2_Disc1L_SlotCap || {};
   const u0 = STATE.performance_summary.Unhedged_9m_6M || {};
   const ew = STATE.performance_summary.Midcap150_EW_Universe || {};
   const kpis = [
-    { lbl: 'F2 Net CAGR (2018–26)', val: fmtPct(f2.cagr_pct), note: `₹1L Discrete SlotCap: ${fmtPct(f2d.cagr_pct)}`, cls: 'c-green' },
-    { lbl: 'Max Drawdown Control', val: fmtPct(f2.max_dd_pct), note: `Unhedged: ${fmtPct(u0.max_dd_pct)} · EW: ${fmtPct(ew.max_dd_pct)}`, cls: 'c-blue' },
-    { lbl: 'Calmar / Sharpe (F2)', val: `${fmtNum(f2.calmar)} / ${fmtNum(f2.sharpe)}`, note: `₹1L Discrete: ${fmtNum(f2d.calmar)} / ${fmtNum(f2d.sharpe)}`, cls: 'c-green' },
-    { lbl: 'EW Index DD252', val: fmtPct(r.ew_dd252_pct), note: 'Trigger Exit: -12.0% · Re-enter: -7.2% & >50DMA', cls: r.ew_dd252_pct < -10 ? 'c-amber' : '' },
+    { lbl: 'R2 Net CAGR (2018–26)', val: fmtPct(r2.cagr_pct), note: `₹1L SlotCap: ${fmtPct(r2d.cagr_pct)} · 16Y PIT: 19.17%`, cls: 'c-green' },
+    { lbl: 'Max Drawdown Control', val: fmtPct(r2.max_dd_pct), note: `Unhedged: ${fmtPct(u0.max_dd_pct)} · EW: ${fmtPct(ew.max_dd_pct)}`, cls: 'c-blue' },
+    { lbl: 'Calmar / Sharpe (R2)', val: `${fmtNum(r2.calmar)} / ${fmtNum(r2.sharpe)}`, note: `₹1L Discrete: ${fmtNum(r2d.calmar)} / ${fmtNum(r2d.sharpe)} · F2: ${fmtNum(f2.sharpe)}`, cls: 'c-green' },
+    { lbl: 'EW Index DD252', val: fmtPct(r.ew_dd252_pct), note: `Trigger Exit: ${trigPct}% · Re-enter: ${reentPct}% & >50DMA`, cls: r.ew_dd252_pct < -12 ? 'c-amber' : '' },
     { lbl: 'GOLDBEES vs 50DMA', val: `₹${fmtNum(r.etfs.GOLDBEES.price)}`, note: r.etfs.GOLDBEES.above_ma50 ? 'Above 50DMA' : 'Below 50DMA (-31.7% from 2026 peak)', cls: 'c-amber' },
     { lbl: 'India VIX (NSE MCP)', val: fmtNum(r.india_vix, 2), note: `Breadth >50DMA: ${fmtPct(r.breadth_50_sma10_pct, 1)}`, cls: '' },
   ];
@@ -518,8 +546,8 @@ function renderHeaderAndRegime() {
 }
 
 function computeBlendWeights(presetKey, capital, useSlotCap) {
-  const scoreField = presetKey === 'F4' ? 'r12' : 'r9';
-  const useNormZ = presetKey === 'F7';
+  const scoreField = presetKey === 'F4' ? 'r12' : (presetKey === 'R2' || presetKey === 'R7') ? 'rk9' : 'r9';
+  const useNormZ = presetKey === 'F7' || presetKey === 'R7';
   const sorted = [...STATE.universe_scores]
     .filter(x => x[scoreField] != null && isFinite(x.px) && x.px > 0)
     .sort((a, b) => b[scoreField] - a[scoreField]);
@@ -615,13 +643,14 @@ function renderPortfolioCalculator() {
   document.getElementById('calcSummaryGrid').innerHTML = cards.map(c => `
     <div class="kpi"><div class="kpi-lbl">${c.lbl}</div><div class="kpi-val ${c.cls}">${c.val}</div><div class="kpi-note">${c.note}</div></div>`).join('');
 
+  const isRiskPreset = res.preset === 'R2' || res.preset === 'R7';
   const tbody = document.querySelector('#ordersTable tbody');
   tbody.innerHTML = res.rows.map(r => `
     <tr class="${r.sh === 0 ? 'row-muted' : ''}">
       <td>${r.rank}</td>
       <td><strong>${r.sym}</strong></td>
       <td><span class="pill ${r.bucket.includes('Defensive') ? 'pill-amber' : r.bucket.includes('Sweep') ? 'pill-blue' : r.bucket === 'Top20' ? 'pill-green' : 'pill-accent'}">${r.bucket}</span></td>
-      <td class="num">${r.score != null ? fmtPct(r.score) : '—'}</td>
+      <td class="num">${r.score != null ? (isRiskPreset ? fmtNum(r.score, 2) + 'x' : fmtPct(r.score)) : '—'}</td>
       <td class="num">${fmtPct(r.wt * 100, 2)}</td>
       <td class="num">${fmtNum(r.px)}</td>
       <td class="num">${fmtInr(r.tgt)}</td>
@@ -685,6 +714,23 @@ function computeHoldingsDiff() {
     <tbody>${actions.map(a => `<tr><td><strong>${a.sym}</strong></td><td class="num">${a.cur}</td><td class="num">${a.tgt}</td><td><span class="pill ${a.badge}">${a.act}</span></td><td class="num">${fmtInr(a.deltaInr)}</td><td>${a.note}</td></tr>`).join('')}</tbody></table>`;
 }
 
+function renderPitResearchTable() {
+  const rows = STATE.pit_validation_16yr || [];
+  const tbody = document.querySelector('#pitResearchTable tbody');
+  if (!tbody) return;
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td><span class="pill ${r.universe.includes('PIT') ? 'pill-green' : 'pill-red'}">${r.universe}</span></td>
+      <td><strong>${r.strategy}</strong></td>
+      <td class="num">${fmtPct(r.p1_cagr)}</td>
+      <td class="num">${fmtPct(r.p2_cagr)}</td>
+      <td class="num">${fmtPct(r.p3_cagr)}</td>
+      <td class="num c-green"><strong>${fmtPct(r.full_cagr)}</strong></td>
+      <td class="num c-red">${fmtPct(r.full_dd)}</td>
+      <td class="num">${fmtNum(r.full_sh)}</td>
+    </tr>`).join('');
+}
+
 function renderResearchTable() {
   const rows = STATE.clean_verification || [];
   document.querySelector('#researchTable tbody').innerHTML = rows.map(r => `
@@ -707,16 +753,17 @@ function renderRankingsTable() {
   const rows = STATE.rankings_top60.filter(r => !q || r.symbol.includes(q));
   document.querySelector('#rankingsTable tbody').innerHTML = rows.map(r => `
     <tr>
-      <td><strong>#${r.rank_9m}</strong></td>
+      <td><strong>#${r.rank_risk9m ?? r.rank_9m}</strong></td>
+      <td>${r.rank_9m != null ? '#' + r.rank_9m : '—'}</td>
       <td>${r.rank_12m != null ? '#' + r.rank_12m : '—'}</td>
       <td><strong>${r.symbol}</strong></td>
       <td class="num">${fmtNum(r.price)}</td>
-      <td class="num c-green">${fmtPct(r.raw_9m_pct)}</td>
-      <td class="num">${fmtPct(r.raw_12m_pct)}</td>
+      <td class="num c-green">${r.risk_9m != null ? fmtNum(r.risk_9m, 2) + 'x' : '—'}</td>
+      <td class="num">${fmtPct(r.raw_9m_pct)}</td>
       <td class="num">${r.above_ma50 ? '<span class="c-green">Yes</span>' : '<span class="c-red">No</span>'}</td>
-      <td class="num">${r.ew_5050_wt_pct ? fmtPct(r.ew_5050_wt_pct) : '—'}</td>
-      <td class="num">${r.nz_5050_wt_pct ? fmtPct(r.nz_5050_wt_pct) : '—'}</td>
-      <td>${r.affordable_slotcap_1l ? '<span class="pill pill-green">Selected ₹1L</span>' : '<span style="color:var(--sub)">Candidate</span>'}</td>
+      <td class="num">${(r.risk_ew_5050_wt_pct ?? r.ew_5050_wt_pct) ? fmtPct(r.risk_ew_5050_wt_pct ?? r.ew_5050_wt_pct) : '—'}</td>
+      <td class="num">${(r.risk_nz_5050_wt_pct ?? r.nz_5050_wt_pct) ? fmtPct(r.risk_nz_5050_wt_pct ?? r.nz_5050_wt_pct) : '—'}</td>
+      <td>${(r.risk_affordable_slotcap_1l ?? r.affordable_slotcap_1l) ? '<span class="pill pill-green">Selected ₹1L</span>' : '<span style="color:var(--sub)">Candidate</span>'}</td>
     </tr>`).join('');
 }
 
@@ -747,14 +794,17 @@ function renderCharts() {
   };
 
   if (CHARTS.nav) CHARTS.nav.destroy();
+  const r2Nav = ch.nav.R2_Risk9m_6M_DD15_Sh75_GoldLiq50 || ch.nav.F2_9m_6M_DD12_Sh75_GoldLiq50;
+  const r7Nav = ch.nav.R7_NormZ_Risk9m_6M_DD15_Sh75_GoldLiq50 || ch.nav.F7_NormZ_9m_6M_DD12_Sh75_GoldLiq50;
   CHARTS.nav = new Chart(document.getElementById('navChart'), {
     type: 'line',
     data: {
       labels,
       datasets: [
-        { label: 'F2 Recommended (EW DD12 Sh75)', data: rebased(ch.nav.F2_9m_6M_DD12_Sh75_GoldLiq50), borderColor: '#22c55e', borderWidth: 2.3, pointRadius: 0 },
-        { label: 'F7 NormZ (DD12 Sh75)', data: rebased(ch.nav.F7_NormZ_9m_6M_DD12_Sh75_GoldLiq50), borderColor: '#6366f1', borderWidth: 2, pointRadius: 0 },
-        { label: 'Unhedged 50/50 9M', data: rebased(ch.nav.Unhedged_9m_6M), borderColor: '#94a3b8', borderWidth: 1.5, borderDash: [4,4], pointRadius: 0 },
+        { label: 'R2 Upgraded (Risk9M DD15 Sh75)', data: rebased(r2Nav), borderColor: '#22c55e', borderWidth: 2.5, pointRadius: 0 },
+        { label: 'R7 NormZ (Risk9M DD15)', data: rebased(r7Nav), borderColor: '#a855f7', borderWidth: 2, pointRadius: 0 },
+        { label: 'F2 Raw Baseline (DD12 Sh75)', data: rebased(ch.nav.F2_9m_6M_DD12_Sh75_GoldLiq50), borderColor: '#6366f1', borderWidth: 1.7, borderDash: [4,4], pointRadius: 0 },
+        { label: 'Unhedged 50/50 9M', data: rebased(ch.nav.Unhedged_9m_6M), borderColor: '#94a3b8', borderWidth: 1.3, borderDash: [2,3], pointRadius: 0 },
         { label: 'Midcap 150 EW Universe', data: rebased(ch.nav.Midcap150_EW_Universe), borderColor: '#3b82f6', borderWidth: 1.5, pointRadius: 0 },
         { label: '50/50 Gold + Liquid', data: rebased(ch.nav.GOLD_50_LIQUID_50), borderColor: '#f59e0b', borderWidth: 1.5, pointRadius: 0 },
       ],
@@ -770,14 +820,17 @@ function renderCharts() {
   });
 
   if (CHARTS.dd) CHARTS.dd.destroy();
+  const r2Dd = (ch.drawdown_pct.R2_Risk9m_6M_DD15_Sh75_GoldLiq50 || ch.drawdown_pct.F2_9m_6M_DD12_Sh75_GoldLiq50).slice(startIdx);
+  const trigLvl = STATE.regime.trigger_dd_pct || -15;
   CHARTS.dd = new Chart(document.getElementById('ddChart'), {
     type: 'line',
     data: {
       labels,
       datasets: [
-        { label: 'F2 Hedged Drawdown %', data: ch.drawdown_pct.F2_9m_6M_DD12_Sh75_GoldLiq50.slice(startIdx), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.12)', fill: true, borderWidth: 1.8, pointRadius: 0 },
-        { label: 'Unhedged Drawdown %', data: ch.drawdown_pct.Unhedged_9m_6M.slice(startIdx), borderColor: '#ef4444', borderWidth: 1.3, pointRadius: 0 },
-        { label: '-12% Trigger Threshold', data: labels.map(() => -12), borderColor: '#f59e0b', borderDash: [5,5], borderWidth: 1.2, pointRadius: 0 },
+        { label: 'R2 Risk9M DD15 Drawdown %', data: r2Dd, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.12)', fill: true, borderWidth: 1.9, pointRadius: 0 },
+        { label: 'F2 Raw DD12 Drawdown %', data: ch.drawdown_pct.F2_9m_6M_DD12_Sh75_GoldLiq50.slice(startIdx), borderColor: '#6366f1', borderWidth: 1.3, borderDash: [4,4], pointRadius: 0 },
+        { label: 'Unhedged Drawdown %', data: ch.drawdown_pct.Unhedged_9m_6M.slice(startIdx), borderColor: '#ef4444', borderWidth: 1.2, pointRadius: 0 },
+        { label: `${trigLvl}% Trigger Threshold`, data: labels.map(() => trigLvl), borderColor: '#f59e0b', borderDash: [5,5], borderWidth: 1.2, pointRadius: 0 },
       ],
     },
     options: {
@@ -787,10 +840,10 @@ function renderCharts() {
     },
   });
 
+  const yR2 = (STATE.performance_summary.R2_Risk9m_6M_DD15_Sh75_GoldLiq50 || STATE.performance_summary.F2_9m_6M_DD12_Sh75_GoldLiq50).yearly_returns_pct || {};
   const yF2 = STATE.performance_summary.F2_9m_6M_DD12_Sh75_GoldLiq50.yearly_returns_pct || {};
-  const yUn = STATE.performance_summary.Unhedged_9m_6M.yearly_returns_pct || {};
   const yEw = STATE.performance_summary.Midcap150_EW_Universe.yearly_returns_pct || {};
-  const yrs = Object.keys(yF2);
+  const yrs = Object.keys(yR2);
 
   if (CHARTS.yearly) CHARTS.yearly.destroy();
   CHARTS.yearly = new Chart(document.getElementById('yearlyChart'), {
@@ -798,8 +851,8 @@ function renderCharts() {
     data: {
       labels: yrs,
       datasets: [
-        { label: 'F2 DIY Index', data: yrs.map(y => yF2[y]), backgroundColor: '#22c55e' },
-        { label: 'Unhedged 50/50', data: yrs.map(y => yUn[y]), backgroundColor: '#6366f1' },
+        { label: 'R2 Risk9M DD15', data: yrs.map(y => yR2[y]), backgroundColor: '#22c55e' },
+        { label: 'F2 Raw9M DD12', data: yrs.map(y => yF2[y]), backgroundColor: '#6366f1' },
         { label: 'Midcap 150 EW', data: yrs.map(y => yEw[y]), backgroundColor: '#3b82f6' },
       ],
     },
