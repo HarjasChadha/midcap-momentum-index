@@ -4,632 +4,1762 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DIY Midcap 150 Momentum Index</title>
+<meta name="description" content="Interactive Nifty Midcap 150 Momentum portfolio calculator, 4-block market regime monitor, historical charts, and backtest dashboard.">
+<meta property="og:title" content="DIY Midcap 150 Momentum Index">
+<meta property="og:description" content="Interactive Nifty Midcap 150 Momentum portfolio calculator, 4-block market regime monitor, historical charts, and backtest dashboard.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
   :root {
-    --bg: #0f1117;
-    --card: #1a1d27;
-    --card2: #222634;
-    --border: #2a2d3a;
-    --text: #e8eaf0;
-    --sub: #8b8fa8;
-    --equity: #22c55e;
-    --gold: #f59e0b;
-    --debt: #3b82f6;
-    --danger: #ef4444;
-    --accent: #6366f1;
-    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --canvas: #f8fafc;
+    --surface: #ffffff;
+    --surface-subtle: #f1f5f9;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --ink: #0f172a;
+    --ink-secondary: #475569;
+    --ink-muted: #64748b;
+    --accent: #059669;
+    --accent-hover: #047857;
+    --accent-soft: #ecfdf5;
+    --amber: #b45309;
+    --amber-soft: #fffbeb;
+    --amber-border: #fde68a;
+    --crimson: #dc2626;
+    --crimson-soft: #fef2f2;
+    --crimson-border: #fecaca;
+    --slate-blue: #1d4ed8;
+    --slate-blue-soft: #eff6ff;
+    --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --radius-lg: 12px;
+    --radius-md: 8px;
+    --radius-sm: 6px;
+    --sidebar-w: 248px;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
   }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-size: 14px;
-    line-height: 1.45;
-    padding-bottom: 48px;
+
+  html, body {
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
-  .topbar {
-    background: var(--card);
-    border-bottom: 1px solid var(--border);
-    padding: 12px 20px;
+
+  button, input, select, textarea {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+  }
+
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  }
+
+  /* App Shell */
+  .shell {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
+    min-height: 100vh;
+    width: 100%;
+  }
+
+  /* Sidebar Navigation */
+  .sidebar {
+    width: var(--sidebar-w);
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
     position: sticky;
     top: 0;
-    z-index: 100;
+    height: 100vh;
+    z-index: 40;
   }
-  .brand { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .brand h1 { font-size: 16px; font-weight: 700; letter-spacing: 0.3px; }
-  .pill {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 999px;
-    border: 1px solid transparent;
-    white-space: nowrap;
-  }
-  .pill-accent { color: #a5b4fc; background: rgba(99,102,241,0.16); border-color: rgba(99,102,241,0.35); }
-  .pill-green { color: #86efac; background: rgba(34,197,94,0.14); border-color: rgba(34,197,94,0.35); }
-  .pill-amber { color: #fde68a; background: rgba(245,158,11,0.14); border-color: rgba(245,158,11,0.35); }
-  .pill-red { color: #fca5a5; background: rgba(239,68,68,0.14); border-color: rgba(239,68,68,0.35); }
-  .pill-blue { color: #93c5fd; background: rgba(59,130,246,0.14); border-color: rgba(59,130,246,0.35); }
-  .meta-right { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--sub); }
 
-  .container { max-width: 1320px; margin: 0 auto; padding: 16px; }
-  .banner {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-left: 4px solid var(--equity);
-    border-radius: 12px;
-    padding: 16px;
+  .sidebar-brand {
+    height: 60px;
+    padding: 0 20px;
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 14px;
-    margin-bottom: 16px;
-  }
-  .banner.defensive { border-left-color: var(--gold); background: linear-gradient(90deg, rgba(245,158,11,0.08), var(--card)); }
-  .banner-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .banner-sub { color: var(--sub); font-size: 13px; margin-top: 4px; }
-  .alloc-bar-wrap { min-width: min(100%, 260px); flex: 1 1 300px; }
-  .alloc-labels { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; color: var(--sub); font-weight: 600; }
-  .alloc-bar { height: 10px; border-radius: 999px; background: var(--card2); overflow: hidden; display: flex; }
-  .seg-eq { background: var(--equity); }
-  .seg-gold { background: var(--gold); }
-  .seg-liq { background: var(--debt); }
-
-  .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-  .kpi {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 13px 14px;
-  }
-  .kpi-lbl { font-size: 11px; color: var(--sub); text-transform: uppercase; letter-spacing: 0.4px; }
-  .kpi-val { font-size: 21px; font-weight: 700; margin-top: 4px; font-family: var(--mono); }
-  .kpi-note { font-size: 11px; color: var(--sub); margin-top: 3px; }
-  .c-green { color: var(--equity); }
-  .c-amber { color: var(--gold); }
-  .c-red { color: var(--danger); }
-  .c-blue { color: var(--debt); }
-
-  .tabs {
-    display: flex;
-    gap: 8px;
     border-bottom: 1px solid var(--border);
-    margin-bottom: 16px;
-    overflow-x: auto;
-    padding-bottom: 10px;
   }
-  .tab-btn {
-    background: var(--card);
-    color: var(--sub);
-    border: 1px solid var(--border);
-    padding: 8px 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 13px;
+
+  .brand-wordmark {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--ink);
     white-space: nowrap;
   }
-  .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .sidebar-nav {
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+  }
+
+  .nav-group-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    padding: 12px 12px 6px;
+  }
+
+  .nav-btn {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-secondary);
+    transition: background-color 150ms var(--ease), color 150ms var(--ease);
+    white-space: nowrap;
+  }
+
+  .nav-btn:hover {
+    background: var(--surface-subtle);
+    color: var(--ink);
+  }
+
+  .nav-btn.active {
+    background: var(--surface-subtle);
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .nav-sub {
+    font-size: 12px;
+    color: var(--ink-muted);
+    font-weight: 400;
+  }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--ink-muted);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .sidebar-footer strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* Main Area */
+  .main-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Top Bar (Strict 3-zone contract) */
+  .topbar {
+    height: 60px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .mobile-menu-btn {
+    display: none;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--ink);
+    flex-shrink: 0;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--ink-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .breadcrumb-current {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    background: var(--ink);
+    color: #ffffff;
+    border: 1px solid var(--ink);
+    border-radius: var(--radius-md);
+    padding: 9px 16px;
+    min-height: 40px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background-color 150ms var(--ease), transform 150ms var(--ease);
+  }
+
+  .btn-primary:hover { background: #1e293b; }
+  .btn-primary:active { transform: translateY(1px); }
+
+  .btn-accent {
+    background: var(--accent);
+    color: #ffffff;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-md);
+    padding: 9px 16px;
+    min-height: 40px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background-color 150ms var(--ease);
+  }
+
+  .btn-accent:hover { background: var(--accent-hover); }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 8px 14px;
+    min-height: 40px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 150ms var(--ease), border-color 150ms var(--ease);
+  }
+
+  .btn-secondary:hover {
+    background: var(--surface-subtle);
+    border-color: var(--border-strong);
+  }
+
+  /* One-Line Financial Intuition Strip (Quiet, Scannable, Zero Boxes) */
+  .intuition-key {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--ink-secondary);
+    line-height: 1.5;
+  }
+
+  .intuition-key strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .intuition-inline {
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-top: 6px;
+    line-height: 1.45;
+  }
+
+  .intuition-inline strong {
+    color: var(--ink-secondary);
+    font-weight: 600;
+  }
+
+  /* Workspace Viewport */
+  .workspace {
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 28px 64px;
+  }
+
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
 
-  .card {
-    background: var(--card);
+  /* Flat Single-Elevation Surface */
+  .panel {
+    background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 16px;
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .panel-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+
+  .panel-desc {
+    font-size: 14px;
+    color: var(--ink-secondary);
+    margin-top: 4px;
+    max-width: 68ch;
+  }
+
+  /* Market Posture Hero Strip */
+  .posture-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .posture-kicker {
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .posture-headline {
+    font-family: var(--font-display);
+    font-size: clamp(1.35rem, 2.2vw, 1.75rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+
+  .posture-sub {
+    font-size: 14px;
+    color: var(--ink-secondary);
+    margin-top: 6px;
+    max-width: 62ch;
+  }
+
+  .alloc-block {
+    min-width: min(100%, 300px);
+    flex: 0 1 360px;
+    padding-top: 4px;
+  }
+
+  .alloc-row-labels {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-secondary);
+    margin-bottom: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .alloc-bar {
+    height: 10px;
+    background: var(--surface-subtle);
+    border-radius: 999px;
+    overflow: hidden;
+    display: flex;
+  }
+
+  .seg-eq { background: var(--accent); transition: opacity 200ms var(--ease); }
+  .seg-gold { background: #d97706; }
+  .seg-liq { background: #2563eb; }
+
+  .alloc-footnote {
+    font-size: 12px;
+    color: var(--ink-muted);
+    margin-top: 8px;
+  }
+
+  /* Expandable Drawer inside Flat Panel (Hairline Separated — No Nested Cards) */
+  .drawer-trigger-row {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .drawer-summary-meta {
+    font-size: 13px;
+    color: var(--ink-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .drawer-body {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+
+  .drawer-body[hidden] { display: none; }
+
+  /* Clean Unboxed Metric Strip (Hairline Dividers, Zero Nested Cards) */
+  .metric-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin: 20px 0;
+  }
+
+  .metric-cell {
+    padding: 16px 20px 16px 0;
+    border-right: 1px solid var(--border);
     min-width: 0;
   }
-  .card h2 { font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 
-  .controls-grid {
+  .metric-cell:not(:first-child) {
+    padding-left: 20px;
+  }
+
+  .metric-cell:last-child {
+    border-right: none;
+    padding-right: 0;
+  }
+
+  .metric-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-muted);
+  }
+
+  .metric-value {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-top: 4px;
+    line-height: 1.25;
+  }
+
+  .metric-note {
+    font-size: 12px;
+    color: var(--ink-muted);
+    margin-top: 4px;
+  }
+
+  /* 5-Column Signal Strip (Inside Expandable Market Health Drawer) */
+  .signal-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    gap: 12px;
-    margin-bottom: 14px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 16px;
   }
-  .ctrl label { display: block; font-size: 11px; color: var(--sub); margin-bottom: 5px; font-weight: 600; text-transform: uppercase; }
-  .ctrl input[type="number"], .ctrl input[type="text"], .ctrl select, textarea {
-    width: 100%;
-    background: var(--bg);
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 10px;
+
+  .signal-item {
+    padding-right: 14px;
+    border-right: 1px solid var(--border);
+  }
+
+  .signal-item:last-child {
+    border-right: none;
+    padding-right: 0;
+  }
+
+  .signal-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .signal-weight {
+    font-size: 12px;
+    color: var(--ink-muted);
+    font-weight: 400;
+  }
+
+  .signal-val {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 18px;
+    font-weight: 600;
+    margin-top: 6px;
+  }
+
+  .signal-desc {
+    font-size: 12px;
+    color: var(--ink-muted);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  /* Form Controls */
+  .controls-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 20px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .field-grow { flex: 1 1 240px; }
+
+  .field label {
     font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
   }
-  .quick-caps { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
-  .chip-btn {
-    background: var(--card2);
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 4px 8px;
-    font-size: 11px;
+
+  .input-box, .select-box, .textarea-box {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    padding: 9px 12px;
+    min-height: 40px;
+    font-size: 14px;
+    color: var(--ink);
+    width: 100%;
+    transition: border-color 150ms var(--ease);
+  }
+
+  .input-box:hover, .select-box:hover, .textarea-box:hover {
+    border-color: #94a3b8;
+  }
+
+  .input-box.mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+  }
+
+  .textarea-box {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    resize: vertical;
+  }
+
+  /* Segmented Controls (Interactive Filter Buttons) */
+  .segmented {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    background: var(--surface-subtle);
+    border-radius: var(--radius-md);
+    flex-wrap: wrap;
+  }
+
+  .seg-btn {
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+    min-height: 32px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background-color 150ms var(--ease), color 150ms var(--ease);
+  }
+
+  .seg-btn:hover { color: var(--ink); }
+
+  .seg-btn.active {
+    background: var(--surface);
+    color: var(--ink);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  }
+
+  /* Checkboxes & Inline Toggles */
+  .check-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .check-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--ink);
+    cursor: pointer;
+    min-height: 36px;
+  }
+
+  .check-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
     cursor: pointer;
   }
-  .chip-btn:hover, .chip-btn.active { border-color: var(--accent); background: rgba(99,102,241,0.2); }
-  .toggle-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; padding: 10px 12px; background: var(--card2); border-radius: 8px; margin-bottom: 14px; }
-  .toggle-row label { display: flex; align-items: center; gap: 7px; font-size: 13px; cursor: pointer; }
-  .btn-primary { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 7px 13px; font-weight: 600; font-size: 12px; cursor: pointer; }
-  .btn-secondary { background: var(--card2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 7px 13px; font-weight: 600; font-size: 12px; cursor: pointer; }
 
-  .table-wrap { overflow-x: auto; max-width: 100%; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th, td { padding: 9px 10px; border-bottom: 1px solid var(--border); text-align: left; }
-  th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--sub); background: var(--card2); position: sticky; top: 0; }
-  td.num, th.num { text-align: right; font-family: var(--mono); }
-  tr:hover td { background: rgba(255,255,255,0.02); }
-  tr.row-muted td { opacity: 0.55; }
+  /* Subtle Notice Strip (Zero thick left borders) */
+  .notice-strip {
+    background: var(--amber-soft);
+    border: 1px solid var(--amber-border);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #78350f;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
 
-  .chart-box { position: relative; height: 340px; width: 100%; }
-  .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 16px; }
+  .notice-strip[hidden] { display: none; }
+
+  /* Tables */
+  .table-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border-top: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  th, td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  th {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    background: var(--canvas);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  td.num, th.num {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  tbody tr:hover td {
+    background: #f8fafc;
+  }
+
+  tr.row-muted td {
+    opacity: 0.5;
+  }
+
+  .col-detail { display: none; }
+  .show-details .col-detail { display: table-cell; }
+
+  /* Semantic Text Colors (Always Paired With Clear Text Labels) */
+  .t-green { color: var(--accent-hover); }
+  .t-amber { color: var(--amber); }
+  .t-red { color: var(--crimson); }
+  .t-blue { color: var(--slate-blue); }
+  .t-muted { color: var(--ink-muted); }
+
+  .asset-name { font-weight: 600; color: var(--ink); }
+  .role-text { font-size: 13px; color: var(--ink-secondary); white-space: nowrap; }
+  .note-text { font-size: 13px; color: var(--ink-muted); }
+
+  /* Two-Column Equal-Height Layouts */
+  .two-col {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    align-items: stretch;
+  }
+
   .two-col > * { min-width: 0; }
-  .qa-item { border-left: 3px solid var(--accent); padding-left: 12px; margin-bottom: 14px; }
-  .qa-item h3 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
-  .qa-item p { color: #cbd5e1; font-size: 13px; }
-  .warn-box { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.35); border-radius: 10px; padding: 12px 14px; font-size: 13px; margin-bottom: 14px; }
+
+  .three-col {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    align-items: stretch;
+  }
+
+  .three-col > * { min-width: 0; }
+
+  /* Charts */
+  .chart-box {
+    position: relative;
+    height: 350px;
+    width: 100%;
+  }
+
+  .chart-box-sm {
+    position: relative;
+    height: 300px;
+    width: 100%;
+  }
+
+  /* Strategy 3-Step Story Row */
+  .step-block {
+    padding-right: 20px;
+    border-right: 1px solid var(--border);
+  }
+
+  .step-block:last-child {
+    border-right: none;
+    padding-right: 0;
+  }
+
+  .step-num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-hover);
+    margin-bottom: 6px;
+  }
+
+  .step-title {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+
+  .step-copy {
+    font-size: 14px;
+    color: var(--ink-secondary);
+    line-height: 1.55;
+  }
+
+  /* Clean Expandable Q&A Accordions (No thick left accent bar) */
+  .qa-list {
+    border-top: 1px solid var(--border);
+  }
+
+  details.qa-row {
+    border-bottom: 1px solid var(--border);
+  }
+
+  details.qa-row summary {
+    list-style: none;
+    padding: 16px 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  details.qa-row summary::-webkit-details-marker { display: none; }
+
+  .qa-chevron {
+    font-size: 14px;
+    color: var(--ink-muted);
+    transition: transform 160ms var(--ease);
+    flex-shrink: 0;
+  }
+
+  details.qa-row[open] .qa-chevron {
+    transform: rotate(180deg);
+  }
+
+  .qa-answer {
+    padding: 0 0 18px;
+    font-size: 14px;
+    color: var(--ink-secondary);
+    max-width: 78ch;
+    line-height: 1.65;
+  }
+
+  .qa-answer strong { color: var(--ink); }
+
+  /* Empty & Error States */
+  .empty-state {
+    padding: 36px 20px;
+    text-align: center;
+    color: var(--ink-muted);
+    font-size: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .empty-state p {
+    margin-bottom: 12px;
+    max-width: 48ch;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Loading Skeleton */
+  .skeleton-bar {
+    height: 18px;
+    background: var(--surface-subtle);
+    border-radius: 4px;
+    width: 60%;
+  }
+
+  /* Mobile Backdrop & Responsive */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.35);
+    z-index: 35;
+  }
+
+  @media (max-width: 1024px) {
+    .metric-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .metric-cell { border-right: none; border-bottom: 1px solid var(--border); padding: 14px 12px 14px 0; }
+    .metric-cell:not(:first-child) { padding-left: 0; }
+    .metric-cell:nth-child(even) { padding-left: 16px; border-left: 1px solid var(--border); }
+    .metric-cell:nth-last-child(-n+2) { border-bottom: none; }
+    .signal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .signal-item { border-right: none; border-bottom: 1px solid var(--border); padding: 0 0 12px; }
+    .signal-item:last-child { border-bottom: none; }
+    .two-col, .three-col { grid-template-columns: 1fr; }
+    .step-block { border-right: none; border-bottom: 1px solid var(--border); padding: 0 0 16px; }
+    .step-block:last-child { border-bottom: none; padding-bottom: 0; }
+  }
+
+  @media (max-width: 860px) {
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      transform: translateX(-100%);
+      transition: transform 200ms var(--ease);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-backdrop.open { display: block; }
+    .mobile-menu-btn { display: inline-flex; }
+    .topbar { padding: 0 16px; height: 56px; gap: 12px; }
+    .workspace { padding: 16px 16px 48px; }
+    .panel { padding: 16px; margin-bottom: 16px; }
+    .metric-strip { grid-template-columns: 1fr; }
+    .metric-cell:nth-child(even) { padding-left: 0; border-left: none; }
+    .metric-cell:nth-last-child(2) { border-bottom: 1px solid var(--border); }
+    .signal-grid { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <div class="brand">
-    <h1>DIY Midcap 150 Momentum Index</h1>
-    <span class="pill pill-accent" id="strategyBadge" style="white-space:normal; max-width:100%;">R3 · Risk-Adj 9M · 4-Block Multi-Factor · TrendGold</span>
-    <span class="pill pill-blue" id="nseBadge">NSE MCP Connecting...</span>
-  </div>
-  <div class="meta-right">
-    <span>As of <strong id="asOfDate">—</strong></span>
-    <span>·</span>
-    <span>Universe: <strong id="univCount">150</strong></span>
-  </div>
-</div>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
-<div class="container" id="appRoot">
-  <div class="banner" id="regimeBanner">
-    <div>
-      <div class="banner-title">
-        <span id="regimeTitle">Loading Live Market Regime...</span>
-        <span class="pill pill-green" id="regimePill">—</span>
-      </div>
-      <div class="banner-sub" id="regimeSubtitle">Fetching live NSE Midcap 150 momentum metrics...</div>
+<div class="shell">
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar" id="sidebar" aria-label="Workspace navigation">
+    <div class="sidebar-brand">
+      <span class="brand-wordmark">Midcap 150 Momentum</span>
     </div>
-    <div class="alloc-bar-wrap">
-      <div class="alloc-labels">
-        <span id="lblEq">Equity —%</span>
-        <span id="lblGold">GOLDBEES —%</span>
-        <span id="lblLiq">LIQUIDCASE —%</span>
-      </div>
-      <div class="alloc-bar">
-        <div class="seg-eq" id="barEq" style="width:100%"></div>
-        <div class="seg-gold" id="barGold" style="width:0%"></div>
-        <div class="seg-liq" id="barLiq" style="width:0%"></div>
-      </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">Daily Action</div>
+      <button class="nav-btn active" data-tab="portfolio">
+        <span>Action &amp; Orders</span>
+      </button>
+      <button class="nav-btn" data-tab="rebalance">
+        <span>Rebalance &amp; Tax Diff</span>
+      </button>
+
+      <div class="nav-group-label">Explore &amp; Verify</div>
+      <button class="nav-btn" data-tab="charts">
+        <span>Performance &amp; Risk</span>
+      </button>
+      <button class="nav-btn" data-tab="rankings">
+        <span>Top 60 Stocks</span>
+      </button>
+      <button class="nav-btn" data-tab="research">
+        <span>Strategy &amp; Proof</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div>Data as of <strong id="asOfDate">—</strong></div>
+      <div><span id="univCount">150</span> NSE Midcap stocks · <span id="nseStatusText">Loading feed</span></div>
     </div>
-  </div>
+  </aside>
 
-  <div class="card" id="mfDiagCard" style="padding:12px 16px;">
-    <h2 style="margin-bottom:8px;">
-      <span>Causal 4-Block Regime Composite &amp; TrendGold EMA150 Gate</span>
-      <span id="mfGateBadge" class="pill pill-blue" style="white-space:normal; max-width:100%; line-height:1.35;">Checking Gate...</span>
-    </h2>
-    <div id="mfBlocksGrid" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr)); gap:10px;"></div>
-  </div>
-
-  <div class="kpi-grid" id="kpiGrid"></div>
-
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="portfolio">Portfolio &amp; Order Sheet</button>
-    <button class="tab-btn" data-tab="charts">Index &amp; Drawdown Charts</button>
-    <button class="tab-btn" data-tab="research">Backtest Findings &amp; Matrix</button>
-    <button class="tab-btn" data-tab="rankings">Live Top 60 Scorer</button>
-  </div>
-
-  <!-- TAB 1: PORTFOLIO & ORDER SHEET -->
-  <div class="tab-panel active" id="tab-portfolio">
-    <div class="card">
-      <h2>
-        <span>Execution Calculator &amp; Rebalance Ticket</span>
-        <div>
-          <button class="btn-secondary" id="exportCsvBtn">Export Orders CSV</button>
+  <!-- MAIN WORKSPACE -->
+  <div class="main-col">
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open navigation menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="breadcrumb">
+          <span>Portfolio</span>
+          <span aria-hidden="true">/</span>
+          <span class="breadcrumb-current" id="breadcrumbTitle">Action &amp; Orders</span>
         </div>
-      </h2>
-      <div class="controls-grid">
-        <div class="ctrl">
-          <label for="capitalInput">Your Capital (₹)</label>
-          <input type="number" id="capitalInput" value="100000" min="10000" step="10000">
-          <div class="quick-caps">
-            <button class="chip-btn active" data-cap="100000">₹1L</button>
-            <button class="chip-btn" data-cap="200000">₹2L</button>
-            <button class="chip-btn" data-cap="350000">₹3.5L</button>
-            <button class="chip-btn" data-cap="500000">₹5L</button>
-            <button class="chip-btn" data-cap="1000000">₹10L</button>
+      </div>
+
+      <div class="topbar-actions">
+        <button class="btn-primary" id="exportCsvBtn">Export Orders CSV</button>
+      </div>
+    </header>
+
+    <main class="workspace" id="appRoot">
+      <!-- ================================================================ -->
+      <!-- VIEW 1: ACTION & ORDERS                                          -->
+      <!-- ================================================================ -->
+      <section class="tab-panel active" id="tab-portfolio" aria-label="Action and Orders">
+        <!-- Market Posture Summary -->
+        <div class="panel">
+          <div class="posture-top">
+            <div>
+              <div class="posture-kicker">
+                <span id="regimeStateLabel" class="t-green">Loading market signal...</span>
+                <span class="t-muted" aria-hidden="true">·</span>
+                <span class="t-muted" id="regimeStrategyShort">R3 Multi-Factor + TrendGold</span>
+              </div>
+              <h1 class="posture-headline" id="regimeTitle">Loading Live Market Posture...</h1>
+              <p class="posture-sub" id="regimeSubtitle">Fetching live Nifty Midcap 150 momentum and safety signals.</p>
+            </div>
+
+            <div class="alloc-block">
+              <div class="alloc-row-labels">
+                <span id="lblEq">Stocks —%</span>
+                <span id="lblGold">Gold —%</span>
+                <span id="lblLiq">Cash —%</span>
+              </div>
+              <div class="alloc-bar" role="img" aria-label="Target portfolio allocation split">
+                <div class="seg-eq" id="barEq" style="width:100%"></div>
+                <div class="seg-gold" id="barGold" style="width:0%"></div>
+                <div class="seg-liq" id="barLiq" style="width:0%"></div>
+              </div>
+              <div class="alloc-footnote" id="gateSummaryText">Checking Gold vs Cash safe-haven gate...</div>
+              <div class="alloc-footnote">EMA150 is Gold's 150-day average trend — holds Gold only when rising, else Cash.</div>
+            </div>
+          </div>
+
+          <div class="drawer-trigger-row">
+            <span class="drawer-summary-meta" id="quickMarketStats">Midcap drawdown, India VIX, and breadth loading...</span>
+            <button class="btn-secondary" id="toggleDiagnosticsBtn" aria-expanded="false" aria-controls="diagnosticsDrawer">
+              Inspect 4-Signal Breakdown
+            </button>
+          </div>
+
+          <!-- Progressive Disclosure: 4-Block Market Health & TrendGold Diagnostics -->
+          <div class="drawer-body" id="diagnosticsDrawer" hidden>
+            <div style="margin-bottom: 14px; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <div style="font-weight: 600; font-size: 14px; color: var(--ink);">4-Block Market Health Score (MF4)</div>
+                <div style="font-size: 13px; color: var(--ink-muted);">Blends 4 independent gauges on a -1 to +1 scale: below -0.10 turns Cautious (60% stocks), below -0.25 turns Defensive (25%), and above +0.18 returns to 100% stocks.</div>
+              </div>
+              <div style="font-size: 13px; color: var(--ink-secondary);" id="mfGateDetail">—</div>
+            </div>
+            <div class="signal-grid" id="mfBlocksGrid"></div>
+            <div class="intuition-key" style="margin-top: 16px; padding-bottom: 0;">
+              <div><strong>1Y Drawdown:</strong> How far the average Midcap 150 stock currently sits below its highest point in the past year.</div>
+              <div><strong>India VIX:</strong> Market fear gauge measuring expected 30-day swings — higher numbers mean choppier, riskier markets.</div>
+              <div><strong>Stocks &gt; 50-DMA:</strong> Share of midcap stocks trading above their 50-day average price — shows whether the rally is broad or narrow.</div>
+            </div>
           </div>
         </div>
-        <div class="ctrl">
-          <label for="presetSelect">Strategy Preset</label>
-          <select id="presetSelect">
-            <option value="R3" selected>R3 Optimal Default: Risk-Adj 9M · 4-Block Multi-Factor · TrendGold150</option>
-            <option value="S3">S3 Runner-Up: Sortino 9M · 4-Block Multi-Factor · TrendGold150</option>
-            <option value="R2">R2 Simple Trigger: Risk-Adj 9M · 6M Rebal · DD&gt;15% Sh75% (50/50)</option>
-            <option value="R7">R7 Concentrated: NormZ Risk-Adj 9M · 6M Rebal · DD&gt;15% Sh75%</option>
-            <option value="F2">F2 Legacy V1: Raw 9M · 6M Rebal · DD&gt;12% Sh75% (50/50)</option>
-            <option value="F4">F4 Large Capital (&gt;₹5L): Raw 12M · 12M Rebal · DD&gt;12% Sh50%</option>
-          </select>
-        </div>
-        <div class="ctrl">
-          <label for="postureOverride">Posture View</label>
-          <select id="postureOverride">
-            <option value="LIVE">Live Signal Today</option>
-            <option value="SIM_CAUTIOUS">Simulate Cautious (40% Defensive)</option>
-            <option value="SIM_CRASH">Simulate Crash (75% Defensive)</option>
-          </select>
-        </div>
-      </div>
 
-      <div class="toggle-row">
-        <label><input type="checkbox" id="slotCapToggle" checked> Sequential-SlotCap (&lt; ₹3.5L substitutes unaffordable stocks up)</label>
-        <label><input type="checkbox" id="liqSweepToggle" checked> Sweep Idle Cash into LIQUIDCASE (₹<span id="liqPxLbl">117.1</span>/u)</label>
-      </div>
+        <!-- Interactive Capital & Order Sheet -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Order Calculator</h2>
+              <p class="panel-desc">Enter your investment amount to calculate exact whole-share buy orders for the Top 30 midcap momentum basket (Top 20 get 4.17% each; Ranks 21–30 get 1.67%).</p>
+            </div>
+          </div>
 
-      <div class="kpi-grid" id="calcSummaryGrid"></div>
+          <div class="controls-bar">
+            <div class="field" style="flex: 0 1 220px;">
+              <label for="capitalInput">Investment Capital (&#8377;)</label>
+              <input class="input-box mono" type="number" id="capitalInput" value="100000" min="10000" step="10000">
+            </div>
 
-      <div class="table-wrap" style="max-height: 520px; overflow-y: auto;">
-        <table id="ordersTable">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Asset / Symbol</th>
-              <th>Bucket</th>
-              <th class="num">Mom Score</th>
-              <th class="num">Target %</th>
-              <th class="num">LTP (₹)</th>
-              <th class="num">Target (₹)</th>
-              <th class="num">Buy Shares</th>
-              <th class="num">Actual (₹)</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
+            <div class="field">
+              <label>Quick Amounts</label>
+              <div class="segmented quick-caps" role="group" aria-label="Quick capital amounts">
+                <button class="seg-btn active" data-cap="100000">&#8377;1L</button>
+                <button class="seg-btn" data-cap="200000">&#8377;2L</button>
+                <button class="seg-btn" data-cap="350000">&#8377;3.5L</button>
+                <button class="seg-btn" data-cap="500000">&#8377;5L</button>
+                <button class="seg-btn" data-cap="1000000">&#8377;10L</button>
+              </div>
+            </div>
 
-    <div class="card">
-      <h2><span>Tax-Aware Holdings Diff &amp; 330–364d LTCG Shield (Browser Local Only)</span></h2>
-      <p style="color:var(--sub); font-size:12px; margin-bottom:10px;">
-        Paste current holdings as <code>SYMBOL,SHARES,YYYY-MM-DD</code> (stored only in browser <code>localStorage</code>). Flags positions near 365d LTCG conversion and enforces <strong>weakest-first</strong> trimming + ₹500 minimum delta filter.
-      </p>
-      <div class="two-col">
-        <div>
-          <textarea id="holdingsInput" rows="5" placeholder="LAURUSLABS,2,2025-12-15&#10;BHEL,10,2026-04-01&#10;GOLDBEES,150,2026-03-10"></textarea>
-          <div style="margin-top:8px; display:flex; gap:8px;">
-            <button class="btn-primary" id="computeDiffBtn">Compute Weakest-First Trade Diff</button>
-            <button class="btn-secondary" id="clearHoldingsBtn">Clear</button>
+            <div class="field" style="flex: 0 1 230px;">
+              <label for="postureOverride">Market Scenario</label>
+              <select class="select-box" id="postureOverride">
+                <option value="LIVE">Live Market Signal (Today)</option>
+                <option value="SIM_CAUTIOUS">Simulate Caution (60% Stocks)</option>
+                <option value="SIM_CRASH">Simulate Crash (25% Stocks)</option>
+              </select>
+            </div>
+
+            <div class="field" style="margin-left: auto;">
+              <button class="btn-secondary" id="toggleAdvancedBtn" aria-expanded="false" aria-controls="advancedOptionsDrawer">
+                Strategy &amp; Filters
+              </button>
+            </div>
+          </div>
+
+          <!-- Progressive Disclosure: Strategy Preset & Execution Rules -->
+          <div class="drawer-body" id="advancedOptionsDrawer" hidden>
+            <div class="controls-bar" style="margin-bottom: 14px;">
+              <div class="field field-grow">
+                <label for="presetSelect">Strategy Preset</label>
+                <select class="select-box" id="presetSelect">
+                  <option value="R3" selected>R3 Optimal (Default) — Steady 9M Momentum · 4-Signal Regime · Gold/Cash Gate</option>
+                  <option value="S3">S3 Runner-Up — Downside Sortino 9M · 4-Signal Regime · Gold/Cash Gate</option>
+                  <option value="R2">R2 Simple Trigger — Steady 9M · -15% Drawdown Switch · 50/50 Gold &amp; Cash</option>
+                  <option value="R7">R7 Concentrated — NormZ Weighted 9M · -15% Drawdown Switch · 50/50 Gold &amp; Cash</option>
+                  <option value="F2">F2 Legacy V1 — Raw 9M Return · -12% Drawdown Switch · 50/50 Gold &amp; Cash</option>
+                  <option value="F4">F4 Large Capital (&gt;&#8377;5L) — Raw 12M · Annual Rebalance · 50% Crash Shift</option>
+                </select>
+                <div class="intuition-inline" id="presetIntuition"><strong>How R3 works:</strong> Ranks stocks by 9-month return divided by volatility (favoring smooth climbers over wild spikes) and routes safety money to Gold or Cash based on Gold's trend.</div>
+              </div>
+            </div>
+            <div class="check-group">
+              <label class="check-label">
+                <input type="checkbox" id="slotCapToggle" checked>
+                <span><strong>SlotCap filter</strong> — if 1 share costs more than its rupee budget (under &#8377;3.5L), skips it and promotes Rank 31+ so cash stays invested</span>
+              </label>
+              <label class="check-label">
+                <input type="checkbox" id="liqSweepToggle" checked>
+                <span><strong>LIQUIDCASE cash sweep</strong> — parks leftover whole-share rupees into an overnight liquid ETF (&#8377;<span id="liqPxLbl">117.16</span>/unit) instead of 0% cash</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Simulation Warning Banner (only visible when simulating) -->
+          <div class="notice-strip" id="simNotice" hidden style="margin-top: 18px;">
+            <span id="simNoticeText">Simulation mode active — showing hypothetical orders.</span>
+            <button class="btn-secondary" id="resetLivePostureBtn" style="min-height: 32px; padding: 4px 10px;">Back to Live Signal</button>
+          </div>
+
+          <!-- Unboxed 4-Column Order Summary Strip -->
+          <div class="metric-strip" id="calcSummaryGrid"></div>
+
+          <!-- Table Toolbar -->
+          <div class="table-toolbar">
+            <div style="font-size: 13px; color: var(--ink-muted);" id="ordersMetaLine">Showing order sheet for 30-stock momentum basket</div>
+            <label class="check-label" style="font-size: 13px; color: var(--ink-secondary); min-height: 32px;">
+              <input type="checkbox" id="orderDetailsToggle">
+              <span>Show momentum scores &amp; target &#8377;</span>
+            </label>
+          </div>
+          <div class="intuition-inline" id="orderDetailIntuition" hidden style="margin-top: 0; margin-bottom: 12px;">
+            <strong>Score:</strong> Past 9-month return divided by volatility (skipping the last month) — higher means a steadier climb. <strong>Target &#8377;:</strong> Ideal rupee budget before rounding down to whole shares.
+          </div>
+
+          <div class="table-wrap" id="ordersTableWrap" style="max-height: 540px; overflow-y: auto;">
+            <table id="ordersTable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Asset</th>
+                  <th>Group</th>
+                  <th class="num col-detail">Score</th>
+                  <th class="num">Weight</th>
+                  <th class="num">Price (&#8377;)</th>
+                  <th class="num col-detail">Target (&#8377;)</th>
+                  <th class="num">Buy Qty</th>
+                  <th class="num">Amount (&#8377;)</th>
+                  <th>Note</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
-        <div id="diffOutput" class="table-wrap" style="font-size:12px; color:var(--sub);">
-          Enter holdings on the left and click Compute Trade Diff.
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- VIEW 2: REBALANCE & TAX DIFF                                     -->
+      <!-- ================================================================ -->
+      <section class="tab-panel" id="tab-rebalance" aria-label="Rebalance and Tax Diff">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Tax-Aware Rebalance &amp; Holdings Diff</h1>
+              <p class="panel-desc">Paste what you currently own to generate exact weakest-first Buy/Sell orders. Saved only in your browser — never sent to a server.</p>
+            </div>
+            <div style="font-size: 13px; color: var(--ink-muted);" id="diffTargetContext">Comparing against live &#8377;1,00,000 target</div>
+          </div>
+
+          <div class="two-col">
+            <div>
+              <div class="field" style="margin-bottom: 12px;">
+                <label for="holdingsInput">Your Current Holdings (<code>SYMBOL,SHARES,YYYY-MM-DD</code>)</label>
+                <textarea class="textarea-box" id="holdingsInput" rows="8" placeholder="LAURUSLABS,2,2025-12-15&#10;BHEL,10,2026-04-01&#10;GOLDBEES,150,2026-03-10"></textarea>
+              </div>
+              <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                <button class="btn-accent" id="computeDiffBtn">Compute Trade Diff</button>
+                <button class="btn-secondary" id="clearHoldingsBtn">Clear</button>
+              </div>
+              <div class="intuition-key" style="margin-top: 18px; padding-bottom: 0;">
+                <div><strong>STCG (20%) vs LTCG (12.5%):</strong> Profits sold before 365 days are taxed at 20%; held 365+ days are taxed at 12.5% (first &#8377;1.25L/year is tax-free).</div>
+                <div><strong>330–364d LTCG Shield:</strong> Flags any sell order just days away from 365 days so you can avoid jumping into the higher 20% tax bracket.</div>
+                <div><strong>Weakest-First Trimming:</strong> Defensive cuts trim lower-ranked stocks first so your strongest winners keep compounding toward LTCG.</div>
+                <div><strong>&#8377;500 Minimum Delta:</strong> Skips tiny buy/sell adjustments under &#8377;500 (unless exiting a stock completely) to avoid needless fees.</div>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column;">
+              <div class="metric-strip" id="diffSummaryStrip" style="margin-top: 0; grid-template-columns: repeat(3, minmax(0, 1fr));">
+                <div class="metric-cell">
+                  <div class="metric-label">Buy Orders</div>
+                  <div class="metric-value t-green" id="diffBuyTotal">&#8377;0</div>
+                  <div class="metric-note" id="diffBuyCount">0 trades</div>
+                </div>
+                <div class="metric-cell">
+                  <div class="metric-label">Sell Orders</div>
+                  <div class="metric-value t-red" id="diffSellTotal">&#8377;0</div>
+                  <div class="metric-note" id="diffSellCount">0 trades</div>
+                </div>
+                <div class="metric-cell">
+                  <div class="metric-label">LTCG Warnings</div>
+                  <div class="metric-value t-amber" id="diffTaxFlags">0</div>
+                  <div class="metric-note">Held 330–364 days</div>
+                </div>
+              </div>
+
+              <div id="diffOutput" class="table-wrap" style="flex: 1; max-height: 440px; overflow-y: auto;">
+                <div class="empty-state">
+                  <p>Paste your current holdings as <code>SYMBOL,SHARES,YYYY-MM-DD</code> on the left and click Compute Trade Diff to see exact Buy, Sell, and Hold actions.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
+      </section>
 
-  <!-- TAB 2: CHARTS -->
-  <div class="tab-panel" id="tab-charts">
-    <div class="card">
-      <h2>
-        <span>Cumulative Equity Curve (Post-Cost 15bps + STCG/LTCG Tax, Start ₹1,00,000)</span>
-        <div style="display:flex; gap:6px; flex-wrap:wrap;">
-          <button class="chip-btn active" data-win="ALL">Full (2018–26)</button>
-          <button class="chip-btn" data-win="5Y">5Y</button>
-          <button class="chip-btn" data-win="3Y">3Y</button>
-          <button class="chip-btn" data-win="1Y">1Y</button>
-          <button class="chip-btn" id="logScaleBtn">Log Scale: ON</button>
+      <!-- ================================================================ -->
+      <!-- VIEW 3: PERFORMANCE & RISK CHARTS                                -->
+      <!-- ================================================================ -->
+      <section class="tab-panel" id="tab-charts" aria-label="Performance and Risk Charts">
+        <!-- Headline Metrics Strip -->
+        <div class="panel" style="padding-bottom: 12px;">
+          <div class="panel-header" style="margin-bottom: 8px;">
+            <div>
+              <h1 class="panel-title">Historical Performance &amp; Downside Protection</h1>
+              <p class="panel-desc">All figures include 0.15% per-trade friction and real Indian FIFO taxes (20% STCG, 12.5% LTCG above &#8377;1.25L exemption).</p>
+            </div>
+          </div>
+          <div class="metric-strip" id="perfSummaryGrid" style="margin-bottom: 12px; border-bottom: none;"></div>
+          <div class="intuition-key" style="padding-bottom: 4px;">
+            <div><strong>CAGR:</strong> Steady yearly compounding rate needed to grow your starting rupee amount into the final value.</div>
+            <div><strong>Max Drawdown (Max DD):</strong> Largest peak-to-bottom percentage fall during a crash — measures worst-case pain.</div>
+            <div><strong>Sharpe Ratio:</strong> Extra return earned above a safe 6.25% T-bill per unit of overall ups-and-downs — higher means a smoother ride.</div>
+            <div><strong>Calmar Ratio:</strong> Yearly return divided by worst crash (CAGR &divide; Max DD) — shows reward earned per unit of crash risk.</div>
+          </div>
         </div>
-      </h2>
-      <div class="chart-box"><canvas id="navChart"></canvas></div>
-    </div>
 
-    <div class="two-col">
-      <div class="card">
-        <h2><span>Drawdown Underwater Curve vs -15% Crash Trigger</span></h2>
-        <div class="chart-box"><canvas id="ddChart"></canvas></div>
-      </div>
-      <div class="card">
-        <h2><span>Calendar Year Net Returns (%)</span></h2>
-        <div class="chart-box"><canvas id="yearlyChart"></canvas></div>
-      </div>
-    </div>
+        <!-- Primary Equity Curve -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Growth of &#8377;1,00,000 (2018–2026)</h2>
+              <p class="panel-desc">Log scale spaces equal percentage gains evenly (so doubling from &#8377;1L to &#8377;2L matches &#8377;5L to &#8377;10L). Toggle overlays below to compare other presets.</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <div class="segmented" role="group" aria-label="Chart time range">
+                <button class="seg-btn active" data-win="ALL">Full</button>
+                <button class="seg-btn" data-win="5Y">5Y</button>
+                <button class="seg-btn" data-win="3Y">3Y</button>
+                <button class="seg-btn" data-win="1Y">1Y</button>
+              </div>
+              <button class="btn-secondary" id="logScaleBtn" style="min-height: 36px; padding: 6px 12px;" title="Spaces equal percentage gains evenly on the vertical axis">Log Scale: On</button>
+            </div>
+          </div>
 
-    <div class="card">
-      <h2><span>Historical 4-Block Multi-Factor Regime Switches (2018–2026)</span></h2>
-      <div class="table-wrap">
-        <table id="triggersTable">
-          <thead><tr><th>Date</th><th>Signal Event</th><th class="num">EW Index DD252</th><th class="num">Target Equity</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+          <div class="check-group" style="margin-bottom: 14px; font-size: 13px;">
+            <span class="t-muted" style="font-weight: 600;">Compare overlays:</span>
+            <label class="check-label" style="font-size: 13px; min-height: 28px;"><input type="checkbox" class="series-toggle" data-series="s3"> S3 Sortino</label>
+            <label class="check-label" style="font-size: 13px; min-height: 28px;"><input type="checkbox" class="series-toggle" data-series="r2"> R2 Simple (-15%)</label>
+            <label class="check-label" style="font-size: 13px; min-height: 28px;"><input type="checkbox" class="series-toggle" data-series="f2"> F2 Legacy (-12%)</label>
+            <label class="check-label" style="font-size: 13px; min-height: 28px;"><input type="checkbox" class="series-toggle" data-series="u0"> Unhedged 9M (no crash shield)</label>
+          </div>
 
-  <!-- TAB 3: RESEARCH MATRIX -->
-  <div class="tab-panel" id="tab-research">
-    <div class="warn-box">
-      <strong>Clean ETF-Free 16-Year Zero-Survivorship Audit (4,171 Days × 4,047 Equities, 419 NSE ETFs Excluded, Lagged PIT Mask):</strong> After purging <code>LIQUID1</code>/<code>GOLD*</code> ETF contamination and 1-day mask look-ahead leak, passive rolling Midcap Ranks 81–230 (772 equities) returned <strong>9.77% CAGR</strong> (<code>-54.08%</code> MaxDD, <code>0.18</code> Sharpe). Replacing arbitrary <code>-15%</code>/<code>50-50</code> heuristics with <strong>Numba + SciPy Walk-Forward Multi-Factor + TrendGold EMA150 (R3)</strong> delivers <strong>18.16% CAGR</strong> (<code>-26.93%</code> DD, <code>0.78</code> Sharpe) across all 3 blind regimes (<code>13.76% → 25.69% → 21.26%</code>) — beating legacy <code>F2</code> (<code>12.04%</code> / <code>0.39</code> Sh) by <strong>+6.12% p.a.</strong> and doubling risk-adjusted Sharpe!
-    </div>
-    <div class="card">
-      <h2>
-        <span>All 6 Institutional Questions Answered Mathematically (Zero Arbitrary Constants)</span>
-        <a href="https://github.com/HarjasChadha/midcap-momentum-index/blob/main/MATHEMATICAL_SPECIFICATION.md" target="_blank" rel="noopener" class="btn-secondary" style="text-decoration:none;">Full Mathematical Spec (PDF/MD) ↗</a>
-      </h2>
-      <div class="qa-item">
-        <h3>1. How was -15% found, and why do single-trigger DD rules still fail OOS?</h3>
-        <p>Exhaustive <strong>21,600-config Numba grid</strong> (<code>dd_win × dd_th × r_ratio × re_ma × confirm × thrust × shift</code>) found the marginal Sharpe peak sits at <strong>15%–16% drawdown</strong> from the 252d rolling peak (<code>0.15 → 0.429 Sh</code>; <code>0.16 → 0.435 Sh</code> vs <code>0.12 → 0.385 Sh</code> / <code>0.08 → 0.339 Sh</code> at 472% whipsaw TO). However, rank correlation across periods was <strong>Spearman ρ = -0.091 (P1→P2)</strong> and <strong>+0.122 (P1+P2→P3)</strong> — proving any single DD% threshold overfits prior crash amplitudes (e.g. legacy DD15 lost <code>-20.8%</code> vs <code>-16.7%</code> unhedged in 2022 RateHike).</p>
-      </div>
-      <div class="qa-item">
-        <h3>2. Why 4-Block Multi-Factor Mixture instead of a single noisy trigger?</h3>
-        <p>We replaced the single trigger with <strong>4 causally normalized (756d rolling median/MAD) orthogonal blocks</strong> (pair correlations <code>0.219–0.496</code>): <strong>Trend [44%]</strong> (EW/EMA126, EW/EMA200, Rel vs Nifty), <strong>Stress Vol [10%]</strong> (21d downside semivol + VIX spike), <strong>Market Breadth [34%]</strong> (% &gt;50DMA + 21d Zweig thrust), and <strong>Crash &amp; Gold [12%]</strong> (Daniel-Moskowitz negative trend + Gold/EMA126). SciPy optimization strictly on <code>P1 2011–16</code> converged identically to <code>P1+P2</code> (<code>[0.44, 0.10, 0.34, 0.12]</code>), lifting 16Y R3 CAGR from <code>15.79%</code> (R2) to <strong>18.16%</strong> while winning every blind period.</p>
-      </div>
-      <div class="qa-item">
-        <h3>3. When do we shift back in (Zero-Arbitrary Hysteresis + Zweig Thrust)?</h3>
-        <p>The 21,600-config surface proved simple <code>re_ratio=1.0</code> (disabling hysteresis) raised turnover to <code>501%</code> and hurt Sharpe (<code>0.356</code> vs <code>0.416</code>), while <code>-9%/50DMA</code> missed bottom snapbacks. <code>MF4</code> uses <strong>Asymmetric EWMA (8d down / 22d up) + 3-state Schmitt hysteresis</strong> (<code>&lt;-0.25</code> → 25% Eq; <code>&lt;-0.10</code> → 60% Eq; re-enter 100% Eq at <code>&gt;+0.18</code> with 25d minimum hold) plus an explicit <strong>Breadth Thrust override</strong> (21d breadth surge ≥ +25 pts &amp; &gt;50%), capturing fast V-bottoms like 2020 COVID &amp; Mar 2023 cleanly.</p>
-      </div>
-      <div class="qa-item">
-        <h3>4. Was 50/50 Gold+Liquid optimal, and what fixed Gold's -31.7% 2026 slump?</h3>
-        <p>No — modeling actual RBI T-Bills / <code>LIQUIDCASE</code> (<code>5.77%</code> actual CAGR since 2024) + Sec 50AA <strong>30% debt tax</strong> vs <strong>12.5%</strong> &gt;1yr Gold shows higher Gold beats static <code>50/50</code> (<code>14.03%</code> → <code>15.91%</code> at 100% Gold), EXCEPT static 100% Gold got hit by <strong>-31.7%</strong> in 2026! Our causal <strong>TrendGold gate (GOLDBEES &gt; 1.02×EMA150 ±2% hysteresis, else 100% LIQUIDCASE)</strong> automatically flips defensive capital into <code>LIQUIDCASE</code> during gold bear markets (<code>18.16%</code> CAGR / <code>0.78</code> Sharpe; saving <code>+16.8%</code> over static Gold during 2026).</p>
-      </div>
-      <div class="qa-item">
-        <h3>5. Why not Short Futures, Long Puts, Gilts, Hang Seng, or LowVol30 equity?</h3>
-        <p>Head-to-head testing across all 16 years proves: <strong>Internal LowVol30</strong> fails (<code>-40.96%</code> DD, <code>0.93</code> stress correlation); <strong>Monthly 5% OTM Puts</strong> suffer VIX-scaled theta decay (<code>0.47</code> Sharpe); <strong>Long-Gilt (LICNETFGSC)</strong> stays capped around <code>0.48</code> Sharpe with 30% debt slab tax; and <strong>Short Index Futures</strong> (<code>0.81</code> Sh, <code>-32.38%</code> DD) requires <code>₹25L–₹1Cr+</code> due to <code>₹16.5L</code> SEBI contract minimums + 0.05% Apr-2026 STT + 30% slab tax — making <code>TrendGold150</code> optimal from <code>₹1L</code> to <code>₹25L+</code>.</p>
-      </div>
-      <div class="qa-item">
-        <h3>6. Why Top-20 + Top-30 = 30 stocks (and not 50), plus ₹1L SlotCap?</h3>
-        <p>Top 20 is a <strong>strict subset</strong> of Top 30 — every Top-20 stock appears in both sleeves (<code>2.50% + 1.67% = 4.17%</code> weight), while Ranks 21–30 appear once (<code>1.67%</code>). So the basket holds <strong>30 unique stocks</strong>, balancing conviction and risk. At <code>₹1L</code>, <strong>Sequential-SlotCap</strong> skips single shares costing above their rupee slot and sweeps residual cash into <code>LIQUIDCASE</code> (~99.9% invested).</p>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2><span>Clean ETF-Free 16-Year FIFO Verification (Zero-Leak PIT · 772 Equities · 2011–2026)</span></h2>
-      <div class="table-wrap">
-        <table id="pitResearchTable">
-          <thead>
-            <tr>
-              <th>Universe</th>
-              <th>Strategy</th>
-              <th class="num">P1 Train 11–16</th>
-              <th class="num">P2 Val1 16–21</th>
-              <th class="num">P3 Val2 21–26</th>
-              <th class="num">Full 16Y CAGR</th>
-              <th class="num">16Y MaxDD</th>
-              <th class="num">16Y Sharpe</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="two-col">
-      <div class="card">
-        <h2><span>Historical Crash &amp; 2026 Gold Slump Attribution (%)</span></h2>
-        <div class="table-wrap">
-          <table id="crashAnatomyTable">
-            <thead>
-              <tr>
-                <th>Defensive Engine</th>
-                <th class="num">2011 DD</th>
-                <th class="num">18-19 NBFC</th>
-                <th class="num">2020 COVID</th>
-                <th class="num">2022 Hike</th>
-                <th class="num">24-25 Bear</th>
-                <th class="num">2026 Gold Slump</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
+          <div class="chart-box"><canvas id="navChart"></canvas></div>
         </div>
-      </div>
-      <div class="card">
-        <h2><span>Realistic Monthly F&amp;O Hedges vs TrendGold (With VIX Theta, STT &amp; 30% Tax)</span></h2>
-        <div class="table-wrap">
-          <table id="fnoCompareTable">
-            <thead>
-              <tr>
-                <th>Overlay Strategy</th>
-                <th class="num">Full CAGR</th>
-                <th class="num">Max DD</th>
-                <th class="num">Sharpe</th>
-                <th>Minimum Capital &amp; Notes</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
+
+        <!-- Secondary Charts Side-by-Side -->
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Drawdown From Peak (%)</h2>
+                <p class="panel-desc">Percentage drop from each prior all-time high — staying closer to 0% means shallower, faster-recovering crashes.</p>
+              </div>
+            </div>
+            <div class="chart-box-sm"><canvas id="ddChart"></canvas></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Calendar-Year Net Returns (%)</h2>
+                <p class="panel-desc">Post-tax return in each calendar year vs owning all 150 midcaps equally (Equal-Weight Index).</p>
+              </div>
+            </div>
+            <div class="chart-box-sm"><canvas id="yearlyChart"></canvas></div>
+          </div>
         </div>
-      </div>
-    </div>
 
-    <div class="card">
-      <h2><span>Live Synchronized Backtest Matrix (2018-01-02 to Current, 15bps + Post-Tax)</span></h2>
-      <div class="table-wrap">
-        <table id="researchTable">
-          <thead>
-            <tr>
-              <th>Scenario</th>
-              <th>Strategy</th>
-              <th class="num">CAGR%</th>
-              <th class="num">MaxDD%</th>
-              <th class="num">Calmar</th>
-              <th class="num">Sharpe</th>
-              <th class="num">Sortino</th>
-              <th class="num">Turn%</th>
-              <th class="num">Eq%</th>
-              <th class="num">Tax (₹)</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+        <!-- Historical Regime Switches -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Historical Market Posture Switches (2018–2026)</h2>
+              <p class="panel-desc">Every date the 4-block engine stepped down to safety or stepped back into full equity.</p>
+            </div>
+            <div class="segmented" role="group" aria-label="Filter posture switches">
+              <button class="seg-btn active" data-trig-filter="ALL">All Events</button>
+              <button class="seg-btn" data-trig-filter="DEFENSIVE">Defensive Exits</button>
+              <button class="seg-btn" data-trig-filter="RISK_ON">Equity Re-Entries</button>
+            </div>
+          </div>
+          <div class="table-wrap" style="max-height: 380px; overflow-y: auto;">
+            <table id="triggersTable">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Posture Change</th>
+                  <th class="num">Midcap 1Y Drawdown</th>
+                  <th class="num">Target Stocks</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
 
-  <!-- TAB 4: LIVE TOP 60 -->
-  <div class="tab-panel" id="tab-rankings">
-    <div class="card">
-      <h2>
-        <span>Top 60 Nifty Midcap 150 Momentum Rankings (Risk-Adj 9M · Sortino 9M · Raw 9M/12M)</span>
-        <input type="text" id="rankSearch" placeholder="Filter ticker (e.g. LAURUS)..." style="max-width:240px; background:var(--bg); color:var(--text); border:1px solid var(--border); padding:6px 10px; border-radius:8px;">
-      </h2>
-      <div class="table-wrap" style="max-height: 600px; overflow-y: auto;">
-        <table id="rankingsTable">
-          <thead>
-            <tr>
-              <th>Risk9M #</th>
-              <th>Sortino #</th>
-              <th>Raw9M #</th>
-              <th>12M #</th>
-              <th>Symbol</th>
-              <th class="num">LTP (₹)</th>
-              <th class="num">Risk 9M</th>
-              <th class="num">Sortino 9M</th>
-              <th class="num">Raw 9M %</th>
-              <th class="num">&gt;50DMA</th>
-              <th class="num">R3 EW%</th>
-              <th class="num">R7 NormZ%</th>
-              <th>₹1L SlotCap</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
+      <!-- ================================================================ -->
+      <!-- VIEW 4: TOP 60 STOCKS LEADERBOARD                                -->
+      <!-- ================================================================ -->
+      <section class="tab-panel" id="tab-rankings" aria-label="Live Top 60 Stocks">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Top 60 Nifty Midcap 150 Leaders</h1>
+              <p class="panel-desc">Ranked by steady 9-month risk-adjusted momentum (skipping the last month). Ranks 1–30 form the active basket.</p>
+            </div>
+          </div>
+
+          <div class="table-toolbar" style="margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <input class="input-box" type="text" id="rankSearch" placeholder="Search symbol (e.g. LAURUS)..." style="width: 220px; min-height: 36px; padding: 6px 12px;">
+              <div class="segmented" role="group" aria-label="Filter stock rankings">
+                <button class="seg-btn active" data-rank-filter="ALL">All 60</button>
+                <button class="seg-btn" data-rank-filter="TOP30">Top 30 Basket</button>
+                <button class="seg-btn" data-rank-filter="AFF1L">&#8377;1L Affordable</button>
+                <button class="seg-btn" data-rank-filter="MA50">Above 50-DMA</button>
+              </div>
+            </div>
+
+            <label class="check-label" style="font-size: 13px; color: var(--ink-secondary); min-height: 32px;">
+              <input type="checkbox" id="rankDetailsToggle">
+              <span>Show all quant scores &amp; ranks</span>
+            </label>
+          </div>
+
+          <div class="intuition-key" id="rankIntuitionKey" style="margin-bottom: 12px;">
+            <div><strong>9M Return:</strong> Price gain over the past 9 months, skipping the most recent 1 month to avoid short-term pullbacks.</div>
+            <div><strong>Above 50-DMA:</strong> Whether the stock currently trades above its 50-day average price (short-term uptrend check).</div>
+            <div><strong>Target Wt &amp; &#8377;1L SlotCap:</strong> Planned share of your portfolio (4.17% Top 20, 1.67% Ranks 21–30) and whether 1 share fits a &#8377;1L budget.</div>
+            <div id="rankDetailIntuition" hidden><strong>Risk-Adj 9M / Sortino 9M / NormZ:</strong> Risk-Adj divides 9M return by total volatility; Sortino divides by downside drops only; NormZ tilts heavier weight into extreme leaders.</div>
+          </div>
+
+          <div class="table-wrap" id="rankingsTableWrap" style="max-height: 600px; overflow-y: auto;">
+            <table id="rankingsTable">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th class="col-detail">Sortino #</th>
+                  <th class="col-detail">Raw 9M #</th>
+                  <th class="col-detail">12M #</th>
+                  <th>Symbol</th>
+                  <th class="num">Price (&#8377;)</th>
+                  <th class="num">9M Return</th>
+                  <th class="num col-detail">Risk-Adj 9M</th>
+                  <th class="num col-detail">Sortino 9M</th>
+                  <th class="num">Above 50-DMA</th>
+                  <th class="num">Target Wt</th>
+                  <th class="num col-detail">NormZ Wt</th>
+                  <th>&#8377;1L SlotCap</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- VIEW 5: STRATEGY & PROOF                                         -->
+      <!-- ================================================================ -->
+      <section class="tab-panel" id="tab-research" aria-label="Strategy and Research Proof">
+        <!-- 3-Step Plain-English How It Works -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">How This Strategy Works</h1>
+              <p class="panel-desc">Verified over 16 years (2011–2026) across 4,047 NSE equities with zero survivorship bias, 0.15% trade costs, and Indian FIFO taxes.</p>
+            </div>
+            <a href="./public/assets/aistudio/Momentum_Strategy_Mathematical_Specification_8d7e4a2d.pdf" target="_blank" rel="noopener" class="btn-secondary">
+              Full Math Specification (PDF) &nearr;
+            </a>
+          </div>
+
+          <div class="three-col">
+            <div class="step-block">
+              <div class="step-num">01. Stock Selection</div>
+              <div class="step-title">Hold the 30 steadiest winners</div>
+              <p class="step-copy">Every 6 months, rank all 150 midcaps by 9-month return divided by volatility (skipping the last month). Ranks 1–20 get 4.17% weight each and Ranks 21–30 get 1.67% each.</p>
+            </div>
+            <div class="step-block">
+              <div class="step-num">02. Market Weather</div>
+              <div class="step-title">4 signals protect against crashes</div>
+              <p class="step-copy">Instead of one noisy crash trigger, 4 independent signals (Trend 44%, Breadth 34%, Macro/Gold 12%, Volatility 10%) scale stock exposure cleanly between 100%, 60%, and 25%.</p>
+            </div>
+            <div class="step-block">
+              <div class="step-num">03. Smart Safe Haven</div>
+              <div class="step-title">Gold when trending, Cash when not</div>
+              <p class="step-copy">Defensive money moves into GOLDBEES only when Gold trades above its 150-day trend (+2% buffer); otherwise it stays protected in LIQUIDCASE cash.</p>
+            </div>
+          </div>
+
+          <div class="metric-strip" style="margin-bottom: 12px; border-bottom: none;">
+            <div class="metric-cell">
+              <div class="metric-label">16-Year Clean Return (CAGR)</div>
+              <div class="metric-value t-green">18.16%</div>
+              <div class="metric-note">Yearly rate vs 9.77% passive Midcap 150</div>
+            </div>
+            <div class="metric-cell">
+              <div class="metric-label">16-Year Worst Crash (Max DD)</div>
+              <div class="metric-value t-blue">-26.93%</div>
+              <div class="metric-note">Peak-to-bottom drop vs -54.08% passive</div>
+            </div>
+            <div class="metric-cell">
+              <div class="metric-label">Sharpe Ratio (Smoothness)</div>
+              <div class="metric-value">0.78</div>
+              <div class="metric-note">Return per unit of risk — double legacy F2 (0.39)</div>
+            </div>
+            <div class="metric-cell">
+              <div class="metric-label">3 Blind Test Windows</div>
+              <div class="metric-value t-green">All 3 Won</div>
+              <div class="metric-note">13.8% &rarr; 25.7% &rarr; 21.3% out-of-sample</div>
+            </div>
+          </div>
+          <div class="intuition-key" style="padding-bottom: 0;">
+            <div><strong>Zero-Survivorship PIT (Point-in-Time):</strong> Rebuilt using only the actual midcap stocks alive in each past year — prevents hindsight cherry-picking of today's winners.</div>
+            <div><strong>FIFO Taxes:</strong> First-In, First-Out lot accounting — sells your oldest shares first, matching how Indian brokers and tax rules compute STCG/LTCG.</div>
+          </div>
+        </div>
+
+        <!-- 6 Strategy Questions Answered (Clean Accordions) -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Key Strategy Questions Answered</h2>
+              <p class="panel-desc">Plain-English explanations backed by the 16-year NSE archive audit and 21,600-configuration grid tests.</p>
+            </div>
+          </div>
+
+          <div class="qa-list">
+            <details class="qa-row" open>
+              <summary>
+                <span>1. Why use 4 market health signals instead of a simple -15% drop rule?</span>
+                <span class="qa-chevron" aria-hidden="true">&#9662;</span>
+              </summary>
+              <div class="qa-answer">
+                Testing 21,600 single-threshold crash rules showed that any single drawdown number overfits past crash depths (out-of-sample rank correlation was near zero: Spearman &rho; = -0.091). Replacing it with <strong>4 causally normalized orthogonal blocks</strong> — Trend (44%), Breadth (34%), Macro/Gold (12%), and Volatility/VIX (10%) — converged to identical weights across periods and lifted 16-year return from <strong>15.79%</strong> (R2) to <strong>18.16%</strong> (R3) while winning every blind test window.
+              </div>
+            </details>
+
+            <details class="qa-row">
+              <summary>
+                <span>2. When does the strategy move back into stocks after a crash?</span>
+                <span class="qa-chevron" aria-hidden="true">&#9662;</span>
+              </summary>
+              <div class="qa-answer">
+                Simple on/off switches cause excessive whipsaw churn (~501% annual turnover). The 4-block model steps down fast during sell-offs (8-day smoothing) and climbs back steadily (22-day smoothing with a 25-day wait, requiring composite &gt; +0.18 to return to 100% equity). An explicit <strong>Zweig Breadth Thrust</strong> override (21-day breadth surge &ge; +25 pts and &gt; 50%) lets it catch sharp V-bottom recoveries like 2020 COVID and March 2023 cleanly.
+              </div>
+            </details>
+
+            <details class="qa-row">
+              <summary>
+                <span>3. Why switch between Gold and Cash instead of holding 50/50?</span>
+                <span class="qa-chevron" aria-hidden="true">&#9662;</span>
+              </summary>
+              <div class="qa-answer">
+                Liquid cash funds face a 30% debt-slab tax (Sec 50AA), whereas Gold held over 1 year is taxed at 12.5%. Higher Gold beat static 50/50 historically — except static 100% Gold suffered a <strong>-31.7% slump in 2026</strong>. The causal <strong>TrendGold150 gate</strong> holds GOLDBEES when Gold trades &gt; 2% above its 150-day EMA and automatically shifts to LIQUIDCASE when Gold falls &gt; 2% below it, saving <strong>+16.8%</strong> during the 2026 slump.
+              </div>
+            </details>
+
+            <details class="qa-row">
+              <summary>
+                <span>4. Why does "50% Top-20 + 50% Top-30" hold 30 stocks instead of 50?</span>
+                <span class="qa-chevron" aria-hidden="true">&#9662;</span>
+              </summary>
+              <div class="qa-answer">
+                Because the Top 20 stocks are already inside the Top 30. Every Top-20 leader receives weight from both sleeves (<strong>2.50% + 1.67% = 4.17%</strong>), while Ranks 21–30 appear once (<strong>1.67%</strong>). You hold exactly <strong>30 unique stocks</strong> with a 2.5&times; tilt toward the strongest leaders. Under &#8377;3.5L, Sequential-SlotCap skips any single stock priced above its rupee slot and sweeps leftover rupees into LIQUIDCASE.
+              </div>
+            </details>
+
+            <details class="qa-row">
+              <summary>
+                <span>5. Why not hedge with Index Futures, Put Options, Gilts, or Low-Vol stocks?</span>
+                <span class="qa-chevron" aria-hidden="true">&#9662;</span>
+              </summary>
+              <div class="qa-answer">
+                16-year head-to-head tests show: internal Low-Vol stocks still crash hard (<strong>-40.96%</strong> DD, 0.93 stress correlation); monthly 5% OTM Put options bleed VIX-scaled theta (<strong>0.47</strong> Sharpe); Long Gilts stay capped around <strong>0.48</strong> Sharpe with 30% debt tax; and Short Index Futures (<strong>0.81</strong> Sharpe) require <strong>&#8377;25L–&#8377;1Cr+</strong> due to &#8377;16.5L NSE lot minimums and 30% F&amp;O tax. <strong>TrendGold150</strong> works cleanly from &#8377;1L upward.
+              </div>
+            </details>
+
+            <details class="qa-row">
+              <summary>
+                <span>6. How do we know the 16-year backtest has no data leaks or survivorship bias?</span>
+                <span class="qa-chevron" aria-hidden="true">&#9662;</span>
+              </summary>
+              <div class="qa-answer">
+                All 419 NSE ETFs were purged from equity rankings, historical midcap constituents were rebuilt semi-annually from official NSE archives (772 liquid midcaps, 2010–2026) with a 1-day lagged mask to remove forward look-ahead, and every finalist was re-verified on an exact T+1 Python FIFO tax-lot simulator deducting 0.15% one-way friction and Indian capital-gains taxes.
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <!-- Verification Data Vault (Segmented Switcher — 1 Clean Table at a Time) -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Empirical Backtest Tables</h2>
+              <p class="panel-desc">Switch between the four verification tables supporting the strategy.</p>
+            </div>
+            <div class="segmented" role="tablist" aria-label="Verification tables">
+              <button class="seg-btn active" data-vault="pit">16-Year Clean Audit</button>
+              <button class="seg-btn" data-vault="crash">Crash Attribution</button>
+              <button class="seg-btn" data-vault="fno">F&amp;O Hedges vs TrendGold</button>
+              <button class="seg-btn" data-vault="live">2018–26 Live Matrix</button>
+            </div>
+          </div>
+
+          <div class="intuition-key" id="vaultIntuition" style="margin-bottom: 12px;">
+            <div><strong>How to read this table:</strong> Splits 16 years into three 5-year windows (2011–16 Train, 2016–21 Blind Test 1, 2021–26 Blind Test 2). <strong>CAGR</strong> = steady yearly growth; <strong>Max DD</strong> = worst drop; <strong>Sharpe</strong> = return per unit of volatility.</div>
+          </div>
+
+          <div class="vault-pane" id="vault-pit">
+            <div class="table-wrap">
+              <table id="pitResearchTable">
+                <thead>
+                  <tr>
+                    <th>Universe</th>
+                    <th>Strategy</th>
+                    <th class="num">2011–16</th>
+                    <th class="num">2016–21</th>
+                    <th class="num">2021–26</th>
+                    <th class="num">16Y CAGR</th>
+                    <th class="num">Max DD</th>
+                    <th class="num">Sharpe</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="vault-pane" id="vault-crash" hidden>
+            <div class="table-wrap">
+              <table id="crashAnatomyTable">
+                <thead>
+                  <tr>
+                    <th>Defensive Engine</th>
+                    <th class="num">2011 Bear</th>
+                    <th class="num">18–19 NBFC</th>
+                    <th class="num">2020 COVID</th>
+                    <th class="num">2022 Hike</th>
+                    <th class="num">24–25 Bear</th>
+                    <th class="num">2026 Gold Slump</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="vault-pane" id="vault-fno" hidden>
+            <div class="table-wrap">
+              <table id="fnoCompareTable">
+                <thead>
+                  <tr>
+                    <th>Overlay Strategy</th>
+                    <th class="num">16Y CAGR</th>
+                    <th class="num">Max DD</th>
+                    <th class="num">Sharpe</th>
+                    <th>Minimum Capital &amp; Notes</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="vault-pane" id="vault-live" hidden>
+            <div class="table-wrap">
+              <table id="researchTable">
+                <thead>
+                  <tr>
+                    <th>Scenario</th>
+                    <th>Strategy</th>
+                    <th class="num">CAGR</th>
+                    <th class="num">Max DD</th>
+                    <th class="num">Calmar</th>
+                    <th class="num">Sharpe</th>
+                    <th class="num">Sortino</th>
+                    <th class="num">Turnover</th>
+                    <th class="num">Avg Eq</th>
+                    <th class="num">Tax Paid</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
 </div>
 
 <script>
-const fmtInr = (n) => n == null || !isFinite(n) ? '—' : '₹' + Number(n).toLocaleString('en-IN', {maximumFractionDigits: 2});
-const fmtPct = (n, d=2) => n == null || !isFinite(n) ? '—' : Number(n).toFixed(d) + '%';
-const fmtNum = (n, d=2) => n == null || !isFinite(n) ? '—' : Number(n).toFixed(d);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtInr = (n) => n == null || !isFinite(n) ? '—' : '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+const fmtInrInt = (n) => n == null || !isFinite(n) ? '—' : '₹' + Math.round(Number(n)).toLocaleString('en-IN');
+const fmtPct = (n, d = 2) => n == null || !isFinite(n) ? '—' : Number(n).toFixed(d) + '%';
+const fmtNum = (n, d = 2) => n == null || !isFinite(n) ? '—' : Number(n).toFixed(d);
 
 let STATE = null;
 let CHARTS = {};
 let chartWindow = 'ALL';
 let chartLog = true;
+let triggerFilter = 'ALL';
+let rankFilter = 'ALL';
+const extraSeries = { s3: false, r2: false, f2: false, u0: false };
+
+const TAB_LABELS = {
+  portfolio: 'Action & Orders',
+  rebalance: 'Rebalance & Tax Diff',
+  charts: 'Performance & Risk',
+  rankings: 'Top 60 Stocks',
+  research: 'Strategy & Proof',
+};
+
+function switchTab(tabId) {
+  document.querySelectorAll('.nav-btn[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tabId));
+  document.getElementById('breadcrumbTitle').textContent = TAB_LABELS[tabId] || 'Portfolio';
+  closeMobileSidebar();
+  if (tabId === 'charts' && STATE) renderCharts();
+  if (tabId === 'rebalance' && STATE) updateDiffContextLabel();
+}
+
+function closeMobileSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarBackdrop').classList.remove('open');
+}
 
 async function init() {
   const res = await fetch('./data/live_state.json?_=' + Date.now());
+  if (!res.ok) throw new Error('Unable to load market state (HTTP ' + res.status + ')');
   STATE = await res.json();
   renderHeaderAndRegime();
   renderPortfolioCalculator();
+  renderPerfSummary();
   renderPitResearchTable();
   renderResearchTable();
   renderRankingsTable();
   renderTriggersTable();
-  renderCharts();
+  updateDiffContextLabel();
+
+  const saved = localStorage.getItem('mmi_holdings_csv');
+  if (saved) {
+    document.getElementById('holdingsInput').value = saved;
+    computeHoldingsDiff();
+  }
 }
 
 function renderHeaderAndRegime() {
   const r = STATE.regime;
+  const mf = r.multifactor_blocks || {};
+  const tg = r.trend_gold_status || {};
   const mood = STATE.nse_mcp_status?.market_mood;
+
   document.getElementById('asOfDate').textContent = STATE.as_of_date;
   document.getElementById('univCount').textContent = STATE.universe_count;
   document.getElementById('liqPxLbl').textContent = fmtNum(r.etfs.LIQUIDCASE.price, 2);
 
-  const nseBadge = document.getElementById('nseBadge');
-  nseBadge.textContent = STATE.nse_mcp_status?.bulk_quotes_fetched
-    ? `NSE MCP · ${STATE.nse_mcp_status.bulk_quotes_fetched} quotes`
-    : 'Cached History';
+  document.getElementById('nseStatusText').textContent = STATE.nse_mcp_status?.bulk_quotes_fetched
+    ? `NSE live (${STATE.nse_mcp_status.bulk_quotes_fetched} quotes)`
+    : 'Cached history';
 
-  const banner = document.getElementById('regimeBanner');
   const isRiskOn = r.state === 'RISK_ON';
   const isCautious = r.state === 'CAUTIOUS';
-  banner.className = isRiskOn ? 'banner' : 'banner defensive';
+  const defPct = Math.max(0, 100 - r.target_equity_pct);
+  const activeDef = r.active_defensive_etf || 'LIQUIDCASE';
+
+  const stateEl = document.getElementById('regimeStateLabel');
+  stateEl.className = isRiskOn ? 't-green' : (isCautious ? 't-amber' : 't-red');
+  stateEl.textContent = isRiskOn ? 'RISK-ON · Healthy Market' : (isCautious ? 'CAUTIOUS · Partial Shield' : 'DEFENSIVE · Capital Protection');
+
   document.getElementById('regimeTitle').textContent = isRiskOn
-    ? '100% EQUITY · 4-BLOCK MOMENTUM RISK-ON'
-    : `${r.state} REGIME · ${r.target_equity_pct}% EQUITY / ${100 - r.target_equity_pct}% ${r.active_defensive_etf || 'DEFENSIVE'}`;
-  const pill = document.getElementById('regimePill');
-  pill.className = isRiskOn ? 'pill pill-green' : (isCautious ? 'pill pill-amber' : 'pill pill-red');
-  pill.textContent = isRiskOn ? 'RISK-ON 100%' : (isCautious ? 'CAUTIOUS 60%' : 'DEFENSIVE 25%');
+    ? 'Stay 100% invested in momentum stocks'
+    : `Hold ${r.target_equity_pct}% in stocks and ${defPct}% in ${activeDef}`;
 
-  const mf = r.multifactor_blocks || {};
-  const tg = r.trend_gold_status || {};
-  const sb = mood?.stock_breadth;
-  const ad = (sb && sb.up != null && sb.down != null) ? ` · NSE Adv ${sb.up}/${sb.down} Dec (${sb.up_pct}%)` : '';
-  document.getElementById('regimeSubtitle').textContent =
-    `MF4 Smooth: ${fmtNum(mf.composite_smooth, 2)} (Def <-0.25 · Caut <-0.10 · On >+0.18) · EW DD252: ${fmtPct(r.ew_dd252_pct)}` +
-    (r.midcap150_index ? ` · Midcap 150: ${r.midcap150_index.toLocaleString('en-IN')} (${fmtPct(r.midcap150_dd252_pct)})` : '') +
-    ` · VIX: ${fmtNum(r.india_vix, 2)} · Breadth>50DMA: ${fmtPct(r.breadth_50_sma10_pct, 1)}${ad}`;
+  const goldDir = tg.gold_above_gate
+    ? `Gold (GOLDBEES) is trending above its 150-day average, so defensive capital routes to Gold.`
+    : `Gold is ${fmtPct(Math.abs(tg.gold_vs_ema150_pct), 1)} below its 150-day average, so defensive capital stays safely in LIQUIDCASE cash.`;
 
-  document.getElementById('lblEq').textContent = `Equity ${r.target_equity_pct}%`;
-  document.getElementById('lblGold').textContent = `GOLDBEES ${r.target_goldbees_pct}%`;
-  document.getElementById('lblLiq').textContent = `LIQUIDCASE ${r.target_liquidcase_pct}%`;
+  document.getElementById('regimeSubtitle').textContent = isRiskOn
+    ? `All 4 market health signals support full equity exposure (score ${fmtNum(mf.composite_smooth, 2)}). ${goldDir}`
+    : `Market health score is ${fmtNum(mf.composite_smooth, 2)} (weakest stocks trimmed first). ${goldDir}`;
+
+  document.getElementById('lblEq').textContent = `Stocks ${fmtPct(r.target_equity_pct, 0)}`;
+  document.getElementById('lblGold').textContent = `Gold ${fmtPct(r.target_goldbees_pct, 0)}`;
+  document.getElementById('lblLiq').textContent = `Cash ${fmtPct(r.target_liquidcase_pct, 0)}`;
   document.getElementById('barEq').style.width = `${r.target_equity_pct}%`;
   document.getElementById('barGold').style.width = `${r.target_goldbees_pct}%`;
   document.getElementById('barLiq').style.width = `${r.target_liquidcase_pct}%`;
 
-  const gateEl = document.getElementById('mfGateBadge');
-  if (gateEl) {
-    const gActive = !!tg.gold_above_gate;
-    gateEl.className = gActive ? 'pill pill-amber' : 'pill pill-blue';
-    gateEl.textContent = `Defensive Gate: ${tg.active_defensive_etf || 'LIQUIDCASE'} (Gold ₹${fmtNum(tg.gold_price)} vs EMA150 ₹${fmtNum(tg.gold_ema150)}, ${fmtPct(tg.gold_vs_ema150_pct, 1)})`;
-  }
-  const mfGrid = document.getElementById('mfBlocksGrid');
-  if (mfGrid) {
-    const blocks = [
-      { lbl: 'B1 Trend & Rel [44%]', val: mf.b1_trend, desc: 'EW/EMA126, 200 & vs Nifty' },
-      { lbl: 'B2 Downside Vol & VIX [10%]', val: mf.b2_vol, desc: '21d semivol + VIX/EMA63' },
-      { lbl: 'B3 Breadth & Thrust [34%]', val: mf.b3_breadth, desc: `>${fmtPct(r.breadth_50_sma10_pct, 0)} >50DMA + Zweig` },
-      { lbl: 'B4 Crash & Gold [12%]', val: mf.b4_macro_gold, desc: 'DM crash risk + Gold/EMA126' },
-      { lbl: 'Composite (Raw / Smooth)', val: mf.composite_smooth, desc: `Raw ${fmtNum(mf.composite_raw, 2)} · Trigger <-0.25` },
-    ];
-    mfGrid.innerHTML = blocks.map(b => {
-      const v = b.val ?? 0;
-      const cls = v >= 0.10 ? 'c-green' : v <= -0.15 ? 'c-red' : 'c-amber';
-      return `<div style="background:var(--card2); border:1px solid var(--border); border-radius:8px; padding:8px 10px;">
-        <div style="font-size:11px; color:var(--sub); font-weight:600;">${b.lbl}</div>
-        <div style="font-size:17px; font-weight:700; font-family:var(--mono);" class="${cls}">${v >= 0 ? '+' : ''}${fmtNum(v, 3)}</div>
-        <div style="font-size:11px; color:var(--sub);">${b.desc}</div>
-      </div>`;
-    }).join('');
-  }
+  document.getElementById('gateSummaryText').textContent =
+    `Safe-haven gate: ${activeDef} (GOLDBEES ₹${fmtNum(tg.gold_price)} vs 150-day EMA ₹${fmtNum(tg.gold_ema150)})`;
 
-  const psum = STATE.performance_summary || {};
-  const r3 = psum.R3_Risk9m_6M_MF4_TrendGold150 || psum.R2_Risk9m_6M_DD15_Sh75_GoldLiq50 || {};
-  const r3d = psum.R3_Disc1L_SlotCap || psum.R2_Disc1L_SlotCap || {};
-  const s3 = psum.S3_Sortino9m_6M_MF4_TrendGold150 || {};
-  const s3d = psum.S3_Disc1L_SlotCap || {};
-  const f2 = psum.F2_9m_6M_DD12_Sh75_GoldLiq50 || {};
-  const u0 = psum.Unhedged_9m_6M || {};
-  const ew = psum.Midcap150_EW_Universe || {};
-  const kpis = [
-    { lbl: 'R3 Optimal CAGR (2018–26)', val: fmtPct(r3.cagr_pct), note: `₹1L SlotCap: ${fmtPct(r3d.cagr_pct)} · 16Y PIT: 18.16%`, cls: 'c-green' },
-    { lbl: 'S3 Sortino CAGR (2018–26)', val: fmtPct(s3.cagr_pct), note: `₹1L SlotCap: ${fmtPct(s3d.cagr_pct)} · 16Y PIT: 17.21%`, cls: 'c-green' },
-    { lbl: 'Drawdown / Calmar (R3)', val: `${fmtPct(r3.max_dd_pct)} / ${fmtNum(r3.calmar)}`, note: `Sharpe ${fmtNum(r3.sharpe)} vs F2 ${fmtNum(f2.sharpe)} · EW ${fmtPct(ew.max_dd_pct)}`, cls: 'c-blue' },
-    { lbl: 'MF4 Score (Asym 8d/22d)', val: fmtNum(mf.composite_smooth, 3), note: `Raw: ${fmtNum(mf.composite_raw, 3)} · Def <-0.25 · On >+0.18`, cls: (mf.composite_smooth ?? 0) >= 0 ? 'c-green' : 'c-amber' },
-    { lbl: 'TrendGold EMA150 Gate', val: tg.active_defensive_etf || 'LIQUIDCASE', note: `Gold ₹${fmtNum(r.etfs.GOLDBEES.price)} vs EMA150 ₹${fmtNum(tg.gold_ema150)} (${fmtPct(tg.gold_vs_ema150_pct, 1)})`, cls: tg.gold_above_gate ? 'c-amber' : 'c-blue' },
-    { lbl: 'India VIX & EW DD252', val: `${fmtNum(r.india_vix, 2)} / ${fmtPct(r.ew_dd252_pct)}`, note: `Breadth >50DMA: ${fmtPct(r.breadth_50_sma10_pct, 1)} · Unhedged ${fmtPct(u0.max_dd_pct)}`, cls: '' },
+  const sb = mood?.stock_breadth;
+  const advTxt = (sb && sb.up != null && sb.down != null) ? ` · NSE Adv/Dec ${sb.up}/${sb.down}` : '';
+  document.getElementById('quickMarketStats').textContent =
+    `Midcap 1Y Drawdown: ${fmtPct(r.ew_dd252_pct)} · India VIX: ${fmtNum(r.india_vix, 2)} · Stocks > 50-DMA: ${fmtPct(r.breadth_50_sma10_pct, 1)}${advTxt}`;
+
+  document.getElementById('mfGateDetail').textContent =
+    `Active Defensive Asset: ${activeDef} (${fmtPct(tg.gold_vs_ema150_pct, 1)} vs EMA150)`;
+
+  const readTone = (v) => v >= 0.10 ? { cls: 't-green', lbl: 'Healthy' } : v <= -0.15 ? { cls: 't-red', lbl: 'Stressed' } : { cls: 't-amber', lbl: 'Mixed' };
+  const blocks = [
+    { name: 'Trend & Strength', wt: '44%', val: mf.b1_trend, desc: 'Are midcaps above their 6–10 month trend and beating Nifty 50?' },
+    { name: 'Market Breadth', wt: '34%', val: mf.b3_breadth, desc: `Are most midcaps rising together? (${fmtPct(r.breadth_50_sma10_pct, 0)} > 50-DMA)` },
+    { name: 'Macro & Gold', wt: '12%', val: mf.b4_macro_gold, desc: 'Checks if downtrends + volatility or surging Gold warn of a crash.' },
+    { name: 'Volatility & VIX', wt: '10%', val: mf.b2_vol, desc: `Measures downside chop & fear (VIX ${fmtNum(r.india_vix, 1)}); higher = calmer.` },
+    { name: 'Combined Score', wt: 'MF4', val: mf.composite_smooth, desc: `Weighted blend (Raw ${fmtNum(mf.composite_raw, 2)}). Caution <-0.10, Def <-0.25.` },
   ];
-  document.getElementById('kpiGrid').innerHTML = kpis.map(k => `
-    <div class="kpi">
-      <div class="kpi-lbl">${k.lbl}</div>
-      <div class="kpi-val ${k.cls}">${k.val}</div>
-      <div class="kpi-note">${k.note}</div>
-    </div>`).join('');
+
+  document.getElementById('mfBlocksGrid').innerHTML = blocks.map(b => {
+    const v = b.val ?? 0;
+    const tone = readTone(v);
+    const sign = v >= 0 ? '+' : '';
+    return `
+      <div class="signal-item">
+        <div class="signal-name">${esc(b.name)} <span class="signal-weight">(${esc(b.wt)})</span></div>
+        <div class="signal-val ${tone.cls}">${sign}${fmtNum(v, 3)} <span style="font-family:var(--font-body); font-size:12px; font-weight:500;">${tone.lbl}</span></div>
+        <div class="signal-desc">${esc(b.desc)}</div>
+      </div>`;
+  }).join('');
 }
 
 function computeBlendWeights(presetKey, capital, useSlotCap) {
@@ -641,7 +1771,7 @@ function computeBlendWeights(presetKey, capital, useSlotCap) {
     .filter(x => x[scoreField] != null && isFinite(x.px) && x.px > 0)
     .sort((a, b) => b[scoreField] - a[scoreField]);
 
-  const mean = sorted.reduce((s, x) => s + x[scoreField], 0) / sorted.length;
+  const mean = sorted.reduce((s, x) => s + x[scoreField], 0) / Math.max(1, sorted.length);
   const sd = Math.sqrt(sorted.reduce((s, x) => s + (x[scoreField] - mean) ** 2, 0) / Math.max(1, sorted.length - 1)) || 1;
   const normZVal = (raw) => { const z = (raw - mean) / sd; return z > 0 ? 1 + z : 1 / (1 - z); };
 
@@ -658,7 +1788,13 @@ function computeBlendWeights(presetKey, capital, useSlotCap) {
     top20.forEach(x => wMap.set(x.sym, (wMap.get(x.sym) || 0) + 0.5 * (useNormZ ? normZVal(x[scoreField]) / nz20 : 1 / top20.length)));
     top30.forEach(x => wMap.set(x.sym, (wMap.get(x.sym) || 0) + 0.5 * (useNormZ ? normZVal(x[scoreField]) / nz30 : 1 / top30.length)));
 
-    chosen = top30.map((x, idx) => ({ ...x, rank: idx + 1, score: x[scoreField], wt: wMap.get(x.sym) || 0, bucket: idx < 20 ? 'Top20' : 'Rank21-30' }));
+    chosen = top30.map((x, idx) => ({
+      ...x,
+      rank: idx + 1,
+      score: x[scoreField],
+      wt: wMap.get(x.sym) || 0,
+      bucket: idx < 20 ? 'Top 20 Leader' : 'Rank 21–30',
+    }));
     if (!useSlotCap) break;
     const bad = chosen.find(x => x.px > capital * x.wt);
     if (!bad) break;
@@ -705,16 +1841,16 @@ function getLatestComputedOrders() {
       const dTgt = capital * defFrac;
       const dSh = Math.floor(dTgt / dPx);
       const dNote = activeDefEtf === 'GOLDBEES'
-        ? 'TrendGold Gate (Gold > EMA150+2%)'
-        : 'TrendGold Gate -> Cash Shield (Gold < EMA150)';
-      rows.push({ rank: 'D1', sym: activeDefEtf, bucket: 'Defensive 100%', score: null, wt: defFrac, px: dPx, tgt: dTgt, sh: dSh, inv: dSh * dPx, note: dNote });
+        ? 'Safe haven — Gold above 150-day trend'
+        : 'Safe haven — Cash shield (Gold below 150-day trend)';
+      rows.push({ rank: 'D1', sym: activeDefEtf, bucket: 'Safe Haven', tone: 't-amber', score: null, wt: defFrac, px: dPx, tgt: dTgt, sh: dSh, inv: dSh * dPx, note: dNote });
     } else {
       const gTgt = capital * defFrac * 0.5;
       const lTgt = capital * defFrac * 0.5;
       const gSh = Math.floor(gTgt / gPx);
       const lSh = Math.floor(lTgt / lPx);
-      rows.push({ rank: 'D1', sym: 'GOLDBEES', bucket: 'Defensive 50%', score: null, wt: defFrac * 0.5, px: gPx, tgt: gTgt, sh: gSh, inv: gSh * gPx, note: 'Crash Hedge ETF' });
-      rows.push({ rank: 'D2', sym: 'LIQUIDCASE', bucket: 'Defensive 50%', score: null, wt: defFrac * 0.5, px: lPx, tgt: lTgt, sh: lSh, inv: lSh * lPx, note: 'Cash Preservation ETF' });
+      rows.push({ rank: 'D1', sym: 'GOLDBEES', bucket: 'Safe Haven 50%', tone: 't-amber', score: null, wt: defFrac * 0.5, px: gPx, tgt: gTgt, sh: gSh, inv: gSh * gPx, note: 'Crash hedge ETF' });
+      rows.push({ rank: 'D2', sym: 'LIQUIDCASE', bucket: 'Safe Haven 50%', tone: 't-blue', score: null, wt: defFrac * 0.5, px: lPx, tgt: lTgt, sh: lSh, inv: lSh * lPx, note: 'Cash preservation ETF' });
     }
   }
 
@@ -725,8 +1861,17 @@ function getLatestComputedOrders() {
     if (sh > 0) heldCount += 1;
     eqDeployed += inv;
     rows.push({
-      rank: x.rank, sym: x.sym, bucket: x.bucket, score: x.score, wt: x.wt * eqFrac, px: x.px, tgt, sh, inv,
-      note: sh === 0 ? 'Price > slot (0 sh)' : (eqFrac < 0.99 && x.rank <= 15 ? 'Core winner retained' : ''),
+      rank: x.rank,
+      sym: x.sym,
+      bucket: x.bucket,
+      tone: x.rank <= 20 ? 't-green' : 't-muted',
+      score: x.score,
+      wt: x.wt * eqFrac,
+      px: x.px,
+      tgt,
+      sh,
+      inv,
+      note: sh === 0 ? 'Price exceeds rupee slot (0 shares)' : (eqFrac < 0.99 && x.rank <= 15 ? 'Core winner retained' : ''),
     });
   });
 
@@ -736,46 +1881,87 @@ function getLatestComputedOrders() {
   const sweepSh = useSweep ? Math.floor(remCash / liqPx) : 0;
   const sweepInv = sweepSh * liqPx;
   if (sweepSh > 0) {
-    rows.push({ rank: 'SWP', sym: 'LIQUIDCASE', bucket: 'Idle Cash Sweep', score: null, wt: sweepInv / capital, px: liqPx, tgt: remCash, sh: sweepSh, inv: sweepInv, note: 'Parks leftover integer-share cash' });
+    rows.push({ rank: 'Cash', sym: 'LIQUIDCASE', bucket: 'Cash Sweep', tone: 't-blue', score: null, wt: sweepInv / capital, px: liqPx, tgt: remCash, sh: sweepSh, inv: sweepInv, note: 'Parks leftover whole-share rupees' });
   }
   const idleCash = Math.max(0, remCash - sweepInv);
-  return { capital, preset, eqFrac, simCrash, isTrendGold, activeDefEtf, rows, eqDeployed, defInvested, sweepInv, idleCash, heldCount, totalSlots: chosen.length, skipped };
+  return { capital, preset, posture, eqFrac, simCrash, isTrendGold, activeDefEtf, rows, eqDeployed, defInvested, sweepInv, idleCash, heldCount, totalSlots: chosen.length, skipped };
 }
 
 function renderPortfolioCalculator() {
   const res = getLatestComputedOrders();
   const totalDeployed = res.eqDeployed + res.defInvested + res.sweepInv;
-  const defDesc = res.isTrendGold ? `TrendGold → ${res.activeDefEtf}` : '50/50 Gold+Liquid';
-  const cards = [
-    { lbl: 'Equity Deployed', val: fmtInr(res.eqDeployed), note: `${fmtPct(res.eqDeployed / res.capital * 100, 1)} (${res.heldCount}/${res.totalSlots} stocks)`, cls: 'c-green' },
-    { lbl: 'Defensive ETFs', val: fmtInr(res.defInvested), note: res.simCrash ? `${fmtPct(res.defInvested / res.capital * 100, 1)} (${defDesc})` : '0% (Risk-On)', cls: 'c-amber' },
-    { lbl: 'LIQUIDCASE Sweep', val: fmtInr(res.sweepInv), note: `${fmtPct(res.sweepInv / res.capital * 100, 1)} residual cash parked`, cls: 'c-blue' },
-    { lbl: 'Uninvested Cash', val: fmtInr(res.idleCash), note: `Total Utilized: ${fmtPct(totalDeployed / res.capital * 100, 2)}`, cls: '' },
-    { lbl: 'Skipped (SlotCap)', val: String(res.skipped.length), note: res.skipped.slice(0, 4).join(', ') || 'None (All Top 30 affordable)', cls: res.skipped.length ? 'c-amber' : 'c-green' },
+  const defDesc = res.isTrendGold ? res.activeDefEtf : '50/50 Gold & Cash';
+
+  // Simulation notice
+  const simNotice = document.getElementById('simNotice');
+  if (res.posture !== 'LIVE') {
+    simNotice.hidden = false;
+    document.getElementById('simNoticeText').textContent = res.posture === 'SIM_CAUTIOUS'
+      ? `Simulating Caution mode (${fmtPct(res.eqFrac * 100, 0)} Stocks / ${fmtPct((1 - res.eqFrac) * 100, 0)} ${defDesc}). Switch back to Live Signal before placing real orders.`
+      : `Simulating Crash mode (${fmtPct(res.eqFrac * 100, 0)} Stocks / ${fmtPct((1 - res.eqFrac) * 100, 0)} ${defDesc}). Switch back to Live Signal before placing real orders.`;
+  } else {
+    simNotice.hidden = true;
+  }
+
+  const skippedNote = res.skipped.length
+    ? `${res.skipped.length} pricey skipped (${res.skipped.slice(0, 3).join(', ')}${res.skipped.length > 3 ? '...' : ''})`
+    : `All ${res.totalSlots} top stocks affordable`;
+
+  const cells = [
+    { lbl: 'Equity Deployed', val: fmtInrInt(res.eqDeployed), note: `${fmtPct(res.eqDeployed / res.capital * 100, 1)} · ${res.heldCount}/${res.totalSlots} stocks`, cls: 't-green' },
+    { lbl: 'Safe-Haven ETFs', val: fmtInrInt(res.defInvested), note: res.simCrash ? `${fmtPct(res.defInvested / res.capital * 100, 1)} in ${defDesc}` : '0% (Full equity posture)', cls: res.defInvested > 0 ? 't-amber' : '' },
+    { lbl: 'Cash Sweep (LIQUIDCASE)', val: fmtInrInt(res.sweepInv), note: `${fmtPct(res.sweepInv / res.capital * 100, 1)} leftover rupees parked`, cls: 't-blue' },
+    { lbl: 'Idle Cash & SlotCap', val: fmtInrInt(res.idleCash), note: `${fmtPct(totalDeployed / res.capital * 100, 2)} utilized · ${skippedNote}`, cls: '' },
   ];
-  document.getElementById('calcSummaryGrid').innerHTML = cards.map(c => `
-    <div class="kpi"><div class="kpi-lbl">${c.lbl}</div><div class="kpi-val ${c.cls}">${c.val}</div><div class="kpi-note">${c.note}</div></div>`).join('');
+
+  document.getElementById('calcSummaryGrid').innerHTML = cells.map(c => `
+    <div class="metric-cell">
+      <div class="metric-label">${esc(c.lbl)}</div>
+      <div class="metric-value ${c.cls}">${esc(c.val)}</div>
+      <div class="metric-note">${esc(c.note)}</div>
+    </div>`).join('');
+
+  document.getElementById('ordersMetaLine').textContent =
+    `Preset ${res.preset} · ${res.rows.length} order lines · ${fmtPct(totalDeployed / res.capital * 100, 1)} of ${fmtInrInt(res.capital)} deployed`;
 
   const isRatioPreset = res.preset === 'R3' || res.preset === 'S3' || res.preset === 'R2' || res.preset === 'R7';
-  const tbody = document.querySelector('#ordersTable tbody');
-  tbody.innerHTML = res.rows.map(r => `
+  document.querySelector('#ordersTable tbody').innerHTML = res.rows.map(r => `
     <tr class="${r.sh === 0 ? 'row-muted' : ''}">
-      <td>${r.rank}</td>
-      <td><strong>${r.sym}</strong></td>
-      <td><span class="pill ${r.bucket.includes('Defensive') ? 'pill-amber' : r.bucket.includes('Sweep') ? 'pill-blue' : r.bucket === 'Top20' ? 'pill-green' : 'pill-accent'}">${r.bucket}</span></td>
-      <td class="num">${r.score != null ? (isRatioPreset ? fmtNum(r.score, 2) + 'x' : fmtPct(r.score)) : '—'}</td>
+      <td class="t-muted" style="font-family:var(--font-mono); font-size:13px;">${esc(r.rank)}</td>
+      <td class="asset-name">${esc(r.sym)}</td>
+      <td class="role-text ${r.tone}">${esc(r.bucket)}</td>
+      <td class="num col-detail">${r.score != null ? (isRatioPreset ? fmtNum(r.score, 2) + 'x' : fmtPct(r.score)) : '—'}</td>
       <td class="num">${fmtPct(r.wt * 100, 2)}</td>
       <td class="num">${fmtNum(r.px)}</td>
-      <td class="num">${fmtInr(r.tgt)}</td>
+      <td class="num col-detail">${fmtInr(r.tgt)}</td>
       <td class="num"><strong>${r.sh}</strong></td>
       <td class="num">${fmtInr(r.inv)}</td>
-      <td style="font-size:12px; color:var(--sub)">${r.note}</td>
+      <td class="note-text">${esc(r.note)}</td>
     </tr>`).join('');
+
+  updateDiffContextLabel();
+}
+
+function updateDiffContextLabel() {
+  if (!STATE) return;
+  const cap = Math.max(10000, Number(document.getElementById('capitalInput').value) || 100000);
+  const preset = document.getElementById('presetSelect').value;
+  document.getElementById('diffTargetContext').textContent = `Comparing against ${preset} target for ${fmtInrInt(cap)}`;
 }
 
 function computeHoldingsDiff() {
   const txt = document.getElementById('holdingsInput').value.trim();
   localStorage.setItem('mmi_holdings_csv', txt);
+  if (!txt) {
+    document.getElementById('diffBuyTotal').textContent = '₹0';
+    document.getElementById('diffBuyCount').textContent = '0 trades';
+    document.getElementById('diffSellTotal').textContent = '₹0';
+    document.getElementById('diffSellCount').textContent = '0 trades';
+    document.getElementById('diffTaxFlags').textContent = '0';
+    document.getElementById('diffOutput').innerHTML = '<div class="empty-state"><p>Paste your current holdings on the left and click Compute Trade Diff.</p></div>';
+    return;
+  }
+
   const res = getLatestComputedOrders();
   const tgtMap = new Map();
   res.rows.forEach(r => tgtMap.set(r.sym, (tgtMap.get(r.sym) || 0) + r.sh));
@@ -798,6 +1984,8 @@ function computeHoldingsDiff() {
 
   const allSyms = new Set([...held.keys(), ...tgtMap.keys()]);
   const actions = [];
+  let buySum = 0, buyCnt = 0, sellSum = 0, sellCnt = 0, ltcgWarnCnt = 0;
+
   allSyms.forEach(sym => {
     const cur = held.get(sym)?.sh || 0;
     const days = held.get(sym)?.daysHeld;
@@ -806,25 +1994,84 @@ function computeHoldingsDiff() {
     const delta = tgt - cur;
     const deltaInr = Math.abs(delta) * px;
     let act = 'HOLD';
-    let badge = 'pill-blue';
+    let tone = 't-muted';
     let note = '';
-    if (delta > 0 && deltaInr >= 500) { act = `BUY +${delta}`; badge = 'pill-green'; }
-    else if (delta < 0 && (tgt === 0 || deltaInr >= 500)) {
-      act = `SELL ${delta}`; badge = 'pill-red';
+    if (delta > 0 && deltaInr >= 500) {
+      act = `BUY +${delta}`;
+      tone = 't-green';
+      buySum += deltaInr;
+      buyCnt += 1;
+    } else if (delta < 0 && (tgt === 0 || deltaInr >= 500)) {
+      act = `SELL ${delta}`;
+      tone = 't-red';
+      sellSum += deltaInr;
+      sellCnt += 1;
       if (days != null && days >= 330 && days < 365) {
-        note = `⚠ Held ${days}d — LTCG in ${365 - days}d!`;
+        ltcgWarnCnt += 1;
+        note = `Held ${days}d — LTCG in ${365 - days}d (consider waiting)`;
       }
     } else if (delta !== 0) {
-      note = `Below ₹500 min trade delta (${fmtInr(deltaInr)})`;
+      note = `Skipped — below ₹500 min delta (${fmtInrInt(deltaInr)})`;
     }
     if (days != null && !note) note = `${days}d held (${days >= 365 ? 'LTCG 12.5%' : 'STCG 20%'})`;
-    actions.push({ sym, cur, tgt, delta, deltaInr, act, badge, note });
+    actions.push({ sym, cur, tgt, delta, deltaInr, act, tone, note, isTaxWarn: note.includes('LTCG in') });
   });
 
-  actions.sort((a, b) => (a.act.startsWith('SELL') ? -2 : a.act.startsWith('BUY') ? -1 : 1) - (b.act.startsWith('SELL') ? -2 : b.act.startsWith('BUY') ? -1 : 1));
+  const orderRank = (a) => a.act.startsWith('SELL') ? 0 : a.act.startsWith('BUY') ? 1 : 2;
+  actions.sort((a, b) => orderRank(a) - orderRank(b) || b.deltaInr - a.deltaInr);
+
+  document.getElementById('diffBuyTotal').textContent = fmtInrInt(buySum);
+  document.getElementById('diffBuyCount').textContent = `${buyCnt} buy ${buyCnt === 1 ? 'order' : 'orders'}`;
+  document.getElementById('diffSellTotal').textContent = fmtInrInt(sellSum);
+  document.getElementById('diffSellCount').textContent = `${sellCnt} sell ${sellCnt === 1 ? 'order' : 'orders'}`;
+  document.getElementById('diffTaxFlags').textContent = String(ltcgWarnCnt);
+
   document.getElementById('diffOutput').innerHTML = `
-    <table><thead><tr><th>Symbol</th><th class="num">Held</th><th class="num">Target</th><th>Action</th><th class="num">Trade ₹</th><th>Tax / Notes</th></tr></thead>
-    <tbody>${actions.map(a => `<tr><td><strong>${a.sym}</strong></td><td class="num">${a.cur}</td><td class="num">${a.tgt}</td><td><span class="pill ${a.badge}">${a.act}</span></td><td class="num">${fmtInr(a.deltaInr)}</td><td>${a.note}</td></tr>`).join('')}</tbody></table>`;
+    <table>
+      <thead>
+        <tr>
+          <th>Symbol</th>
+          <th class="num">Held</th>
+          <th class="num">Target</th>
+          <th>Action</th>
+          <th class="num">Trade (&#8377;)</th>
+          <th>Tax &amp; Timing</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${actions.map(a => `
+          <tr>
+            <td class="asset-name">${esc(a.sym)}</td>
+            <td class="num">${a.cur}</td>
+            <td class="num">${a.tgt}</td>
+            <td class="${a.tone}" style="font-weight:600; white-space:nowrap;">${esc(a.act)}</td>
+            <td class="num">${fmtInrInt(a.deltaInr)}</td>
+            <td class="${a.isTaxWarn ? 't-amber' : 'note-text'}" style="${a.isTaxWarn ? 'font-weight:600;' : ''}">${esc(a.note)}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderPerfSummary() {
+  const psum = STATE.performance_summary || {};
+  const r3 = psum.R3_Risk9m_6M_MF4_TrendGold150 || {};
+  const r3d = psum.R3_Disc1L_SlotCap || {};
+  const ew = psum.Midcap150_EW_Universe || {};
+  const s3 = psum.S3_Sortino9m_6M_MF4_TrendGold150 || {};
+
+  const items = [
+    { lbl: 'R3 Optimal (2018–26)', val: fmtPct(r3.cagr_pct), note: `₹1L SlotCap: ${fmtPct(r3d.cagr_pct)} · ₹1L → ${fmtInrInt(r3d.final_value)}`, cls: 't-green' },
+    { lbl: 'Midcap 150 Index (EW)', val: fmtPct(ew.cagr_pct), note: `₹1L → ${fmtInrInt(ew.final_value)} · Max DD ${fmtPct(ew.max_dd_pct)}`, cls: '' },
+    { lbl: 'R3 Max Drawdown', val: fmtPct(r3.max_dd_pct), note: `Calmar ${fmtNum(r3.calmar)} · Sharpe ${fmtNum(r3.sharpe)}`, cls: 't-blue' },
+    { lbl: 'S3 Sortino Runner-Up', val: fmtPct(s3.cagr_pct), note: `Max DD ${fmtPct(s3.max_dd_pct)} · Sharpe ${fmtNum(s3.sharpe)}`, cls: 't-green' },
+  ];
+
+  document.getElementById('perfSummaryGrid').innerHTML = items.map(i => `
+    <div class="metric-cell">
+      <div class="metric-label">${esc(i.lbl)}</div>
+      <div class="metric-value ${i.cls}">${esc(i.val)}</div>
+      <div class="metric-note">${esc(i.note)}</div>
+    </div>`).join('');
 }
 
 function renderPitResearchTable() {
@@ -833,46 +2080,59 @@ function renderPitResearchTable() {
   if (tbody) {
     tbody.innerHTML = rows.map(r => `
       <tr>
-        <td><span class="pill ${r.universe.includes('PIT') ? 'pill-green' : 'pill-red'}">${r.universe}</span></td>
-        <td><strong>${r.strategy}</strong></td>
+        <td class="${r.universe.includes('PIT') ? 't-green' : 't-muted'}" style="font-size:13px; white-space:nowrap;">${esc(r.universe)}</td>
+        <td class="asset-name">${esc(r.strategy)}</td>
         <td class="num">${fmtPct(r.p1_cagr)}</td>
         <td class="num">${fmtPct(r.p2_cagr)}</td>
         <td class="num">${fmtPct(r.p3_cagr)}</td>
-        <td class="num c-green"><strong>${fmtPct(r.full_cagr)}</strong></td>
-        <td class="num c-red">${fmtPct(r.full_dd)}</td>
+        <td class="num t-green"><strong>${fmtPct(r.full_cagr)}</strong></td>
+        <td class="num t-red">${fmtPct(r.full_dd)}</td>
         <td class="num">${fmtNum(r.full_sh)}</td>
       </tr>`).join('');
   }
+
   const v3 = STATE.research_v3 || {};
   const cTbody = document.querySelector('#crashAnatomyTable tbody');
   if (cTbody && v3.crash_anatomy) {
     cTbody.innerHTML = v3.crash_anatomy.map(c => `
       <tr>
-        <td><strong>${c.defensive_strategy}</strong></td>
+        <td class="asset-name">${esc(c.defensive_strategy)}</td>
         <td class="num">${fmtPct(c['2011_Bear_dd'], 1)}</td>
         <td class="num">${fmtPct(c['2018_19_NBFC_ret'], 1)}</td>
         <td class="num">${fmtPct(c['2020_COVID_dd'], 1)}</td>
         <td class="num">${fmtPct(c['2022_RateHike_ret'], 1)}</td>
         <td class="num">${fmtPct(c['2024_25_MidBear_dd'], 1)}</td>
-        <td class="num ${(c['2026_GoldSlump_ret'] ?? 0) >= 0 ? 'c-green' : 'c-red'}"><strong>${fmtPct(c['2026_GoldSlump_ret'], 1)}</strong></td>
+        <td class="num ${(c['2026_GoldSlump_ret'] ?? 0) >= 0 ? 't-green' : 't-red'}"><strong>${fmtPct(c['2026_GoldSlump_ret'], 1)}</strong></td>
       </tr>`).join('');
   }
+
   const fTbody = document.querySelector('#fnoCompareTable tbody');
   if (fTbody && v3.fno_hedges) {
     const fRows = [
       ...v3.fno_hedges.map(f => ({
-        name: f.name, cagr: f.FULL_cagr, dd: f.FULL_dd, sh: f.FULL_sh,
-        note: f.name.includes('ShortFut') ? 'Needs ₹25L–₹1Cr+ (₹16.5L lot min, 0.05% STT, 30% tax)' : 'VIX-scaled theta bleed + 30% F&O tax'
+        name: f.name,
+        cagr: f.FULL_cagr,
+        dd: f.FULL_dd,
+        sh: f.FULL_sh,
+        note: f.name.includes('ShortFut')
+          ? 'Needs ₹25L–₹1Cr+ (₹16.5L lot min, 0.05% STT, 30% tax)'
+          : 'VIX-scaled theta bleed + 30% F&O slab tax',
       })),
-      { name: 'R3 Spot + MF4 + TrendGold150 (Exact FIFO)', cagr: 18.16, dd: -26.93, sh: 0.78, note: 'Optimal from ₹1L+ (12.5% Gold LTCG + Cash shield)' }
+      {
+        name: 'R3 Spot + MF4 + TrendGold150 (Exact FIFO)',
+        cagr: 18.16,
+        dd: -26.93,
+        sh: 0.78,
+        note: 'Optimal from ₹1L+ (12.5% Gold LTCG + LIQUIDCASE cash shield)',
+      },
     ];
     fTbody.innerHTML = fRows.map(f => `
       <tr>
-        <td><strong>${f.name}</strong></td>
-        <td class="num">${fmtPct(f.cagr)}</td>
-        <td class="num c-red">${fmtPct(f.dd)}</td>
+        <td class="asset-name">${esc(f.name)}</td>
+        <td class="num t-green"><strong>${fmtPct(f.cagr)}</strong></td>
+        <td class="num t-red">${fmtPct(f.dd)}</td>
         <td class="num">${fmtNum(f.sh)}</td>
-        <td style="font-size:12px; color:var(--sub)">${f.note}</td>
+        <td class="note-text">${esc(f.note)}</td>
       </tr>`).join('');
   }
 }
@@ -881,55 +2141,90 @@ function renderResearchTable() {
   const rows = STATE.clean_verification || [];
   document.querySelector('#researchTable tbody').innerHTML = rows.map(r => `
     <tr>
-      <td><span class="pill ${(r.scenario.includes('R3') || r.scenario.includes('S3')) ? 'pill-green' : r.scenario === 'Benchmark' ? 'pill-blue' : 'pill-accent'}">${r.scenario}</span></td>
-      <td><strong>${r.name}</strong></td>
-      <td class="num">${fmtPct(r.cagr_pct)}</td>
-      <td class="num c-red">${fmtPct(r.max_dd_pct)}</td>
+      <td class="${(r.scenario.includes('R3') || r.scenario.includes('S3')) ? 't-green' : 't-muted'}" style="font-size:13px; font-weight:600; white-space:nowrap;">${esc(r.scenario)}</td>
+      <td class="asset-name">${esc(r.name)}</td>
+      <td class="num"><strong>${fmtPct(r.cagr_pct)}</strong></td>
+      <td class="num t-red">${fmtPct(r.max_dd_pct)}</td>
       <td class="num">${fmtNum(r.calmar)}</td>
       <td class="num">${fmtNum(r.sharpe)}</td>
       <td class="num">${fmtNum(r.sortino)}</td>
       <td class="num">${fmtPct(r.ann_turnover_pct, 1)}</td>
       <td class="num">${r.avg_eq_pct != null ? fmtPct(r.avg_eq_pct, 1) : '—'}</td>
-      <td class="num">${r.total_tax_paid != null ? fmtInr(r.total_tax_paid) : '—'}</td>
+      <td class="num">${r.total_tax_paid != null ? fmtInrInt(r.total_tax_paid) : '—'}</td>
     </tr>`).join('');
 }
 
 function renderRankingsTable() {
   const q = (document.getElementById('rankSearch').value || '').trim().toUpperCase();
-  const rows = STATE.rankings_top60.filter(r => !q || r.symbol.includes(q));
-  document.querySelector('#rankingsTable tbody').innerHTML = rows.map(r => `
-    <tr>
-      <td><strong>#${r.rank_risk9m ?? r.rank_9m}</strong></td>
-      <td>${r.rank_sortino9m != null ? '#' + r.rank_sortino9m : '—'}</td>
-      <td>${r.rank_9m != null ? '#' + r.rank_9m : '—'}</td>
-      <td>${r.rank_12m != null ? '#' + r.rank_12m : '—'}</td>
-      <td><strong>${r.symbol}</strong></td>
-      <td class="num">${fmtNum(r.price)}</td>
-      <td class="num c-green">${r.risk_9m != null ? fmtNum(r.risk_9m, 2) + 'x' : '—'}</td>
-      <td class="num">${r.sortino_9m != null ? fmtNum(r.sortino_9m, 2) + 'x' : '—'}</td>
-      <td class="num">${fmtPct(r.raw_9m_pct)}</td>
-      <td class="num">${r.above_ma50 ? '<span class="c-green">Yes</span>' : '<span class="c-red">No</span>'}</td>
-      <td class="num">${(r.risk_ew_5050_wt_pct ?? r.ew_5050_wt_pct) ? fmtPct(r.risk_ew_5050_wt_pct ?? r.ew_5050_wt_pct) : '—'}</td>
-      <td class="num">${(r.risk_nz_5050_wt_pct ?? r.nz_5050_wt_pct) ? fmtPct(r.risk_nz_5050_wt_pct ?? r.nz_5050_wt_pct) : '—'}</td>
-      <td>${(r.risk_affordable_slotcap_1l ?? r.affordable_slotcap_1l) ? '<span class="pill pill-green">Selected ₹1L</span>' : '<span style="color:var(--sub)">Candidate</span>'}</td>
-    </tr>`).join('');
+  const rows = STATE.rankings_top60.filter(r => {
+    if (q && !r.symbol.includes(q)) return false;
+    const rk = r.rank_risk9m ?? r.rank_9m ?? 999;
+    const aff = !!(r.risk_affordable_slotcap_1l ?? r.affordable_slotcap_1l);
+    if (rankFilter === 'TOP30' && rk > 30) return false;
+    if (rankFilter === 'AFF1L' && !aff) return false;
+    if (rankFilter === 'MA50' && !r.above_ma50) return false;
+    return true;
+  });
+
+  const tbody = document.querySelector('#rankingsTable tbody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center; padding:28px; color:var(--ink-muted);">No stocks match this search or filter.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => {
+    const aff = !!(r.risk_affordable_slotcap_1l ?? r.affordable_slotcap_1l);
+    const ewWt = r.risk_ew_5050_wt_pct ?? r.ew_5050_wt_pct;
+    const nzWt = r.risk_nz_5050_wt_pct ?? r.nz_5050_wt_pct;
+    return `
+      <tr>
+        <td style="font-family:var(--font-mono); font-weight:600;">#${r.rank_risk9m ?? r.rank_9m}</td>
+        <td class="col-detail t-muted" style="font-family:var(--font-mono);">${r.rank_sortino9m != null ? '#' + r.rank_sortino9m : '—'}</td>
+        <td class="col-detail t-muted" style="font-family:var(--font-mono);">${r.rank_9m != null ? '#' + r.rank_9m : '—'}</td>
+        <td class="col-detail t-muted" style="font-family:var(--font-mono);">${r.rank_12m != null ? '#' + r.rank_12m : '—'}</td>
+        <td class="asset-name">${esc(r.symbol)}</td>
+        <td class="num">${fmtNum(r.price)}</td>
+        <td class="num ${(r.raw_9m_pct ?? 0) >= 0 ? 't-green' : 't-red'}">${fmtPct(r.raw_9m_pct, 1)}</td>
+        <td class="num col-detail">${r.risk_9m != null ? fmtNum(r.risk_9m, 2) + 'x' : '—'}</td>
+        <td class="num col-detail">${r.sortino_9m != null ? fmtNum(r.sortino_9m, 2) + 'x' : '—'}</td>
+        <td class="num">${r.above_ma50 ? '<span class="t-green">Yes</span>' : '<span class="t-red">No</span>'}</td>
+        <td class="num">${ewWt ? fmtPct(ewWt) : '—'}</td>
+        <td class="num col-detail">${nzWt ? fmtPct(nzWt) : '—'}</td>
+        <td class="${aff ? 't-green' : 't-muted'}" style="font-size:13px; white-space:nowrap;">${aff ? 'Selected ₹1L' : 'Candidate'}</td>
+      </tr>`;
+  }).join('');
+}
+
+function humanTriggerLabel(event) {
+  if (event === 'EXIT_TO_DEFENSIVE') return { text: 'Moved to Defensive (25% Stocks)', cls: 't-red' };
+  if (event === 'SHIFT_TO_CAUTIOUS') return { text: 'Stepped Down to Caution (60% Stocks)', cls: 't-amber' };
+  if (event === 'STEP_UP_CAUTIOUS') return { text: 'Stepped Up to Caution (60% Stocks)', cls: 't-blue' };
+  if (event === 'REENTER_EQUITY') return { text: 'Returned to Full Stocks (100%)', cls: 't-green' };
+  return { text: event, cls: 't-muted' };
 }
 
 function renderTriggersTable() {
-  const rows = STATE.regime.historical_triggers || [];
+  const allRows = [...(STATE.regime.historical_triggers || [])].reverse();
+  const rows = allRows.filter(t => {
+    if (triggerFilter === 'DEFENSIVE') return t.event.includes('EXIT') || t.event === 'SHIFT_TO_CAUTIOUS';
+    if (triggerFilter === 'RISK_ON') return t.event === 'REENTER_EQUITY';
+    return true;
+  });
+
   document.querySelector('#triggersTable tbody').innerHTML = rows.map(t => {
-    const cls = t.event.includes('EXIT') ? 'pill-red' : t.event.includes('CAUTIOUS') ? 'pill-amber' : 'pill-green';
-    return `<tr>
-      <td>${t.date}</td>
-      <td><span class="pill ${cls}">${t.event}</span></td>
-      <td class="num">${fmtPct(t.ew_dd252_pct)}</td>
-      <td class="num">${fmtPct(t.equity_pct, 0)}</td>
-    </tr>`;
+    const info = humanTriggerLabel(t.event);
+    return `
+      <tr>
+        <td style="font-family:var(--font-mono); font-size:13px; white-space:nowrap;">${esc(t.date)}</td>
+        <td class="${info.cls}" style="font-weight:600;">${esc(info.text)}</td>
+        <td class="num">${fmtPct(t.ew_dd252_pct)}</td>
+        <td class="num">${fmtPct(t.equity_pct, 0)}</td>
+      </tr>`;
   }).join('');
 }
 
 function renderCharts() {
-  if (typeof Chart === 'undefined') return;
+  if (typeof Chart === 'undefined' || !STATE) return;
   const ch = STATE.charts;
   const allDates = ch.dates;
   let startIdx = 0;
@@ -943,62 +2238,77 @@ function renderCharts() {
     return sub.map(v => Number(((v / base) * 100000).toFixed(2)));
   };
 
+  const gridColor = '#e2e8f0';
+  const tickColor = '#64748b';
+  const legendColor = '#334155';
+
   if (CHARTS.nav) CHARTS.nav.destroy();
   const r3Nav = ch.nav.R3_Risk9m_6M_MF4_TrendGold150 || ch.nav.R2_Risk9m_6M_DD15_Sh75_GoldLiq50;
   const s3Nav = ch.nav.S3_Sortino9m_6M_MF4_TrendGold150 || r3Nav;
   const r2Nav = ch.nav.R2_Risk9m_6M_DD15_Sh75_GoldLiq50 || ch.nav.F2_9m_6M_DD12_Sh75_GoldLiq50;
   const tgNav = ch.nav.TREND_GOLD150_OR_LIQ || ch.nav.GOLD_50_LIQUID_50;
+
+  const navDatasets = [
+    { label: 'R3 Optimal Strategy', data: rebased(r3Nav), borderColor: '#059669', borderWidth: 2.5, pointRadius: 0, tension: 0.1 },
+    { label: 'Midcap 150 Index (EW)', data: rebased(ch.nav.Midcap150_EW_Universe), borderColor: '#64748b', borderWidth: 1.75, pointRadius: 0, tension: 0.1 },
+    { label: 'Safe-Haven TrendGold', data: rebased(tgNav), borderColor: '#d97706', borderWidth: 1.6, borderDash: [4, 4], pointRadius: 0, tension: 0.1 },
+  ];
+  if (extraSeries.s3) navDatasets.push({ label: 'S3 Sortino', data: rebased(s3Nav), borderColor: '#0284c7', borderWidth: 1.8, pointRadius: 0 });
+  if (extraSeries.r2) navDatasets.push({ label: 'R2 Simple (-15%)', data: rebased(r2Nav), borderColor: '#7c3aed', borderWidth: 1.5, pointRadius: 0 });
+  if (extraSeries.f2) navDatasets.push({ label: 'F2 Legacy (-12%)', data: rebased(ch.nav.F2_9m_6M_DD12_Sh75_GoldLiq50), borderColor: '#4f46e5', borderWidth: 1.4, borderDash: [3, 3], pointRadius: 0 });
+  if (extraSeries.u0) navDatasets.push({ label: 'Unhedged 9M', data: rebased(ch.nav.Unhedged_9m_6M), borderColor: '#dc2626', borderWidth: 1.3, borderDash: [2, 3], pointRadius: 0 });
+
   CHARTS.nav = new Chart(document.getElementById('navChart'), {
     type: 'line',
-    data: {
-      labels,
-      datasets: [
-        { label: 'R3 Optimal (Risk9M · MF4 · TrendGold)', data: rebased(r3Nav), borderColor: '#22c55e', borderWidth: 2.6, pointRadius: 0 },
-        { label: 'S3 Sortino9M · MF4 · TrendGold', data: rebased(s3Nav), borderColor: '#06b6d4', borderWidth: 2.0, pointRadius: 0 },
-        { label: 'R2 Simple (Risk9M · DD15 · 50/50)', data: rebased(r2Nav), borderColor: '#a855f7', borderWidth: 1.7, pointRadius: 0 },
-        { label: 'F2 Legacy V1 (Raw9M · DD12)', data: rebased(ch.nav.F2_9m_6M_DD12_Sh75_GoldLiq50), borderColor: '#6366f1', borderWidth: 1.6, borderDash: [4,4], pointRadius: 0 },
-        { label: 'Unhedged 50/50 9M', data: rebased(ch.nav.Unhedged_9m_6M), borderColor: '#94a3b8', borderWidth: 1.3, borderDash: [2,3], pointRadius: 0 },
-        { label: 'Midcap 150 EW Universe', data: rebased(ch.nav.Midcap150_EW_Universe), borderColor: '#3b82f6', borderWidth: 1.5, pointRadius: 0 },
-        { label: 'TrendGold EMA150 / LIQUIDCASE', data: rebased(tgNav), borderColor: '#f59e0b', borderWidth: 1.5, pointRadius: 0 },
-      ],
-    },
+    data: { labels, datasets: navDatasets },
     options: {
-      responsive: true, maintainAspectRatio: false,
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
       scales: {
-        y: { type: chartLog ? 'logarithmic' : 'linear', ticks: { color: '#8b8fa8' }, grid: { color: '#2a2d3a' } },
-        x: { ticks: { color: '#8b8fa8', maxTicksLimit: 10 }, grid: { display: false } },
+        y: {
+          type: chartLog ? 'logarithmic' : 'linear',
+          ticks: { color: tickColor, callback: (v) => '₹' + Number(v).toLocaleString('en-IN') },
+          grid: { color: gridColor },
+        },
+        x: { ticks: { color: tickColor, maxTicksLimit: 9 }, grid: { display: false } },
       },
-      plugins: { legend: { labels: { color: '#e8eaf0' } } },
+      plugins: {
+        legend: { position: 'bottom', labels: { color: legendColor, usePointStyle: true, boxWidth: 8, padding: 16 } },
+        tooltip: {
+          callbacks: { label: (ctx) => `${ctx.dataset.label}: ${fmtInrInt(ctx.parsed.y)}` },
+        },
+      },
     },
   });
 
   if (CHARTS.dd) CHARTS.dd.destroy();
   const r3Dd = (ch.drawdown_pct.R3_Risk9m_6M_MF4_TrendGold150 || ch.drawdown_pct.R2_Risk9m_6M_DD15_Sh75_GoldLiq50).slice(startIdx);
-  const s3Dd = (ch.drawdown_pct.S3_Sortino9m_6M_MF4_TrendGold150 || r3Dd).slice(startIdx);
   const trigLvl = STATE.regime.trigger_dd_pct || -15;
   CHARTS.dd = new Chart(document.getElementById('ddChart'), {
     type: 'line',
     data: {
       labels,
       datasets: [
-        { label: 'R3 MF4 + TrendGold Drawdown %', data: r3Dd, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.12)', fill: true, borderWidth: 2.0, pointRadius: 0 },
-        { label: 'S3 Sortino + TrendGold Drawdown %', data: s3Dd, borderColor: '#06b6d4', borderWidth: 1.5, pointRadius: 0 },
-        { label: 'F2 Legacy DD12 Drawdown %', data: ch.drawdown_pct.F2_9m_6M_DD12_Sh75_GoldLiq50.slice(startIdx), borderColor: '#6366f1', borderWidth: 1.3, borderDash: [4,4], pointRadius: 0 },
-        { label: 'Unhedged Drawdown %', data: ch.drawdown_pct.Unhedged_9m_6M.slice(startIdx), borderColor: '#ef4444', borderWidth: 1.2, pointRadius: 0 },
-        { label: `${trigLvl}% DD Ref`, data: labels.map(() => trigLvl), borderColor: '#f59e0b', borderDash: [5,5], borderWidth: 1.2, pointRadius: 0 },
+        { label: 'R3 Optimal Drawdown', data: r3Dd, borderColor: '#059669', backgroundColor: 'rgba(5, 150, 105, 0.10)', fill: true, borderWidth: 2, pointRadius: 0 },
+        { label: 'Unhedged Drawdown', data: ch.drawdown_pct.Unhedged_9m_6M.slice(startIdx), borderColor: '#dc2626', borderWidth: 1.4, pointRadius: 0 },
+        { label: `${trigLvl}% Reference`, data: labels.map(() => trigLvl), borderColor: '#d97706', borderDash: [5, 5], borderWidth: 1.2, pointRadius: 0 },
       ],
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      scales: { y: { ticks: { color: '#8b8fa8' }, grid: { color: '#2a2d3a' } }, x: { ticks: { color: '#8b8fa8', maxTicksLimit: 8 }, grid: { display: false } } },
-      plugins: { legend: { labels: { color: '#e8eaf0' } } },
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        y: { ticks: { color: tickColor, callback: (v) => v + '%' }, grid: { color: gridColor } },
+        x: { ticks: { color: tickColor, maxTicksLimit: 7 }, grid: { display: false } },
+      },
+      plugins: { legend: { position: 'bottom', labels: { color: legendColor, usePointStyle: true, boxWidth: 8 } } },
     },
   });
 
   const psumY = STATE.performance_summary || {};
-  const yR3 = (psumY.R3_Risk9m_6M_MF4_TrendGold150 || psumY.R2_Risk9m_6M_DD15_Sh75_GoldLiq50 || {}).yearly_returns_pct || {};
-  const yS3 = (psumY.S3_Sortino9m_6M_MF4_TrendGold150 || {}).yearly_returns_pct || {};
-  const yF2 = (psumY.F2_9m_6M_DD12_Sh75_GoldLiq50 || {}).yearly_returns_pct || {};
+  const yR3 = (psumY.R3_Risk9m_6M_MF4_TrendGold150 || {}).yearly_returns_pct || {};
   const yEw = (psumY.Midcap150_EW_Universe || {}).yearly_returns_pct || {};
   const yrs = Object.keys(yR3);
 
@@ -1008,68 +2318,182 @@ function renderCharts() {
     data: {
       labels: yrs,
       datasets: [
-        { label: 'R3 Risk9M MF4', data: yrs.map(y => yR3[y]), backgroundColor: '#22c55e' },
-        { label: 'S3 Sortino MF4', data: yrs.map(y => yS3[y]), backgroundColor: '#06b6d4' },
-        { label: 'F2 Legacy DD12', data: yrs.map(y => yF2[y]), backgroundColor: '#6366f1' },
-        { label: 'Midcap 150 EW', data: yrs.map(y => yEw[y]), backgroundColor: '#3b82f6' },
+        { label: 'R3 Optimal', data: yrs.map(y => yR3[y]), backgroundColor: '#059669', borderRadius: 4 },
+        { label: 'Midcap 150 Index', data: yrs.map(y => yEw[y]), backgroundColor: '#cbd5e1', borderRadius: 4 },
       ],
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      scales: { y: { ticks: { color: '#8b8fa8' }, grid: { color: '#2a2d3a' } }, x: { ticks: { color: '#8b8fa8' }, grid: { display: false } } },
-      plugins: { legend: { labels: { color: '#e8eaf0' } } },
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { ticks: { color: tickColor, callback: (v) => v + '%' }, grid: { color: gridColor } },
+        x: { ticks: { color: tickColor }, grid: { display: false } },
+      },
+      plugins: { legend: { position: 'bottom', labels: { color: legendColor, usePointStyle: true, boxWidth: 8 } } },
     },
   });
 }
 
-// Event bindings
-document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-  if (btn.dataset.tab === 'charts') renderCharts();
-}));
-
-document.querySelectorAll('.quick-caps .chip-btn').forEach(btn => btn.addEventListener('click', () => {
-  document.querySelectorAll('.quick-caps .chip-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  const cap = Number(btn.dataset.cap);
-  document.getElementById('capitalInput').value = cap;
-  document.getElementById('slotCapToggle').checked = cap < 350000;
-  renderPortfolioCalculator();
-}));
-
-['capitalInput', 'presetSelect', 'postureOverride', 'slotCapToggle', 'liqSweepToggle'].forEach(id => {
-  document.getElementById(id).addEventListener('change', () => renderPortfolioCalculator());
-  document.getElementById(id).addEventListener('input', () => renderPortfolioCalculator());
+// Navigation bindings
+document.querySelectorAll('.nav-btn[data-tab]').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
 });
 
-document.getElementById('rankSearch').addEventListener('input', renderRankingsTable);
+const PRESET_INTUITION = {
+  R3: '<strong>How R3 works:</strong> Ranks stocks by 9-month return divided by volatility (favoring smooth climbers over wild spikes) and routes safety money to Gold or Cash based on Gold\'s 150-day trend.',
+  S3: '<strong>How S3 works:</strong> Same 4-signal safety switch and Gold/Cash gate as R3, but ranks stocks using Sortino 9M (ignores upside jumps and only penalizes downward drops).',
+  R2: '<strong>How R2 works:</strong> Uses a simpler single -15% market drop trigger (instead of 4 signals) and splits defensive money 50/50 between Gold and Cash.',
+  R7: '<strong>How R7 works:</strong> Uses NormZ weighting to concentrate more money into the highest-scoring momentum outliers, with a -15% drop trigger and 50/50 Gold/Cash split.',
+  F2: '<strong>How F2 works:</strong> Legacy V1 baseline ranking by raw 9-month percentage gain (ignoring volatility), switching to 50/50 Gold/Cash on a -12% drop.',
+  F4: '<strong>How F4 works:</strong> Designed for larger portfolios (&gt;₹5L) — ranks by 12-month gain and rebalances once a year so more gains qualify for lower 12.5% LTCG tax.',
+};
+
+const VAULT_INTUITION = {
+  pit: '<div><strong>How to read this table:</strong> Splits 16 years into three 5-year windows (2011–16 Train, 2016–21 Blind Test 1, 2021–26 Blind Test 2). <strong>CAGR</strong> = steady yearly growth; <strong>Max DD</strong> = worst drop; <strong>Sharpe</strong> = return per unit of volatility.</div>',
+  crash: '<div><strong>How to read this table:</strong> Shows how each defensive engine survived 6 real market shocks — negative numbers are losses during that crash; notice how TrendGold avoided static Gold\'s -31.7% slump in 2026.</div>',
+  fno: '<div><strong>How to read this table:</strong> Compares real futures/options hedges against TrendGold. <strong>OTM Put Options</strong> act like crash insurance but lose money every quiet month (theta bleed), while <strong>Short Futures</strong> need ₹25L+ capital due to ₹16.5L NSE lot minimums.</div>',
+  live: '<div><strong>How to read this table:</strong> Full post-tax comparison from 2018–26. <strong>Sortino</strong> = return per unit of downside drops only; <strong>Calmar</strong> = CAGR &divide; Max DD; <strong>Turnover</strong> = % of portfolio replaced yearly; <strong>Avg Eq</strong> = average % held in stocks.</div>',
+};
+
+document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarBackdrop').classList.toggle('open');
+});
+document.getElementById('sidebarBackdrop').addEventListener('click', closeMobileSidebar);
+
+// Expandable drawers
+document.getElementById('toggleDiagnosticsBtn').addEventListener('click', (e) => {
+  const drawer = document.getElementById('diagnosticsDrawer');
+  const open = drawer.hidden;
+  drawer.hidden = !open;
+  e.currentTarget.setAttribute('aria-expanded', String(open));
+  e.currentTarget.textContent = open ? 'Hide 4-Signal Breakdown' : 'Inspect 4-Signal Breakdown';
+});
+
+document.getElementById('toggleAdvancedBtn').addEventListener('click', (e) => {
+  const drawer = document.getElementById('advancedOptionsDrawer');
+  const open = drawer.hidden;
+  drawer.hidden = !open;
+  e.currentTarget.setAttribute('aria-expanded', String(open));
+  e.currentTarget.textContent = open ? 'Hide Strategy & Filters' : 'Strategy & Filters';
+});
+
+// Quick capital presets
+document.querySelectorAll('.quick-caps .seg-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.quick-caps .seg-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const cap = Number(btn.dataset.cap);
+    document.getElementById('capitalInput').value = cap;
+    document.getElementById('slotCapToggle').checked = cap < 350000;
+    renderPortfolioCalculator();
+  });
+});
+
+['capitalInput', 'presetSelect', 'postureOverride', 'slotCapToggle', 'liqSweepToggle'].forEach(id => {
+  document.getElementById(id).addEventListener('change', () => {
+    if (id === 'capitalInput') {
+      const cap = Number(document.getElementById('capitalInput').value);
+      document.querySelectorAll('.quick-caps .seg-btn').forEach(b => b.classList.toggle('active', Number(b.dataset.cap) === cap));
+    }
+    if (id === 'presetSelect') {
+      const key = document.getElementById('presetSelect').value;
+      document.getElementById('presetIntuition').innerHTML = PRESET_INTUITION[key] || '';
+    }
+    renderPortfolioCalculator();
+  });
+  if (id === 'capitalInput') {
+    document.getElementById(id).addEventListener('input', () => renderPortfolioCalculator());
+  }
+});
+
+document.getElementById('resetLivePostureBtn').addEventListener('click', () => {
+  document.getElementById('postureOverride').value = 'LIVE';
+  renderPortfolioCalculator();
+});
+
+// Detailed column toggles
+document.getElementById('orderDetailsToggle').addEventListener('change', (e) => {
+  document.getElementById('ordersTableWrap').classList.toggle('show-details', e.target.checked);
+  document.getElementById('orderDetailIntuition').hidden = !e.target.checked;
+});
+
+document.getElementById('rankDetailsToggle').addEventListener('change', (e) => {
+  document.getElementById('rankingsTableWrap').classList.toggle('show-details', e.target.checked);
+  document.getElementById('rankDetailIntuition').hidden = !e.target.checked;
+});
+
+// Rebalance & Holdings Diff controls
 document.getElementById('computeDiffBtn').addEventListener('click', computeHoldingsDiff);
 document.getElementById('clearHoldingsBtn').addEventListener('click', () => {
   document.getElementById('holdingsInput').value = '';
   localStorage.removeItem('mmi_holdings_csv');
-  document.getElementById('diffOutput').textContent = 'Cleared saved holdings.';
+  computeHoldingsDiff();
 });
 
-document.querySelectorAll('[data-win]').forEach(btn => btn.addEventListener('click', () => {
-  document.querySelectorAll('[data-win]').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  chartWindow = btn.dataset.win;
-  renderCharts();
-}));
+// Rankings search & filters
+document.getElementById('rankSearch').addEventListener('input', renderRankingsTable);
+document.querySelectorAll('[data-rank-filter]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-rank-filter]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    rankFilter = btn.dataset.rankFilter;
+    renderRankingsTable();
+  });
+});
+
+// Chart window, log scale, and overlay toggles
+document.querySelectorAll('[data-win]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-win]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    chartWindow = btn.dataset.win;
+    renderCharts();
+  });
+});
 
 document.getElementById('logScaleBtn').addEventListener('click', (e) => {
   chartLog = !chartLog;
-  e.target.textContent = 'Log Scale: ' + (chartLog ? 'ON' : 'OFF');
+  e.currentTarget.textContent = 'Log Scale: ' + (chartLog ? 'On' : 'Off');
   renderCharts();
 });
 
+document.querySelectorAll('.series-toggle').forEach(chk => {
+  chk.addEventListener('change', () => {
+    extraSeries[chk.dataset.series] = chk.checked;
+    renderCharts();
+  });
+});
+
+// Trigger log filter
+document.querySelectorAll('[data-trig-filter]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-trig-filter]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    triggerFilter = btn.dataset.trigFilter;
+    renderTriggersTable();
+  });
+});
+
+// Research vault table switcher
+document.querySelectorAll('[data-vault]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-vault]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const target = btn.dataset.vault;
+    document.querySelectorAll('.vault-pane').forEach(p => {
+      p.hidden = p.id !== 'vault-' + target;
+    });
+    document.getElementById('vaultIntuition').innerHTML = VAULT_INTUITION[target] || '';
+  });
+});
+
+// Export CSV
 document.getElementById('exportCsvBtn').addEventListener('click', () => {
+  if (!STATE) return;
   const res = getLatestComputedOrders();
-  const header = 'Rank,Symbol,Bucket,WeightPct,LTP,TargetINR,BuyShares,ActualINR\n';
-  const body = res.rows.map(r => `${r.rank},${r.sym},${r.bucket},${(r.wt*100).toFixed(2)},${r.px},${r.tgt.toFixed(2)},${r.sh},${r.inv.toFixed(2)}`).join('\n');
+  const header = 'Rank,Symbol,Group,WeightPct,LTP,TargetINR,BuyShares,ActualINR\n';
+  const body = res.rows.map(r => `${r.rank},${r.sym},"${r.bucket}",${(r.wt * 100).toFixed(2)},${r.px},${r.tgt.toFixed(2)},${r.sh},${r.inv.toFixed(2)}`).join('\n');
   const blob = new Blob([header + body], { type: 'text/csv' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -1077,11 +2501,8 @@ document.getElementById('exportCsvBtn').addEventListener('click', () => {
   a.click();
 });
 
-const saved = localStorage.getItem('mmi_holdings_csv');
-if (saved) document.getElementById('holdingsInput').value = saved;
-
 init().catch(err => {
-  document.getElementById('regimeTitle').textContent = 'Error Loading Live State';
+  document.getElementById('regimeTitle').textContent = 'Unable to load market data';
   document.getElementById('regimeSubtitle').textContent = err.message;
 });
 </script>

@@ -9,3 +9,5 @@ data/cmie/*.txt
 !data/cmie/nse_midcap150_plus_etfs.txt
 .pytest_cache/
 .venv/
+node_modules/
+
