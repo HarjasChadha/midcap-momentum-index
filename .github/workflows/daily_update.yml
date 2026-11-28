@@ -31,10 +31,10 @@ jobs:
       - name: Update live index state via NSE MCP & fallback
         run: python scripts/update_live.py
 
-      - name: Commit updated live_state.json
+      - name: Commit updated live state and paper bot ledgers
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/live_state.json
+          git add data/live_state.json data/paper_ledger.json data/forward_tape.json
           git diff --cached --quiet || git commit -m "chore: live market update $(date -u +%Y-%m-%d)"
           git push

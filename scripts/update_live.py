@@ -19,6 +19,11 @@ from src.backtester import BacktestConfig, compute_metrics, run_backtest  # noqa
 from src.data_loader import BENCHMARK_TICKERS, fetch_and_cache_all, load_universe  # noqa: E402
 from src.momentum import combine_sleeves, compute_score_matrix, select_affordable_blend, select_sleeve_weights  # noqa: E402
 from src.nse_mcp import NseMcpClient  # noqa: E402
+from src.paper_bot import (  # noqa: E402
+    build_forward_tape_entry,
+    update_forward_tape,
+    update_paper_ledger,
+)
 from src.regime import (  # noqa: E402
     build_defensive_series,
     build_ew_index,
@@ -581,6 +586,34 @@ def build_live_state() -> dict[str, Any]:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(safe_payload, indent=2, allow_nan=False))
     print(f"Wrote {out_path} (as_of={last_dt}, stocks={len(universe_scores)}, regime={safe_payload['regime']['state']})")
+
+    # Build/append compact daily forward tape & step autonomous Paper Trading Bot ledgers (idempotent)
+    adj_last = adj_df.ffill(limit=2).loc[last_dt] if last_dt in adj_df.index else adj_df.ffill(limit=2).iloc[-1]
+    tape_entry = build_forward_tape_entry(
+        date_str=last_dt,
+        raw_last=raw_last,
+        bench_df=bench_df,
+        etf_symbols=TRACKED_ETFS,
+        ma50_last=ma50_last,
+        adj_last=adj_last,
+        scores=scores,
+        mf_diag_row=mf_last,
+        tg_status=tg_status,
+        reg_dd15_val=float(reg_dd15.loc[last_dt]),
+        reg_dd75_val=float(reg_dd75.loc[last_dt]),
+        reg_dd50_val=float(reg_dd50.loc[last_dt]),
+        ew_index_val=ew_cur,
+        corp_actions=nse_telemetry.get("corp_actions_checked") or [],
+    )
+    tape_path = REPO_ROOT / "data" / "forward_tape.json"
+    ledger_path = REPO_ROOT / "data" / "paper_ledger.json"
+    tape_obj = update_forward_tape(tape_path, tape_entry)
+    ledger_obj = update_paper_ledger(ledger_path, tape_obj)
+    print(
+        f"Paper Bot updated (inception={ledger_obj['inception_date']}, as_of={ledger_obj['last_date']}, "
+        f"1L_NAV=₹{ledger_obj['accounts']['R3_1L_SlotCap']['summary']['nav']:,.2f}, "
+        f"10L_NAV=₹{ledger_obj['accounts']['R3_10L_Standard']['summary']['nav']:,.2f})"
+    )
     return safe_payload
 
 

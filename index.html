@@ -906,6 +906,125 @@
     z-index: 35;
   }
 
+  /* Badges, Toasts, Sub-Views & Modals for Paper Bot & Tracked Views */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid var(--border);
+    background: var(--surface-subtle);
+    color: var(--ink-secondary);
+  }
+  .badge-green { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
+  .badge-amber { background: var(--amber-soft); border-color: var(--amber-border); color: #92400e; }
+  .badge-red { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+  .badge-blue { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+
+  .btn-danger {
+    background: var(--surface);
+    color: var(--crimson);
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-md);
+    padding: 7px 12px;
+    min-height: 36px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 150ms var(--ease);
+  }
+  .btn-danger:hover { background: #fef2f2; }
+
+  .btn-sm {
+    min-height: 32px !important;
+    padding: 5px 10px !important;
+    font-size: 12px !important;
+  }
+
+  .outside-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--amber-border);
+    flex-wrap: wrap;
+  }
+  .outside-row:last-child { border-bottom: none; }
+
+  .pb-feed-item {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  .pb-feed-item:last-child { border-bottom: none; }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-backdrop[hidden] { display: none; }
+
+  .modal-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 540px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 24px;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18);
+  }
+
+  .modal-option {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    cursor: pointer;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    transition: border-color 150ms var(--ease), background-color 150ms var(--ease);
+  }
+  .modal-option:hover { border-color: var(--accent); background: #f8fafc; }
+  .modal-option input { margin-top: 3px; accent-color: var(--accent); }
+
+  .toast-banner {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 70;
+    background: var(--ink);
+    color: #ffffff;
+    padding: 12px 18px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.22);
+    max-width: min(440px, calc(100vw - 32px));
+  }
+  .toast-banner[hidden] { display: none; }
+
+  .metric-strip-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .metric-strip-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+
   @media (max-width: 1024px) {
     .metric-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .metric-cell { border-right: none; border-bottom: 1px solid var(--border); padding: 14px 12px 14px 0; }
@@ -959,6 +1078,9 @@
       </button>
       <button class="nav-btn" data-tab="rebalance">
         <span>Rebalance &amp; Tax Diff</span>
+      </button>
+      <button class="nav-btn" data-tab="paperbot">
+        <span>Paper Trading Bot</span>
       </button>
 
       <div class="nav-group-label">Explore &amp; Verify</div>
@@ -1179,31 +1301,85 @@
           <div class="panel-header">
             <div>
               <h1 class="panel-title">Tax-Aware Rebalance &amp; Holdings Diff</h1>
-              <p class="panel-desc">Paste what you currently own to generate exact weakest-first Buy/Sell orders. Saved only in your browser — never sent to a server.</p>
+              <p class="panel-desc">Paste your full portfolio + spare cash to see strategy-specific Buy/Sell/Hold advice, immediate STCG/LTCG estimates, or hand it straight over to the autonomous Paper Bot.</p>
             </div>
-            <div style="font-size: 13px; color: var(--ink-muted);" id="diffTargetContext">Comparing against live &#8377;1,00,000 target</div>
+            <div style="font-size: 13px; color: var(--ink-muted); font-variant-numeric: tabular-nums;" id="diffTargetContext">Paste holdings or cash to value total portfolio</div>
+          </div>
+
+          <!-- Local Strategy Preset & Cash Bar -->
+          <div class="controls-bar" style="margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
+            <div class="field" style="flex: 1 1 210px;">
+              <label for="rebalancePresetSelect">Strategy Preset</label>
+              <select class="select-box" id="rebalancePresetSelect">
+                <option value="R3">R3 · Risk-Adj 9M + MF4 + TrendGold (Recommended)</option>
+                <option value="S3">S3 · Sortino 9M + MF4 + TrendGold</option>
+                <option value="R2">R2 · Risk-Adj 9M + -15% Trigger</option>
+                <option value="R7">R7 · Concentrated NormZ Risk-Adj</option>
+                <option value="F2">F2 · Legacy V1 Raw 9M</option>
+                <option value="F4">F4 · 12M Hold (Low LTCG Tax)</option>
+              </select>
+            </div>
+
+            <div class="field" style="flex: 0 1 200px;">
+              <label for="rebalanceCashInput">Available Cash to Deploy (&#8377;)</label>
+              <input class="input-box mono" type="number" id="rebalanceCashInput" min="0" step="500" value="0" />
+            </div>
+
+            <div class="check-group" style="padding-bottom: 4px;">
+              <label class="check-label">
+                <input type="checkbox" id="rebalanceSlotCapToggle" checked />
+                <span>Skip Unaffordable Stocks (SlotCap)</span>
+              </label>
+              <label class="check-label">
+                <input type="checkbox" id="rebalanceSweepToggle" checked />
+                <span>Park Spare Cash in LIQUIDCASE</span>
+              </label>
+            </div>
           </div>
 
           <div class="two-col">
             <div>
               <div class="field" style="margin-bottom: 12px;">
-                <label for="holdingsInput">Your Current Holdings (<code>SYMBOL,SHARES,YYYY-MM-DD</code>)</label>
-                <textarea class="textarea-box" id="holdingsInput" rows="8" placeholder="LAURUSLABS,2,2025-12-15&#10;BHEL,10,2026-04-01&#10;GOLDBEES,150,2026-03-10"></textarea>
+                <label for="holdingsInput">Your Current Holdings (<code>SYMBOL,SHARES,YYYY-MM-DD[,AVG_BUY_PRICE]</code>)</label>
+                <textarea class="textarea-box" id="holdingsInput" rows="8" placeholder="LAURUSLABS,2,2025-12-15,2150&#10;BHEL,10,2026-04-01,390&#10;RELIANCE,5,2025-10-01,2850&#10;GOLDBEES,150,2026-03-10,98"></textarea>
               </div>
+
+              <!-- Outside Midcap 150 Handling Panel -->
+              <div class="notice-strip" id="outsideUniverseBox" hidden style="flex-direction: column; align-items: stretch; margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <div>
+                    <strong>Outside Midcap 150 Detected (<span id="outsideCountLbl">0</span>)</strong>
+                    <div style="font-size: 12px; opacity: 0.9;">Choose whether to liquidate these external stocks into strategy cash or keep them untouched outside the sleeve.</div>
+                  </div>
+                  <div class="segmented" role="group" aria-label="Outside Midcap 150 handling">
+                    <button type="button" class="seg-btn active" data-outside-mode="exclude">Keep Outside Sleeve</button>
+                    <button type="button" class="seg-btn" data-outside-mode="liquidate">Liquidate Into Strategy</button>
+                  </div>
+                </div>
+                <div id="outsideStockList"></div>
+              </div>
+
               <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
-                <button class="btn-accent" id="computeDiffBtn">Compute Trade Diff</button>
+                <button class="btn-primary" id="computeDiffBtn">Compute Trade Diff</button>
+                <button class="btn-accent" id="handOverBotBtn">Hand Over to Bot &rarr; Create Tracked View</button>
                 <button class="btn-secondary" id="clearHoldingsBtn">Clear</button>
               </div>
+
               <div class="intuition-key" style="margin-top: 18px; padding-bottom: 0;">
-                <div><strong>STCG (20%) vs LTCG (12.5%):</strong> Profits sold before 365 days are taxed at 20%; held 365+ days are taxed at 12.5% (first &#8377;1.25L/year is tax-free).</div>
-                <div><strong>330–364d LTCG Shield:</strong> Flags any sell order just days away from 365 days so you can avoid jumping into the higher 20% tax bracket.</div>
-                <div><strong>Weakest-First Trimming:</strong> Defensive cuts trim lower-ranked stocks first so your strongest winners keep compounding toward LTCG.</div>
-                <div><strong>&#8377;500 Minimum Delta:</strong> Skips tiny buy/sell adjustments under &#8377;500 (unless exiting a stock completely) to avoid needless fees.</div>
+                <div><strong>Total Capital Used:</strong> Strategy portfolio value = In-Universe Holdings + Liquidated Non-Universe Proceeds (if toggled) + Available Cash.</div>
+                <div><strong>STCG (20%) vs LTCG (12.5%):</strong> Profits sold before 365 days are taxed at 20%; held 365+ days at 12.5% (first &#8377;1.25L/FY tax-free). Optional <code>AVG_BUY_PRICE</code> computes exact rupee tax.</div>
+                <div><strong>330–364d LTCG Shield:</strong> Flags sell orders within 35 days of 1-year LTCG — when handing over to the Bot, you can choose to let the Bot shield them automatically until Day 365.</div>
+                <div><strong>&#8377;500 Minimum Delta:</strong> Skips minor adjustments below &#8377;500 (unless closing a non-target position completely).</div>
               </div>
             </div>
 
             <div style="display: flex; flex-direction: column;">
-              <div class="metric-strip" id="diffSummaryStrip" style="margin-top: 0; grid-template-columns: repeat(3, minmax(0, 1fr));">
+              <div class="metric-strip metric-strip-4" id="diffSummaryStrip" style="margin-top: 0;">
+                <div class="metric-cell">
+                  <div class="metric-label">Portfolio Value</div>
+                  <div class="metric-value" id="diffPortTotal">&#8377;0</div>
+                  <div class="metric-note" id="diffPortBreak">Holdings + Cash</div>
+                </div>
                 <div class="metric-cell">
                   <div class="metric-label">Buy Orders</div>
                   <div class="metric-value t-green" id="diffBuyTotal">&#8377;0</div>
@@ -1221,11 +1397,193 @@
                 </div>
               </div>
 
-              <div id="diffOutput" class="table-wrap" style="flex: 1; max-height: 440px; overflow-y: auto;">
-                <div class="empty-state">
-                  <p>Paste your current holdings as <code>SYMBOL,SHARES,YYYY-MM-DD</code> on the left and click Compute Trade Diff to see exact Buy, Sell, and Hold actions.</p>
+              <!-- Estimated Immediate Tax Impact Card -->
+              <div id="diffTaxImpactCard" style="background: var(--canvas); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;">
+                <div>
+                  <div style="font-size: 12px; font-weight: 600; color: var(--ink-muted);">Estimated Immediate Tax Impact (Day-0 Trades)</div>
+                  <div style="font-size: 13px; color: var(--ink-secondary); margin-top: 2px;" id="diffTaxBreakdownText">Enter optional 4th column <code>AVG_BUY_PRICE</code> for exact STCG/LTCG rupee tax estimate.</div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-family: var(--font-mono); font-size: 18px; font-weight: 700;" id="diffTaxEstInr">&#8377;0</div>
+                  <div style="font-size: 11px; color: var(--ink-muted);" id="diffFeeEstText">Friction (0.15%): &#8377;0</div>
                 </div>
               </div>
+
+              <div id="diffOutput" class="table-wrap" style="flex: 1; max-height: 440px; overflow-y: auto;">
+                <div class="empty-state">
+                  <p>Paste your current holdings as <code>SYMBOL,SHARES,YYYY-MM-DD[,AVG_BUY_PRICE]</code> on the left and click Compute Trade Diff to see exact Buy, Sell, and Hold actions.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-paperbot" aria-label="Autonomous Paper Trading Bot">
+        <!-- Sub-Tab Header -->
+        <div class="panel" style="padding: 18px 24px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+            <div>
+              <h1 class="panel-title">Autonomous Paper Trading Bot &amp; Live Forward Audit</h1>
+              <p class="panel-desc" style="margin-top: 2px;">Live weekday paper execution (T+1 close, 0.15% friction, Indian FIFO taxes) plus private forward-replayed portfolio views stored in your browser.</p>
+            </div>
+            <div class="segmented" role="group" aria-label="Paper Bot Sections">
+              <button class="seg-btn active" id="pbTabBtnOfficial" data-pb-tab="official">Official Autonomous Bot</button>
+              <button class="seg-btn" id="pbTabBtnViews" data-pb-tab="views">My Tracked Views (<span id="pbViewsCount">0</span>)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB A: OFFICIAL AUTONOMOUS BOT -->
+        <div id="pbPaneOfficial">
+          <div class="panel">
+            <div class="panel-header" style="margin-bottom: 14px;">
+              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <div class="segmented" role="group" aria-label="Official Bot Account">
+                  <button class="seg-btn active" data-pb-account="R3_1L_SlotCap">R3 · &#8377;1L (SlotCap + Sweep)</button>
+                  <button class="seg-btn" data-pb-account="R3_10L_Standard">R3 · &#8377;10L (Standard)</button>
+                </div>
+                <span class="badge badge-green" id="pbOfficialStatusPill">Loading bot ledger...</span>
+              </div>
+              <label class="check-label" style="font-size: 13px; min-height: 32px;">
+                <input type="checkbox" id="pbNetDefTaxToggle" />
+                <span>Net of Defensive ETF Tax Est. (Sec 50AA / Gold)</span>
+              </label>
+            </div>
+
+            <div class="metric-strip metric-strip-5" id="pbOfficialKpis"></div>
+
+            <div style="margin-top: 20px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                <div>
+                  <h2 class="panel-title" style="font-size: 16px;">Live Forward Equity Curve Since Inception</h2>
+                  <p class="panel-desc" style="font-size: 13px;">Autonomous bot NAV vs Midcap 150 EW and Unhedged 9M from identical starting capital. Markers highlight rebalances &amp; regime switches.</p>
+                </div>
+              </div>
+              <div class="chart-box-sm"><canvas id="pbOfficialChart"></canvas></div>
+            </div>
+          </div>
+
+          <!-- Official Bot Current Holdings -->
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Current Open FIFO Positions (<span id="pbOfficialHeldCount">0</span>)</h2>
+                <p class="panel-desc">Lot-tracked positions marked at latest close with live LTCG 365-day qualification timers.</p>
+              </div>
+              <button class="btn-secondary btn-sm" id="pbExportOfficialCsvBtn">Export Bot Ledger CSV</button>
+            </div>
+            <div class="table-wrap" id="pbOfficialHoldingsWrap"></div>
+          </div>
+
+          <!-- Official Bot Decision Feed & Trade Audit -->
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Decision &amp; Trade Audit Ledger</h2>
+                <p class="panel-desc">Plain-English record of every autonomous decision, 6-month rebalance, MF4 regime step, Gold/Cash gate flip, and corporate action.</p>
+              </div>
+              <div class="segmented" role="group" aria-label="Decision filter">
+                <button class="seg-btn active" data-pb-dec-filter="ACTIONS">Actions Only</button>
+                <button class="seg-btn" data-pb-dec-filter="ALL">All Incl. Daily Checks</button>
+              </div>
+            </div>
+            <div id="pbOfficialDecisionFeed" style="max-height: 280px; overflow-y: auto; border-top: 1px solid var(--border); margin-bottom: 20px;"></div>
+
+            <div class="table-toolbar">
+              <strong style="font-size: 14px;">Executed Orders &amp; FIFO Tax Realizations</strong>
+              <div class="segmented" role="group" aria-label="Trade filter">
+                <button class="seg-btn active" data-pb-trade-filter="ALL">All</button>
+                <button class="seg-btn" data-pb-trade-filter="REBALANCE">Rebalances</button>
+                <button class="seg-btn" data-pb-trade-filter="REGIME">Regime Switches</button>
+                <button class="seg-btn" data-pb-trade-filter="GATE">Gold/Cash Flips</button>
+              </div>
+            </div>
+            <div class="table-wrap" id="pbOfficialTradeWrap" style="max-height: 360px; overflow-y: auto;"></div>
+          </div>
+        </div>
+
+        <!-- TAB B: MY TRACKED VIEWS -->
+        <div id="pbPaneViews" hidden>
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">My Tracked Portfolio Views (Browser Local Replay)</h2>
+                <p class="panel-desc">Automatically caught up day-by-day against <code>data/forward_tape.json</code> until you explicitly click End / Freeze View.</p>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn-accent btn-sm" id="pbNewViewBtn">+ Hand Over Portfolio</button>
+                <button class="btn-secondary btn-sm" id="pbExportViewsBtn">Export All Views (JSON)</button>
+                <button class="btn-secondary btn-sm" id="pbImportViewsBtn">Import Views (JSON)</button>
+                <input type="file" id="pbImportViewsFile" accept="application/json,.json" hidden />
+              </div>
+            </div>
+
+            <div class="table-wrap" id="pbViewsOverviewWrap"></div>
+          </div>
+
+          <div class="panel" id="pbViewsComparePanel" hidden>
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Multi-Scenario Comparison Overlay (% Return Since View Start)</h2>
+                <p class="panel-desc">Check boxes in the table above to compare strategy choices (e.g., R3 vs S3 vs Do-Nothing Frozen Baseline) side-by-side.</p>
+              </div>
+            </div>
+            <div class="chart-box-sm"><canvas id="pbViewsCompareChart"></canvas></div>
+          </div>
+
+          <!-- Selected Tracked View Detailed Dashboard -->
+          <div id="pbSelectedViewPanel" hidden>
+            <div class="panel">
+              <div class="panel-header">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <h2 class="panel-title" id="pbViewDetailTitle">View Details</h2>
+                    <span class="badge" id="pbViewStatusBadge">ACTIVE</span>
+                  </div>
+                  <p class="panel-desc" id="pbViewDetailSub"></p>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button class="btn-secondary btn-sm" id="pbViewCloneBtn">Clone with Different Strategy</button>
+                  <button class="btn-danger btn-sm" id="pbViewEndBtn">End / Freeze View</button>
+                  <button class="btn-danger btn-sm" id="pbViewDeleteBtn">Delete View</button>
+                </div>
+              </div>
+
+              <div class="metric-strip metric-strip-5" id="pbViewKpis"></div>
+
+              <div id="pbViewOutsideNotice" class="notice-strip" hidden style="margin-top: 8px;"></div>
+
+              <div style="margin-top: 16px;">
+                <h3 class="panel-title" style="font-size: 16px; margin-bottom: 8px;">View Equity Curve vs Midcap 150 EW &amp; Unhedged / Do-Nothing</h3>
+                <div class="chart-box-sm"><canvas id="pbViewDetailChart"></canvas></div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <div>
+                  <h2 class="panel-title">View Open Positions (<span id="pbViewHeldCount">0</span>)</h2>
+                  <p class="panel-desc">FIFO lot cost basis, unrealized P&amp;L, and days remaining until 365-day LTCG qualification.</p>
+                </div>
+                <button class="btn-secondary btn-sm" id="pbExportViewCsvBtn">Export View Ledger CSV</button>
+              </div>
+              <div class="table-wrap" id="pbViewHoldingsWrap"></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <div>
+                  <h2 class="panel-title">View Decision &amp; Trade Audit Ledger</h2>
+                  <p class="panel-desc">Complete replay history of automated rebalances, LTCG shield releases, splits/bonuses, and regime switches.</p>
+                </div>
+                <div class="segmented" role="group" aria-label="View Decision filter">
+                  <button class="seg-btn active" data-pb-vdec-filter="ACTIONS">Actions Only</button>
+                  <button class="seg-btn" data-pb-vdec-filter="ALL">All Incl. Daily Checks</button>
+                </div>
+              </div>
+              <div id="pbViewDecisionFeed" style="max-height: 260px; overflow-y: auto; border-top: 1px solid var(--border); margin-bottom: 18px;"></div>
+              <div class="table-wrap" id="pbViewTradeWrap" style="max-height: 340px; overflow-y: auto;"></div>
             </div>
           </div>
         </div>
@@ -1630,6 +1988,117 @@
   </div>
 </div>
 
+<!-- Hand Over to Bot Modal -->
+<div class="modal-backdrop" id="handOverModal" hidden role="dialog" aria-modal="true" aria-labelledby="hoModalTitle">
+  <div class="modal-card">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px;">
+      <div>
+        <h2 class="panel-title" id="hoModalTitle">Hand Over Portfolio to Paper Trading Bot</h2>
+        <p class="panel-desc" style="font-size: 13px;">Creates a persistent Tracked View in your browser and automatically catches up every weekday close against the live forward tape.</p>
+      </div>
+      <button type="button" class="btn-secondary btn-sm" id="hoCancelTopBtn">&times;</button>
+    </div>
+
+    <div class="field" style="margin-bottom: 14px;">
+      <label for="hoViewNameInput">Tracked View Name</label>
+      <input class="input-box" type="text" id="hoViewNameInput" placeholder="e.g., Zerodha Real -> R3 (Nov 2026)" />
+    </div>
+
+    <div class="two-col" style="gap: 12px; margin-bottom: 14px;">
+      <div class="field">
+        <label for="hoPresetSelect">Strategy Preset</label>
+        <select class="select-box" id="hoPresetSelect">
+          <option value="R3">R3 · Risk-Adj 9M + MF4 + TrendGold</option>
+          <option value="S3">S3 · Sortino 9M + MF4 + TrendGold</option>
+          <option value="R2">R2 · Risk-Adj 9M + -15% Trigger</option>
+          <option value="R7">R7 · NormZ Risk-Adj 9M</option>
+          <option value="F2">F2 · Legacy Raw 9M</option>
+          <option value="F4">F4 · 12M Hold (Low LTCG)</option>
+        </select>
+      </div>
+      <div class="field" style="justify-content: flex-end;">
+        <label class="check-label"><input type="checkbox" id="hoSlotCapCheck" checked /> <span>SlotCap Affordability ON</span></label>
+        <label class="check-label"><input type="checkbox" id="hoSweepCheck" checked /> <span>LIQUIDCASE Cash Sweep ON</span></label>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 14px;">
+      <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Day-0 Execution Mode</div>
+      <label class="modal-option">
+        <input type="radio" name="hoExecMode" value="immediate" checked />
+        <div>
+          <strong style="font-size: 13px;">Execute full advice today (Day-0 rebalance)</strong>
+          <div style="font-size: 12px; color: var(--ink-muted);">Immediately sells non-target holdings and buys the target basket at today's close (0.15% friction + FIFO tax).</div>
+        </div>
+      </label>
+      <label class="modal-option">
+        <input type="radio" name="hoExecMode" value="ltcg_shield" />
+        <div>
+          <strong style="font-size: 13px;">Respect 330–364d LTCG Shield</strong>
+          <div style="font-size: 12px; color: var(--ink-muted);">Holds any flagged 330–364d sell lots until Day 365, then automatically sells at 12.5% LTCG and reallocates proceeds.</div>
+        </div>
+      </label>
+    </div>
+
+    <label class="check-label" style="margin-bottom: 18px;">
+      <input type="checkbox" id="hoIncludeDoNothing" checked />
+      <span>Also track a <strong>"Do-Nothing" Frozen Baseline</strong> (compare active bot alpha vs holding untouched)</span>
+    </label>
+
+    <div id="hoPreviewMeta" style="font-size: 12px; color: var(--ink-secondary); background: var(--canvas); padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 16px;"></div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" class="btn-secondary" id="hoCancelBtn">Cancel</button>
+      <button type="button" class="btn-accent" id="hoSubmitBtn">Create Tracked View</button>
+    </div>
+  </div>
+</div>
+
+<!-- Clone View Modal -->
+<div class="modal-backdrop" id="cloneViewModal" hidden role="dialog" aria-modal="true" aria-labelledby="cloneModalTitle">
+  <div class="modal-card" style="max-width: 440px;">
+    <h2 class="panel-title" id="cloneModalTitle" style="margin-bottom: 6px;">Clone View with Different Strategy</h2>
+    <p class="panel-desc" style="font-size: 13px; margin-bottom: 14px;">Replays this View's exact Day-0 portfolio forward through every market day using another preset.</p>
+    <div class="field" style="margin-bottom: 12px;">
+      <label for="cloneNameInput">Cloned View Name</label>
+      <input class="input-box" type="text" id="cloneNameInput" />
+    </div>
+    <div class="field" style="margin-bottom: 12px;">
+      <label for="clonePresetSelect">Target Strategy Preset</label>
+      <select class="select-box" id="clonePresetSelect">
+        <option value="S3">S3 · Sortino 9M + MF4 + TrendGold</option>
+        <option value="R3">R3 · Risk-Adj 9M + MF4 + TrendGold</option>
+        <option value="R2">R2 · Risk-Adj 9M + -15% Trigger</option>
+        <option value="R7">R7 · NormZ Risk-Adj 9M</option>
+        <option value="F2">F2 · Legacy Raw 9M</option>
+        <option value="F4">F4 · 12M Hold (Low LTCG)</option>
+      </select>
+    </div>
+    <div class="check-group" style="margin-bottom: 18px;">
+      <label class="check-label"><input type="checkbox" id="cloneSlotCapCheck" /> <span>SlotCap ON</span></label>
+      <label class="check-label"><input type="checkbox" id="cloneSweepCheck" checked /> <span>LIQUIDCASE Sweep ON</span></label>
+    </div>
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" class="btn-secondary" id="cloneCancelBtn">Cancel</button>
+      <button type="button" class="btn-accent" id="cloneConfirmBtn">Clone &amp; Replay</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm End / Delete Modal -->
+<div class="modal-backdrop" id="confirmViewModal" hidden role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+  <div class="modal-card" style="max-width: 420px;">
+    <h2 class="panel-title" id="confirmModalTitle" style="margin-bottom: 8px;">Confirm Action</h2>
+    <p class="panel-desc" id="confirmModalDesc" style="font-size: 13px; margin-bottom: 18px;"></p>
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" class="btn-secondary" id="confirmCancelBtn">Cancel</button>
+      <button type="button" class="btn-danger" id="confirmProceedBtn" style="padding: 9px 16px; font-size: 13px;">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-banner" id="toastBanner" hidden role="status" aria-live="polite"></div>
+
 <script>
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtInr = (n) => n == null || !isFinite(n) ? '—' : '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 });
@@ -1638,6 +2107,8 @@ const fmtPct = (n, d = 2) => n == null || !isFinite(n) ? '—' : Number(n).toFix
 const fmtNum = (n, d = 2) => n == null || !isFinite(n) ? '—' : Number(n).toFixed(d);
 
 let STATE = null;
+let PAPER_LEDGER = null;
+let FORWARD_TAPE = null;
 let CHARTS = {};
 let chartWindow = 'ALL';
 let chartLog = true;
@@ -1645,9 +2116,23 @@ let triggerFilter = 'ALL';
 let rankFilter = 'ALL';
 const extraSeries = { s3: false, r2: false, f2: false, u0: false };
 
+let PB_SUBTAB = 'official';
+let PB_ACCOUNT = 'R3_1L_SlotCap';
+let PB_DEC_FILTER = 'ACTIONS';
+let PB_TRADE_FILTER = 'ALL';
+let PB_VDEC_FILTER = 'ACTIONS';
+let PB_SELECTED_VIEW_ID = null;
+let PB_COMPARE_IDS = new Set();
+let TRACKED_VIEWS = [];
+let OUTSIDE_MODE = 'exclude';
+let OUTSIDE_PRICES = {};
+let LAST_DIFF_CTX = null;
+let PENDING_CONFIRM_FN = null;
+
 const TAB_LABELS = {
   portfolio: 'Action & Orders',
   rebalance: 'Rebalance & Tax Diff',
+  paperbot: 'Paper Trading Bot',
   charts: 'Performance & Risk',
   rankings: 'Top 60 Stocks',
   research: 'Strategy & Proof',
@@ -1659,7 +2144,8 @@ function switchTab(tabId) {
   document.getElementById('breadcrumbTitle').textContent = TAB_LABELS[tabId] || 'Portfolio';
   closeMobileSidebar();
   if (tabId === 'charts' && STATE) renderCharts();
-  if (tabId === 'rebalance' && STATE) updateDiffContextLabel();
+  if (tabId === 'rebalance' && STATE) computeHoldingsDiff();
+  if (tabId === 'paperbot' && STATE) renderPaperBotPage();
 }
 
 function closeMobileSidebar() {
@@ -1668,9 +2154,20 @@ function closeMobileSidebar() {
 }
 
 async function init() {
-  const res = await fetch('./data/live_state.json?_=' + Date.now());
-  if (!res.ok) throw new Error('Unable to load market state (HTTP ' + res.status + ')');
-  STATE = await res.json();
+  const ts = Date.now();
+  const [liveRes, ledgerRes, tapeRes] = await Promise.all([
+    fetch('./data/live_state.json?_=' + ts),
+    fetch('./data/paper_ledger.json?_=' + ts).catch(() => null),
+    fetch('./data/forward_tape.json?_=' + ts).catch(() => null),
+  ]);
+  if (!liveRes.ok) throw new Error('Unable to load market state (HTTP ' + liveRes.status + ')');
+  STATE = await liveRes.json();
+  if (ledgerRes && ledgerRes.ok) PAPER_LEDGER = await ledgerRes.json();
+  if (tapeRes && tapeRes.ok) FORWARD_TAPE = await tapeRes.json();
+
+  loadTrackedViewsFromStorage();
+  if (FORWARD_TAPE) syncAllActiveTrackedViews(FORWARD_TAPE);
+
   renderHeaderAndRegime();
   renderPortfolioCalculator();
   renderPerfSummary();
@@ -1678,13 +2175,11 @@ async function init() {
   renderResearchTable();
   renderRankingsTable();
   renderTriggersTable();
-  updateDiffContextLabel();
 
-  const saved = localStorage.getItem('mmi_holdings_csv');
-  if (saved) {
-    document.getElementById('holdingsInput').value = saved;
-    computeHoldingsDiff();
-  }
+  restoreRebalanceState();
+  computeHoldingsDiff();
+  updatePbViewsBadge();
+  renderPaperBotPage();
 }
 
 function renderHeaderAndRegime() {
@@ -1803,13 +2298,7 @@ function computeBlendWeights(presetKey, capital, useSlotCap) {
   return { chosen, skipped: [...banned] };
 }
 
-function getLatestComputedOrders() {
-  const capital = Math.max(10000, Number(document.getElementById('capitalInput').value) || 100000);
-  const preset = document.getElementById('presetSelect').value;
-  const posture = document.getElementById('postureOverride').value;
-  const useSlotCap = document.getElementById('slotCapToggle').checked;
-  const useSweep = document.getElementById('liqSweepToggle').checked;
-
+function buildComputedOrders(capital, preset, posture, useSlotCap, useSweep) {
   const isTrendGold = preset === 'R3' || preset === 'S3';
   const shiftCrash = preset === 'F4' ? 0.50 : 0.75;
   let eqFrac = 1.0;
@@ -1887,6 +2376,15 @@ function getLatestComputedOrders() {
   return { capital, preset, posture, eqFrac, simCrash, isTrendGold, activeDefEtf, rows, eqDeployed, defInvested, sweepInv, idleCash, heldCount, totalSlots: chosen.length, skipped };
 }
 
+function getLatestComputedOrders() {
+  const capital = Math.max(10000, Number(document.getElementById('capitalInput').value) || 100000);
+  const preset = document.getElementById('presetSelect').value;
+  const posture = document.getElementById('postureOverride').value;
+  const useSlotCap = document.getElementById('slotCapToggle').checked;
+  const useSweep = document.getElementById('liqSweepToggle').checked;
+  return buildComputedOrders(capital, preset, posture, useSlotCap, useSweep);
+}
+
 function renderPortfolioCalculator() {
   const res = getLatestComputedOrders();
   const totalDeployed = res.eqDeployed + res.defInvested + res.sweepInv;
@@ -1942,53 +2440,204 @@ function renderPortfolioCalculator() {
   updateDiffContextLabel();
 }
 
+function buildUniversePriceMap() {
+  const pxMap = new Map();
+  const lastTapePx = FORWARD_TAPE?.days?.length ? FORWARD_TAPE.days[FORWARD_TAPE.days.length - 1].prices || {} : {};
+  Object.entries(lastTapePx).forEach(([k, v]) => { if (isFinite(v) && v > 0) pxMap.set(k, Number(v)); });
+  (STATE?.universe_scores || []).forEach(u => { if (isFinite(u.px) && u.px > 0) pxMap.set(u.sym, Number(u.px)); });
+  Object.entries(STATE?.regime?.etfs || {}).forEach(([k, v]) => { if (v?.price > 0) pxMap.set(k, Number(v.price)); });
+  return pxMap;
+}
+
+function saveRebalanceState() {
+  try {
+    const payload = {
+      holdingsCsv: document.getElementById('holdingsInput').value,
+      cash: Number(document.getElementById('rebalanceCashInput').value) || 0,
+      preset: document.getElementById('rebalancePresetSelect').value,
+      slotCap: document.getElementById('rebalanceSlotCapToggle').checked,
+      sweep: document.getElementById('rebalanceSweepToggle').checked,
+      outsideMode: OUTSIDE_MODE,
+      outsidePrices: OUTSIDE_PRICES,
+    };
+    localStorage.setItem('mmi_rebalance_state_v1', JSON.stringify(payload));
+    localStorage.setItem('mmi_holdings_csv', payload.holdingsCsv.trim());
+  } catch {}
+}
+
+function restoreRebalanceState() {
+  try {
+    const raw = localStorage.getItem('mmi_rebalance_state_v1');
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s.holdingsCsv != null) document.getElementById('holdingsInput').value = s.holdingsCsv;
+      if (s.cash != null) document.getElementById('rebalanceCashInput').value = s.cash;
+      if (s.preset) document.getElementById('rebalancePresetSelect').value = s.preset;
+      if (s.slotCap != null) document.getElementById('rebalanceSlotCapToggle').checked = !!s.slotCap;
+      if (s.sweep != null) document.getElementById('rebalanceSweepToggle').checked = !!s.sweep;
+      if (s.outsideMode === 'liquidate' || s.outsideMode === 'exclude') {
+        OUTSIDE_MODE = s.outsideMode;
+        document.querySelectorAll('[data-outside-mode]').forEach(b => b.classList.toggle('active', b.dataset.outsideMode === OUTSIDE_MODE));
+      }
+      if (s.outsidePrices && typeof s.outsidePrices === 'object') OUTSIDE_PRICES = s.outsidePrices;
+      return;
+    }
+  } catch {}
+  const saved = localStorage.getItem('mmi_holdings_csv');
+  if (saved) document.getElementById('holdingsInput').value = saved;
+}
+
 function updateDiffContextLabel() {
   if (!STATE) return;
-  const cap = Math.max(10000, Number(document.getElementById('capitalInput').value) || 100000);
-  const preset = document.getElementById('presetSelect').value;
-  document.getElementById('diffTargetContext').textContent = `Comparing against ${preset} target for ${fmtInrInt(cap)}`;
+  const preset = document.getElementById('rebalancePresetSelect').value;
+  if (LAST_DIFF_CTX && LAST_DIFF_CTX.targetPortfolioCap > 0) {
+    document.getElementById('diffTargetContext').textContent =
+      `${preset} target for ${fmtInrInt(LAST_DIFF_CTX.targetPortfolioCap)} (${fmtInrInt(LAST_DIFF_CTX.inUnivVal + LAST_DIFF_CTX.liquidateOutVal)} holdings + ${fmtInrInt(LAST_DIFF_CTX.cashAvail)} cash)`;
+  } else {
+    document.getElementById('diffTargetContext').textContent = `Comparing against ${preset} strategy rules`;
+  }
+}
+
+function renderOutsideStocksPanel(outsideMap, outsideMode) {
+  const box = document.getElementById('outsideUniverseBox');
+  const listEl = document.getElementById('outsideStockList');
+  const syms = [...outsideMap.keys()];
+  if (!syms.length) {
+    box.hidden = true;
+    listEl.innerHTML = '';
+    return;
+  }
+  box.hidden = false;
+  document.getElementById('outsideCountLbl').textContent = String(syms.length);
+  listEl.innerHTML = syms.map(sym => {
+    const info = outsideMap.get(sym);
+    const estPx = OUTSIDE_PRICES[sym] != null ? OUTSIDE_PRICES[sym] : (info.avgBuy || 0);
+    const estVal = info.shares * (Number(estPx) || 0);
+    return `
+      <div class="outside-row">
+        <div>
+          <span class="asset-name">${esc(sym)}</span>
+          <span class="badge badge-amber" style="margin-left:6px;">Outside Midcap 150</span>
+          <div style="font-size:12px; opacity:0.85;">${info.shares} sh${info.oldestDays != null ? ' · ' + info.oldestDays + 'd held' : ''}</div>
+        </div>
+        ${outsideMode === 'liquidate' ? `
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label style="font-size:12px; font-weight:600;">Sell Px (&#8377;):</label>
+            <input class="input-box mono outside-px-inp" data-outside-sym="${esc(sym)}" type="number" min="0" step="0.05" value="${esc(estPx || '')}" placeholder="Current ₹" style="width:110px; min-height:32px; padding:4px 8px;" />
+            <span class="t-muted" style="font-family:var(--font-mono); font-size:12px;">= ${fmtInrInt(estVal)}</span>
+          </div>` : `<div style="font-size:12px; font-weight:600;">Kept separate outside sleeve</div>`}
+      </div>`;
+  }).join('');
+
+  listEl.querySelectorAll('.outside-px-inp').forEach(inp => {
+    inp.addEventListener('input', () => {
+      OUTSIDE_PRICES[inp.dataset.outsideSym] = Math.max(0, Number(inp.value) || 0);
+      computeHoldingsDiff();
+    });
+  });
 }
 
 function computeHoldingsDiff() {
+  saveRebalanceState();
   const txt = document.getElementById('holdingsInput').value.trim();
-  localStorage.setItem('mmi_holdings_csv', txt);
-  if (!txt) {
+  const cashAvail = Math.max(0, Number(document.getElementById('rebalanceCashInput').value) || 0);
+  const rbPreset = document.getElementById('rebalancePresetSelect').value;
+  const rbSlotCap = document.getElementById('rebalanceSlotCapToggle').checked;
+  const rbSweep = document.getElementById('rebalanceSweepToggle').checked;
+
+  const pxMap = buildUniversePriceMap();
+  const etfSet = new Set(['GOLDBEES', 'SILVERBEES', 'EBBETF0431', 'LTGILTBEES', 'LIQUIDCASE', 'LIQUIDBEES', 'NIFTYBEES', 'MON100', 'MIDCAPIETF']);
+  const scoreMap = new Map();
+  const rankMap = new Map();
+  const scField = rbPreset === 'F4' ? 'r12' : rbPreset === 'S3' ? 'so9' : (rbPreset === 'R3' || rbPreset === 'R2' || rbPreset === 'R7') ? 'rk9' : 'r9';
+  const sortedU = [...(STATE.universe_scores || [])]
+    .filter(u => u[scField] != null)
+    .sort((a, b) => (b[scField] - a[scField]) || (a.sym < b.sym ? -1 : 1));
+  sortedU.forEach((u, i) => { scoreMap.set(u.sym, u[scField]); rankMap.set(u.sym, i + 1); });
+
+  const asOfMs = Date.parse(STATE.as_of_date + 'T00:00:00Z');
+  const inUnivLots = [];
+  const heldBySym = new Map();
+  const outsideMap = new Map();
+
+  txt.split(/\r?\n/).forEach(line => {
+    const clean = line.trim();
+    if (!clean || clean.startsWith('#')) return;
+    const parts = clean.split(',').map(s => s.trim());
+    const sym = (parts[0] || '').toUpperCase();
+    const sh = parseFloat(parts[1]);
+    if (!sym || !isFinite(sh) || sh <= 0) return;
+    const dtStr = (parts[2] || '').slice(0, 10);
+    const dtMs = dtStr ? Date.parse(dtStr + 'T00:00:00Z') : NaN;
+    const daysHeld = !isNaN(dtMs) ? Math.round((asOfMs - dtMs) / 86400000) : null;
+    const costInp = parts[3] != null && parts[3] !== '' ? parseFloat(parts[3]) : NaN;
+    const hasCostBasis = isFinite(costInp) && costInp > 0;
+
+    if (pxMap.has(sym)) {
+      const curPx = pxMap.get(sym);
+      const buyPx = hasCostBasis ? costInp : curPx;
+      const buyDate = !isNaN(dtMs) ? dtStr : STATE.as_of_date;
+      inUnivLots.push({ symbol: sym, shares: sh, buy_date: buyDate, buy_price: buyPx, daysHeld, hasCostBasis });
+      const rec = heldBySym.get(sym) || { shares: 0, lots: [], oldestDays: daysHeld };
+      rec.shares += sh;
+      rec.lots.push({ shares: sh, buy_date: buyDate, buy_price: buyPx, daysHeld, hasCostBasis });
+      if (daysHeld != null && (rec.oldestDays == null || daysHeld > rec.oldestDays)) rec.oldestDays = daysHeld;
+      heldBySym.set(sym, rec);
+    } else {
+      const rec = outsideMap.get(sym) || { sym, shares: 0, oldestDays: daysHeld, avgBuy: hasCostBasis ? costInp : 0, buyDate: !isNaN(dtMs) ? dtStr : STATE.as_of_date };
+      rec.shares += sh;
+      if (hasCostBasis && !rec.avgBuy) rec.avgBuy = costInp;
+      if (daysHeld != null && (rec.oldestDays == null || daysHeld > rec.oldestDays)) rec.oldestDays = daysHeld;
+      outsideMap.set(sym, rec);
+    }
+  });
+
+  renderOutsideStocksPanel(outsideMap, OUTSIDE_MODE);
+
+  let inUnivVal = 0;
+  heldBySym.forEach((rec, sym) => { inUnivVal += rec.shares * (pxMap.get(sym) || 0); });
+  let outsideTotalVal = 0;
+  const outsideHoldings = [];
+  outsideMap.forEach((rec, sym) => {
+    const estPx = OUTSIDE_PRICES[sym] != null ? Number(OUTSIDE_PRICES[sym]) : (rec.avgBuy || 0);
+    const val = rec.shares * Math.max(0, estPx || 0);
+    outsideTotalVal += val;
+    outsideHoldings.push({ symbol: sym, shares: rec.shares, buy_date: rec.buyDate, est_price: estPx || 0, value: val });
+  });
+  const liquidateOutVal = OUTSIDE_MODE === 'liquidate' ? outsideTotalVal : 0;
+  const totalWithCash = inUnivVal + liquidateOutVal + cashAvail;
+
+  if (!txt && cashAvail <= 0) {
+    LAST_DIFF_CTX = null;
+    document.getElementById('diffPortTotal').textContent = '₹0';
+    document.getElementById('diffPortBreak').textContent = 'Holdings + Cash';
     document.getElementById('diffBuyTotal').textContent = '₹0';
     document.getElementById('diffBuyCount').textContent = '0 trades';
     document.getElementById('diffSellTotal').textContent = '₹0';
     document.getElementById('diffSellCount').textContent = '0 trades';
     document.getElementById('diffTaxFlags').textContent = '0';
-    document.getElementById('diffOutput').innerHTML = '<div class="empty-state"><p>Paste your current holdings on the left and click Compute Trade Diff.</p></div>';
+    document.getElementById('diffTaxEstInr').textContent = '₹0';
+    document.getElementById('diffFeeEstText').textContent = 'Friction (0.15%): ₹0';
+    document.getElementById('diffTaxBreakdownText').innerHTML = 'Enter optional 4th column <code>AVG_BUY_PRICE</code> for exact STCG/LTCG rupee tax estimate.';
+    document.getElementById('diffOutput').innerHTML = '<div class="empty-state"><p>Paste your current holdings as <code>SYMBOL,SHARES,YYYY-MM-DD[,AVG_BUY_PRICE]</code> or enter cash above.</p></div>';
+    updateDiffContextLabel();
     return;
   }
 
-  const res = getLatestComputedOrders();
+  const targetCapital = Math.max(1000, totalWithCash);
+  const res = buildComputedOrders(targetCapital, rbPreset, 'LIVE', rbSlotCap, rbSweep);
   const tgtMap = new Map();
   res.rows.forEach(r => tgtMap.set(r.sym, (tgtMap.get(r.sym) || 0) + r.sh));
 
-  const held = new Map();
-  const pxMap = new Map(STATE.universe_scores.map(u => [u.sym, u.px]));
-  pxMap.set('GOLDBEES', STATE.regime.etfs.GOLDBEES.price);
-  pxMap.set('LIQUIDCASE', STATE.regime.etfs.LIQUIDCASE.price);
-
-  const asOf = new Date(STATE.as_of_date + 'T00:00:00Z');
-  txt.split(/\r?\n/).forEach(line => {
-    const parts = line.split(',').map(s => s.trim());
-    if (!parts[0] || !parts[1]) return;
-    const sym = parts[0].toUpperCase();
-    const sh = parseInt(parts[1], 10) || 0;
-    const dt = parts[2] ? new Date(parts[2] + 'T00:00:00Z') : null;
-    const daysHeld = dt && !isNaN(dt) ? Math.round((asOf - dt) / 86400000) : null;
-    held.set(sym, { sh, daysHeld });
-  });
-
-  const allSyms = new Set([...held.keys(), ...tgtMap.keys()]);
+  const allSyms = new Set([...heldBySym.keys(), ...tgtMap.keys()]);
   const actions = [];
   let buySum = 0, buyCnt = 0, sellSum = 0, sellCnt = 0, ltcgWarnCnt = 0;
+  let stcgGain = 0, ltcgGain = 0, missingBasisCnt = 0;
 
   allSyms.forEach(sym => {
-    const cur = held.get(sym)?.sh || 0;
-    const days = held.get(sym)?.daysHeld;
+    const rec = heldBySym.get(sym);
+    const cur = rec ? rec.shares : 0;
+    const days = rec ? rec.oldestDays : null;
     const tgt = tgtMap.get(sym) || 0;
     const px = pxMap.get(sym) || 0;
     const delta = tgt - cur;
@@ -1996,35 +2645,123 @@ function computeHoldingsDiff() {
     let act = 'HOLD';
     let tone = 't-muted';
     let note = '';
+    let isTaxWarn = false;
+
     if (delta > 0 && deltaInr >= 500) {
-      act = `BUY +${delta}`;
+      act = `BUY +${Number(delta.toFixed(2))}`;
       tone = 't-green';
       buySum += deltaInr;
       buyCnt += 1;
+      const rk = rankMap.get(sym);
+      note = rk ? `${rbPreset} Rank #${rk} target buy` : `Defensive allocation (${sym})`;
     } else if (delta < 0 && (tgt === 0 || deltaInr >= 500)) {
-      act = `SELL ${delta}`;
+      const sellQty = Math.abs(delta);
+      act = `SELL -${Number(sellQty.toFixed(2))}`;
       tone = 't-red';
       sellSum += deltaInr;
       sellCnt += 1;
-      if (days != null && days >= 330 && days < 365) {
+      // FIFO lot gain / LTCG shield inspection
+      let rem = sellQty;
+      const lotsSorted = [...(rec?.lots || [])].sort((a, b) => (a.buy_date < b.buy_date ? -1 : 1));
+      lotsSorted.forEach(lot => {
+        if (rem <= 1e-6) return;
+        const take = Math.min(lot.shares, rem);
+        rem -= take;
+        if (!lot.hasCostBasis) missingBasisCnt += 1;
+        const gain = (px - lot.buy_price) * take;
+        const dH = lot.daysHeld ?? 0;
+        if (dH >= 330 && dH < 365) isTaxWarn = true;
+        if (!etfSet.has(sym)) {
+          if (dH >= 365) ltcgGain += gain;
+          else stcgGain += gain;
+        }
+      });
+      if (isTaxWarn) {
         ltcgWarnCnt += 1;
-        note = `Held ${days}d — LTCG in ${365 - days}d (consider waiting)`;
+        note = `Held ${days}d — LTCG in ${365 - days}d (330–364d shield)`;
+      } else {
+        const rk = rankMap.get(sym);
+        const wkNote = etfSet.has(sym) ? 'Defensive rebalance cut' : (rk ? `Rank #${rk} trim` : 'Outside Top 30 (weakest-first exit)');
+        note = days != null ? `${wkNote} · ${days}d (${days >= 365 ? 'LTCG 12.5%' : 'STCG 20%'})` : wkNote;
       }
     } else if (delta !== 0) {
       note = `Skipped — below ₹500 min delta (${fmtInrInt(deltaInr)})`;
+    } else if (cur > 0) {
+      const rk = rankMap.get(sym);
+      note = `${rk ? 'Top-30 #' + rk + ' keep' : 'Target match'}${days != null ? ' · ' + days + 'd held' : ''}`;
     }
-    if (days != null && !note) note = `${days}d held (${days >= 365 ? 'LTCG 12.5%' : 'STCG 20%'})`;
-    actions.push({ sym, cur, tgt, delta, deltaInr, act, tone, note, isTaxWarn: note.includes('LTCG in') });
+    actions.push({ sym, cur, tgt, delta, deltaInr, act, tone, note, isTaxWarn, sortPri: act.startsWith('SELL') ? 0 : act.startsWith('BUY') ? 1 : 2 });
   });
 
-  const orderRank = (a) => a.act.startsWith('SELL') ? 0 : a.act.startsWith('BUY') ? 1 : 2;
-  actions.sort((a, b) => orderRank(a) - orderRank(b) || b.deltaInr - a.deltaInr);
+  // Add Outside Midcap 150 stocks cleanly into table too
+  outsideHoldings.forEach(oh => {
+    const val = oh.value;
+    if (OUTSIDE_MODE === 'liquidate') {
+      sellSum += val;
+      sellCnt += 1;
+      actions.push({
+        sym: oh.symbol,
+        cur: oh.shares,
+        tgt: 0,
+        delta: -oh.shares,
+        deltaInr: val,
+        act: `SELL -${oh.shares}`,
+        tone: 't-red',
+        note: `Outside Midcap 150 -> liquidate into strategy cash${val <= 0 ? ' (enter Sell Px)' : ''}`,
+        isTaxWarn: false,
+        sortPri: 0,
+      });
+    } else {
+      actions.push({
+        sym: oh.symbol,
+        cur: oh.shares,
+        tgt: oh.shares,
+        delta: 0,
+        deltaInr: val,
+        act: 'OUTSIDE M150',
+        tone: 't-amber',
+        note: 'Outside Midcap 150 — kept untouched in external sleeve',
+        isTaxWarn: false,
+        sortPri: 3,
+      });
+    }
+  });
 
+  actions.sort((a, b) => a.sortPri - b.sortPri || b.deltaInr - a.deltaInr);
+
+  const stcgTax = Math.max(0, stcgGain) * 0.20;
+  const ltcgTax = Math.max(0, ltcgGain - 125000) * 0.125;
+  const totalTaxEst = stcgTax + ltcgTax;
+  const frictionEst = (buySum + sellSum) * 0.0015;
+
+  document.getElementById('diffPortTotal').textContent = fmtInrInt(totalWithCash);
+  document.getElementById('diffPortBreak').textContent = `${heldBySym.size} univ · ${fmtInrInt(cashAvail)} cash`;
   document.getElementById('diffBuyTotal').textContent = fmtInrInt(buySum);
   document.getElementById('diffBuyCount').textContent = `${buyCnt} buy ${buyCnt === 1 ? 'order' : 'orders'}`;
   document.getElementById('diffSellTotal').textContent = fmtInrInt(sellSum);
   document.getElementById('diffSellCount').textContent = `${sellCnt} sell ${sellCnt === 1 ? 'order' : 'orders'}`;
   document.getElementById('diffTaxFlags').textContent = String(ltcgWarnCnt);
+  document.getElementById('diffTaxEstInr').textContent = fmtInrInt(totalTaxEst);
+  document.getElementById('diffTaxEstInr').className = totalTaxEst > 0 ? 't-red' : 't-green';
+  document.getElementById('diffFeeEstText').textContent = `Friction (0.15%): ${fmtInrInt(frictionEst)}`;
+  document.getElementById('diffTaxBreakdownText').innerHTML =
+    `STCG net ${fmtInrInt(stcgGain)} (tax ${fmtInrInt(stcgTax)}) · LTCG net ${fmtInrInt(ltcgGain)} (tax ${fmtInrInt(ltcgTax)} after ₹1.25L exempt)` +
+    (missingBasisCnt > 0 ? ' · <em>Cost omitted on some lots (LTP assumed)</em>' : '');
+
+  LAST_DIFF_CTX = {
+    preset: rbPreset,
+    slotCap: rbSlotCap,
+    sweep: rbSweep,
+    inUnivLots,
+    inUnivVal,
+    cashAvail,
+    outsideMode: OUTSIDE_MODE,
+    outsideHoldings,
+    liquidateOutVal,
+    targetPortfolioCap: totalWithCash,
+    ltcgWarnCnt,
+  };
+  updateDiffContextLabel();
 
   document.getElementById('diffOutput').innerHTML = `
     <table>
@@ -2427,8 +3164,26 @@ document.getElementById('rankDetailsToggle').addEventListener('change', (e) => {
 document.getElementById('computeDiffBtn').addEventListener('click', computeHoldingsDiff);
 document.getElementById('clearHoldingsBtn').addEventListener('click', () => {
   document.getElementById('holdingsInput').value = '';
+  document.getElementById('rebalanceCashInput').value = '0';
+  OUTSIDE_PRICES = {};
+  OUTSIDE_MODE = 'exclude';
+  document.querySelectorAll('[data-outside-mode]').forEach(b => b.classList.toggle('active', b.dataset.outsideMode === 'exclude'));
   localStorage.removeItem('mmi_holdings_csv');
+  localStorage.removeItem('mmi_rebalance_state_v1');
   computeHoldingsDiff();
+});
+['holdingsInput', 'rebalanceCashInput'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => computeHoldingsDiff());
+});
+['rebalancePresetSelect', 'rebalanceSlotCapToggle', 'rebalanceSweepToggle'].forEach(id => {
+  document.getElementById(id).addEventListener('change', () => computeHoldingsDiff());
+});
+document.querySelectorAll('[data-outside-mode]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    OUTSIDE_MODE = btn.dataset.outsideMode;
+    document.querySelectorAll('[data-outside-mode]').forEach(b => b.classList.toggle('active', b.dataset.outsideMode === OUTSIDE_MODE));
+    computeHoldingsDiff();
+  });
 });
 
 // Rankings search & filters
@@ -2499,6 +3254,1734 @@ document.getElementById('exportCsvBtn').addEventListener('click', () => {
   a.href = URL.createObjectURL(blob);
   a.download = `midcap_momentum_orders_${STATE.as_of_date}_${res.capital}.csv`;
   a.click();
+});
+
+// ============================================================================
+// DETERMINISTIC JS FORWARD REPLAY ENGINE (1:1 Parity With src/paper_bot.py)
+// ============================================================================
+const MMI_REPLAY = (() => {
+  const COST_RATE = 0.0015;
+  const MIN_TRADE_DELTA_INR = 500.0;
+  const LTCG_DAYS = 365;
+  const LTCG_EXEMPTION_INR = 125000.0;
+  const STCG_RATE = 0.20;
+  const LTCG_RATE = 0.125;
+  const LIQUID_SLAB_RATE = 0.30;
+  const GOLD_STCG_RATE = 0.30;
+  const GOLD_LTCG_RATE = 0.125;
+
+  const ETF_SYMBOLS = ['GOLDBEES', 'SILVERBEES', 'EBBETF0431', 'LTGILTBEES', 'LIQUIDCASE', 'LIQUIDBEES', 'NIFTYBEES', 'MON100', 'MIDCAPIETF'];
+  const GOLD_ETFS = new Set(['GOLDBEES', 'SILVERBEES']);
+  const LIQUID_ETFS = new Set(['LIQUIDCASE', 'LIQUIDBEES']);
+  const ETF_SET = new Set(ETF_SYMBOLS);
+
+  const PRESET_RULES = {
+    R3: { id: 'R3', label: 'R3 · Risk-Adj 9M + MF4 + TrendGold150', score_key: 'rk9', weighting: 'equal', rebalance_days: 126, regime_key: 'target_eq_mf4', def_mode: 'TREND_GOLD150_OR_LIQ', trim_mode: 'weakest_first' },
+    S3: { id: 'S3', label: 'S3 · Sortino 9M + MF4 + TrendGold150', score_key: 'so9', weighting: 'equal', rebalance_days: 126, regime_key: 'target_eq_mf4', def_mode: 'TREND_GOLD150_OR_LIQ', trim_mode: 'weakest_first' },
+    R2: { id: 'R2', label: 'R2 · Risk-Adj 9M + DD15 + 50/50 Gold/Liq', score_key: 'rk9', weighting: 'equal', rebalance_days: 126, regime_key: 'target_eq_dd15', def_mode: 'GOLD_50_LIQUID_50', trim_mode: 'weakest_first' },
+    R7: { id: 'R7', label: 'R7 · NormZ Risk-Adj 9M + DD15 + 50/50', score_key: 'rk9', weighting: 'norm_z', rebalance_days: 126, regime_key: 'target_eq_dd15', def_mode: 'GOLD_50_LIQUID_50', trim_mode: 'weakest_first' },
+    F2: { id: 'F2', label: 'F2 · Legacy Raw 9M + DD12 + 50/50', score_key: 'r9', weighting: 'equal', rebalance_days: 126, regime_key: 'target_eq_dd75', def_mode: 'GOLD_50_LIQUID_50', trim_mode: 'weakest_first' },
+    F4: { id: 'F4', label: 'F4 · Raw 12M 12M-Reb + DD12 + 50/50', score_key: 'r12', weighting: 'equal', rebalance_days: 252, regime_key: 'target_eq_dd50', def_mode: 'GOLD_50_LIQUID_50', trim_mode: 'weakest_first' },
+  };
+
+  function roundN(x, d) {
+    const f = 10 ** d;
+    return Math.round((Number(x) + Number.EPSILON) * f) / f;
+  }
+
+  function finiteOrNull(val) {
+    if (val == null || val === '') return null;
+    const v = Number(val);
+    return Number.isFinite(v) ? v : null;
+  }
+
+  function daysBetween(startDate, endDate) {
+    const t1 = Date.parse(String(startDate).slice(0, 10) + 'T00:00:00Z');
+    const t2 = Date.parse(String(endDate).slice(0, 10) + 'T00:00:00Z');
+    if (!Number.isFinite(t1) || !Number.isFinite(t2)) return 0;
+    return Math.round((t2 - t1) / 86400000);
+  }
+
+  function fyFor(dateStr) {
+    const y = Number(String(dateStr).slice(0, 4));
+    const m = Number(String(dateStr).slice(5, 7));
+    return String(m >= 4 ? y : y - 1);
+  }
+
+  function assetClass(symbol) {
+    if (GOLD_ETFS.has(symbol)) return 'GOLD_ETF';
+    if (LIQUID_ETFS.has(symbol)) return 'LIQUID_ETF';
+    if (ETF_SET.has(symbol)) return 'OTHER_ETF';
+    return 'EQUITY';
+  }
+
+  function postureLabel(eqFrac) {
+    if (eqFrac >= 0.99) return 'RISK_ON';
+    if (eqFrac >= 0.50) return 'CAUTIOUS';
+    return 'DEFENSIVE';
+  }
+
+  function computeSleeveWeights(orderedSyms, scoresMap, allValidSyms, topN, weighting) {
+    const selected = orderedSyms.slice(0, topN);
+    if (!selected.length) return {};
+    if (weighting === 'norm_z') {
+      const n = allValidSyms.length;
+      const mean = n > 0 ? allValidSyms.reduce((s, k) => s + scoresMap[k], 0) / n : 0.0;
+      const variance = n > 1 ? allValidSyms.reduce((s, k) => s + (scoresMap[k] - mean) ** 2, 0) / (n - 1) : 0.0;
+      const std = variance > 0 ? Math.sqrt(variance) : 0.0;
+      const rawW = {};
+      let tot = 0.0;
+      selected.forEach(sym => {
+        const z = std > 1e-12 ? (scoresMap[sym] - mean) / std : 0.0;
+        const w = z >= 0.0 ? 1.0 + z : 1.0 / (1.0 - z);
+        rawW[sym] = w;
+        tot += w;
+      });
+      const res = {};
+      selected.forEach(sym => { res[sym] = tot > 0 ? rawW[sym] / tot : 1.0 / selected.length; });
+      return res;
+    }
+    const wEq = 1.0 / selected.length;
+    const res = {};
+    selected.forEach(sym => { res[sym] = wEq; });
+    return res;
+  }
+
+  function computeTargetWeights(rankings, prices, preset, equityBudget, slotCap = false) {
+    const rule = PRESET_RULES[preset];
+    const scoreKey = rule.score_key;
+    const weighting = rule.weighting;
+    const baseScores = {};
+    const basePrices = {};
+
+    Object.entries(rankings || {}).forEach(([sym, row]) => {
+      if (ETF_SET.has(sym) || !row || typeof row !== 'object') return;
+      const sc = finiteOrNull(row[scoreKey]);
+      const px = finiteOrNull((prices || {})[sym]);
+      if (sc !== null && px !== null && px > 0) {
+        baseScores[sym] = sc;
+        basePrices[sym] = px;
+      }
+    });
+
+    const syms = Object.keys(baseScores);
+    if (!syms.length) return {};
+    const orderedAll = syms.sort((a, b) => (baseScores[b] - baseScores[a]) || (a < b ? -1 : a > b ? 1 : 0));
+    const excluded = new Set();
+    const maxIters = slotCap && equityBudget > 0 ? 60 : 1;
+    let finalWeights = {};
+
+    for (let it = 0; it < maxIters; it++) {
+      const eligible = orderedAll.filter(s => !excluded.has(s));
+      if (!eligible.length) break;
+      const w20 = computeSleeveWeights(eligible, baseScores, eligible, 20, weighting);
+      const w30 = computeSleeveWeights(eligible, baseScores, eligible, 30, weighting);
+      const blend = {};
+      let tot = 0.0;
+      eligible.slice(0, 30).forEach(sym => {
+        const w = 0.5 * (w20[sym] || 0.0) + 0.5 * (w30[sym] || 0.0);
+        if (w > 0) {
+          blend[sym] = w;
+          tot += w;
+        }
+      });
+      if (tot > 0) {
+        Object.keys(blend).forEach(s => { blend[s] /= tot; });
+      }
+      finalWeights = blend;
+      if (!slotCap || equityBudget <= 0) break;
+      const unaffordable = Object.keys(blend).filter(s => basePrices[s] > equityBudget * blend[s]);
+      if (!unaffordable.length || eligible.length <= 30) break;
+      unaffordable.sort((a, b) => (basePrices[b] - basePrices[a]) || (b < a ? -1 : b > a ? 1 : 0));
+      excluded.add(unaffordable[0]);
+    }
+    return finalWeights;
+  }
+
+  function resolveTargetAllocation(regime, preset, unhedged = false) {
+    if (unhedged) return [1.0, 0.0, 0.0];
+    const rule = PRESET_RULES[preset];
+    let eqFrac = finiteOrNull((regime || {})[rule.regime_key]);
+    if (eqFrac === null) eqFrac = finiteOrNull((regime || {}).target_eq_mf4);
+    if (eqFrac === null) eqFrac = 1.0;
+    eqFrac = Math.max(0.0, Math.min(1.0, eqFrac));
+    const defFrac = Math.max(0.0, 1.0 - eqFrac);
+    if (defFrac <= 1e-6) return [1.0, 0.0, 0.0];
+    if (rule.def_mode === 'GOLD_50_LIQUID_50') return [eqFrac, 0.5 * defFrac, 0.5 * defFrac];
+    const activeDef = String((regime || {}).active_def_etf || 'LIQUIDCASE');
+    return activeDef === 'GOLDBEES' ? [eqFrac, defFrac, 0.0] : [eqFrac, 0.0, defFrac];
+  }
+
+  function computePositionsSummary(lots, prices) {
+    const bySym = {};
+    let eqVal = 0.0, goldVal = 0.0, liqVal = 0.0;
+    (lots || []).forEach(lot => {
+      const sh = Number(lot.shares);
+      if (sh <= 1e-6) return;
+      const sym = String(lot.symbol);
+      let px = finiteOrNull((prices || {})[sym]);
+      if (px === null || px <= 0) px = Number(lot.buy_price);
+      const mv = sh * px;
+      const ac = assetClass(sym);
+      if (ac === 'GOLD_ETF') goldVal += mv;
+      else if (ac === 'LIQUID_ETF') liqVal += mv;
+      else eqVal += mv;
+
+      if (!bySym[sym]) {
+        bySym[sym] = {
+          symbol: sym, asset_class: ac, shares: 0.0, cost_basis_total: 0.0, market_value: 0.0,
+          oldest_buy_date: lot.buy_date, newest_buy_date: lot.buy_date, shielded_shares: 0.0,
+        };
+      }
+      const e = bySym[sym];
+      e.shares += sh;
+      e.cost_basis_total += sh * Number(lot.buy_price);
+      e.market_value += mv;
+      if (lot.buy_date < e.oldest_buy_date) e.oldest_buy_date = lot.buy_date;
+      if (lot.buy_date > e.newest_buy_date) e.newest_buy_date = lot.buy_date;
+      if (lot.shield_defer) e.shielded_shares += sh;
+    });
+    return { by_sym: bySym, equity_val: eqVal, gold_val: goldVal, liquid_val: liqVal };
+  }
+
+  function buildHoldingsRows(state, prices, asOfDate) {
+    const pos = computePositionsSummary(state.lots, prices);
+    const basket = state.basket_weights || {};
+    const rows = Object.entries(pos.by_sym).map(([sym, info]) => {
+      const sh = info.shares;
+      const avgBuy = sh > 0 ? info.cost_basis_total / sh : 0.0;
+      const px = finiteOrNull((prices || {})[sym]) || avgBuy;
+      const mv = sh * px;
+      const pnl = mv - info.cost_basis_total;
+      const pnlPct = info.cost_basis_total > 0 ? (pnl / info.cost_basis_total) * 100.0 : 0.0;
+      const dHeld = daysBetween(info.oldest_buy_date, asOfDate);
+      const ac = info.asset_class;
+      let bucket = 'Legacy / Shield';
+      if (ac === 'GOLD_ETF' || ac === 'LIQUID_ETF') bucket = 'Defensive';
+      else {
+        const w = basket[sym] || 0.0;
+        if (w > 0.025) bucket = 'Top 20';
+        else if (w > 0) bucket = 'Ranks 21-30';
+      }
+      return {
+        symbol: sym,
+        asset_class: ac,
+        bucket,
+        shares: roundN(sh, 4),
+        avg_buy: roundN(avgBuy, 2),
+        live_price: roundN(px, 2),
+        value: roundN(mv, 2),
+        unrealized_pnl: roundN(pnl, 2),
+        unrealized_pnl_pct: roundN(pnlPct, 2),
+        oldest_buy_date: info.oldest_buy_date,
+        days_held: dHeld,
+        ltcg_days_remaining: Math.max(0, LTCG_DAYS - dHeld),
+        ltcg_eligible: dHeld >= LTCG_DAYS,
+        shield_deferred: info.shielded_shares > 1e-6,
+      };
+    });
+    rows.sort((a, b) => (a.asset_class === 'EQUITY' ? 0 : 1) - (b.asset_class === 'EQUITY' ? 0 : 1) || (b.value - a.value) || (a.symbol < b.symbol ? -1 : 1));
+    return rows;
+  }
+
+  function applyFifoSell(state, sym, sellQty, execPx, execDate, eventType, reason, allowShielded = true) {
+    if (sellQty <= 1e-6 || execPx <= 0) return 0.0;
+    let remaining = Number(sellQty);
+    const fy = fyFor(execDate);
+    if (!state.tax_state.fy[fy]) state.tax_state.fy[fy] = { ltcg_exempt_used: 0.0, stcg_tax: 0.0, ltcg_tax: 0.0, stcg_pnl: 0.0, ltcg_pnl: 0.0 };
+    const fyMap = state.tax_state.fy[fy];
+
+    let soldTotal = 0.0, totalPnl = 0.0, weightedDays = 0.0;
+    const eqTaxBefore = state.tax_state.realized_eq_tax_cum;
+    const defTaxBefore = state.tax_state.estimated_def_tax_cum;
+    const newLots = [];
+    const ac = assetClass(sym);
+
+    for (const lot of state.lots) {
+      if (lot.symbol !== sym || remaining <= 1e-6 || (!allowShielded && lot.shield_defer)) {
+        newLots.push(lot);
+        continue;
+      }
+      const lotSh = Number(lot.shares);
+      const take = Math.min(lotSh, remaining);
+      if (take > 1e-6) {
+        const dHeld = daysBetween(lot.buy_date, execDate);
+        const lotPnl = (execPx - Number(lot.buy_price)) * take;
+        soldTotal += take;
+        totalPnl += lotPnl;
+        weightedDays += dHeld * take;
+        remaining -= take;
+        const left = lotSh - take;
+
+        if (ac === 'EQUITY') {
+          if (dHeld < LTCG_DAYS) {
+            fyMap.stcg_pnl += lotPnl;
+            if (lotPnl < 0) state.tax_state.stcl_carry += Math.abs(lotPnl);
+            else {
+              const offset = Math.min(lotPnl, state.tax_state.stcl_carry);
+              state.tax_state.stcl_carry -= offset;
+              const tax = (lotPnl - offset) * STCG_RATE;
+              fyMap.stcg_tax += tax;
+              state.tax_state.realized_eq_tax_cum += tax;
+              state.cash -= tax;
+            }
+          } else {
+            fyMap.ltcg_pnl += lotPnl;
+            if (lotPnl < 0) state.tax_state.ltcl_carry += Math.abs(lotPnl);
+            else {
+              const offLt = Math.min(lotPnl, state.tax_state.ltcl_carry);
+              state.tax_state.ltcl_carry -= offLt;
+              let remGain = lotPnl - offLt;
+              const offSt = Math.min(remGain, state.tax_state.stcl_carry);
+              state.tax_state.stcl_carry -= offSt;
+              remGain -= offSt;
+              const exLeft = Math.max(0.0, LTCG_EXEMPTION_INR - fyMap.ltcg_exempt_used);
+              const exUsed = Math.min(remGain, exLeft);
+              fyMap.ltcg_exempt_used += exUsed;
+              const tax = Math.max(0.0, remGain - exUsed) * LTCG_RATE;
+              fyMap.ltcg_tax += tax;
+              state.tax_state.realized_eq_tax_cum += tax;
+              state.cash -= tax;
+            }
+          }
+        } else if (ac === 'LIQUID_ETF') {
+          state.tax_state.estimated_def_tax_cum += Math.max(0.0, lotPnl) * LIQUID_SLAB_RATE;
+        } else {
+          const rate = dHeld >= LTCG_DAYS ? GOLD_LTCG_RATE : GOLD_STCG_RATE;
+          state.tax_state.estimated_def_tax_cum += Math.max(0.0, lotPnl) * rate;
+        }
+
+        if (left > 1e-6) newLots.push({ ...lot, shares: roundN(left, 6) });
+      } else {
+        newLots.push(lot);
+      }
+    }
+
+    if (soldTotal <= 1e-6) return 0.0;
+    state.lots = newLots;
+    const gross = soldTotal * execPx;
+    const fee = gross * COST_RATE;
+    state.cash += gross - fee;
+    state.total_fees_cum += fee;
+
+    const avgDays = Math.round(weightedDays / soldTotal);
+    const taxType = ac === 'EQUITY'
+      ? (avgDays >= LTCG_DAYS ? 'EQ_LTCG' : 'EQ_STCG')
+      : (ac === 'LIQUID_ETF' ? 'DEBT_50AA_30%' : (avgDays >= LTCG_DAYS ? 'GOLD_12.5%' : 'GOLD_30%'));
+
+    state.trade_log.push({
+      date: execDate,
+      event_type: eventType,
+      symbol: sym,
+      side: 'SELL',
+      qty: roundN(soldTotal, 4),
+      price: roundN(execPx, 4),
+      notional: roundN(gross, 4),
+      friction: roundN(fee, 4),
+      holding_days: avgDays,
+      realized_pnl: roundN(totalPnl, 4),
+      tax_type: taxType,
+      tax_charged: roundN(state.tax_state.realized_eq_tax_cum - eqTaxBefore, 4),
+      def_tax_est: roundN(state.tax_state.estimated_def_tax_cum - defTaxBefore, 4),
+      reason,
+    });
+    return soldTotal;
+  }
+
+  function buyLot(state, sym, wantShares, execPx, execDate, eventType, reason) {
+    if (wantShares <= 0 || execPx <= 0) return 0;
+    const unitCost = execPx * (1.0 + COST_RATE);
+    const affordable = Math.floor(Math.max(0.0, state.cash) / unitCost);
+    const qty = Math.min(Math.floor(wantShares), affordable);
+    if (qty <= 0) return 0;
+    const gross = qty * execPx;
+    const fee = gross * COST_RATE;
+    state.cash -= gross + fee;
+    state.total_fees_cum += fee;
+    state._lot_seq += 1;
+    state.lots.push({
+      id: `L${state._lot_seq}`,
+      symbol: sym,
+      asset_class: assetClass(sym),
+      shares: Number(qty),
+      buy_date: execDate,
+      buy_price: roundN(execPx, 4),
+      shield_defer: false,
+    });
+    state.trade_log.push({
+      date: execDate,
+      event_type: eventType,
+      symbol: sym,
+      side: 'BUY',
+      qty,
+      price: roundN(execPx, 4),
+      notional: roundN(gross, 4),
+      friction: roundN(fee, 4),
+      holding_days: 0,
+      realized_pnl: 0.0,
+      tax_type: 'OPEN_LOT',
+      tax_charged: 0.0,
+      reason,
+    });
+    return qty;
+  }
+
+  function syncDefensiveAndSweep(state, prices, execDate, targetGoldInr, targetLiqInr, eventType, reason, liquidSweep) {
+    const pos = computePositionsSummary(state.lots, prices).by_sym;
+    const goldPx = finiteOrNull((prices || {}).GOLDBEES) || 0.0;
+    const liqPx = finiteOrNull((prices || {}).LIQUIDCASE) || 0.0;
+
+    const curGoldSh = pos.GOLDBEES ? pos.GOLDBEES.shares : 0.0;
+    const curGoldVal = curGoldSh * goldPx;
+    const tgtGoldSh = (goldPx > 0 && targetGoldInr > MIN_TRADE_DELTA_INR) ? Math.floor(targetGoldInr / goldPx) : 0;
+    if (curGoldSh > 0 && (tgtGoldSh === 0 || (curGoldVal - targetGoldInr) > MIN_TRADE_DELTA_INR)) {
+      const sellSh = tgtGoldSh === 0 ? curGoldSh : Math.min(curGoldSh, Math.ceil((curGoldVal - targetGoldInr) / goldPx));
+      if (sellSh > 0) applyFifoSell(state, 'GOLDBEES', sellSh, goldPx, execDate, eventType, reason);
+    }
+
+    const curLiqSh = pos.LIQUIDCASE ? pos.LIQUIDCASE.shares : 0.0;
+    const curLiqVal = curLiqSh * liqPx;
+    if (!liquidSweep) {
+      const tgtLiqSh = (liqPx > 0 && targetLiqInr > MIN_TRADE_DELTA_INR) ? Math.floor(targetLiqInr / liqPx) : 0;
+      if (curLiqSh > 0 && (tgtLiqSh === 0 || (curLiqVal - targetLiqInr) > MIN_TRADE_DELTA_INR)) {
+        const sellSh = tgtLiqSh === 0 ? curLiqSh : Math.min(curLiqSh, Math.ceil((curLiqVal - targetLiqInr) / liqPx));
+        if (sellSh > 0) applyFifoSell(state, 'LIQUIDCASE', sellSh, liqPx, execDate, eventType, reason);
+      }
+    } else {
+      const needCash = Math.max(0.0, (targetGoldInr - curGoldVal) * (1.0 + COST_RATE) - state.cash);
+      if (curLiqSh > 0 && liqPx > 0 && needCash > MIN_TRADE_DELTA_INR) {
+        const sellSh = Math.min(curLiqSh, Math.ceil(needCash / (liqPx * (1.0 - COST_RATE))));
+        if (sellSh > 0) applyFifoSell(state, 'LIQUIDCASE', sellSh, liqPx, execDate, eventType, reason);
+      }
+    }
+
+    const pos2 = computePositionsSummary(state.lots, prices).by_sym;
+    const curGoldVal2 = (pos2.GOLDBEES ? pos2.GOLDBEES.shares : 0.0) * goldPx;
+    if (goldPx > 0 && (targetGoldInr - curGoldVal2) > MIN_TRADE_DELTA_INR) {
+      const wantSh = Math.floor((targetGoldInr - curGoldVal2) / (goldPx * (1.0 + COST_RATE)));
+      if (wantSh > 0) buyLot(state, 'GOLDBEES', wantSh, goldPx, execDate, eventType, reason);
+    }
+
+    if (liqPx > 0) {
+      if (liquidSweep) {
+        if (state.cash >= liqPx * (1.0 + COST_RATE)) {
+          const wantSh = Math.floor(state.cash / (liqPx * (1.0 + COST_RATE)));
+          if (wantSh > 0) buyLot(state, 'LIQUIDCASE', wantSh, liqPx, execDate, eventType, `${reason} + LIQUIDCASE sweep`);
+        }
+      } else {
+        const pos3 = computePositionsSummary(state.lots, prices).by_sym;
+        const curLiqVal3 = (pos3.LIQUIDCASE ? pos3.LIQUIDCASE.shares : 0.0) * liqPx;
+        if ((targetLiqInr - curLiqVal3) > MIN_TRADE_DELTA_INR) {
+          const wantSh = Math.floor((targetLiqInr - curLiqVal3) / (liqPx * (1.0 + COST_RATE)));
+          if (wantSh > 0) buyLot(state, 'LIQUIDCASE', wantSh, liqPx, execDate, eventType, reason);
+        }
+      }
+    }
+  }
+
+  function settleNegativeCash(state, prices, execDate) {
+    if (state.cash >= 0) return;
+    for (const defSym of ['LIQUIDCASE', 'LIQUIDBEES', 'GOLDBEES']) {
+      if (state.cash >= 0) break;
+      const px = finiteOrNull((prices || {})[defSym]) || 0.0;
+      const held = state.lots.filter(l => l.symbol === defSym).reduce((s, l) => s + Number(l.shares), 0.0);
+      if (held > 0 && px > 0) {
+        const need = Math.min(held, Math.ceil(Math.abs(state.cash) / (px * (1.0 - COST_RATE))));
+        applyFifoSell(state, defSym, need, px, execDate, 'TAX_SETTLE', 'Cover realized FIFO tax liability');
+      }
+    }
+  }
+
+  function rebalanceToBasket(state, targetWeights, targetEqInr, prices, execDate, eventType, reason, respectLtcgShield = false) {
+    const pos = computePositionsSummary(state.lots, prices).by_sym;
+    const heldEqSyms = Object.entries(pos).filter(([, i]) => i.asset_class === 'EQUITY').map(([s]) => s).sort();
+
+    for (const sym of heldEqSyms) {
+      const px = finiteOrNull((prices || {})[sym]) || (pos[sym].cost_basis_total / Math.max(1e-6, pos[sym].shares));
+      const curSh = pos[sym].shares;
+      const curVal = curSh * px;
+      const tgtW = targetWeights[sym] || 0.0;
+      const tgtVal = targetEqInr * tgtW;
+      let sellWant = 0.0;
+      if (tgtW <= 0) sellWant = curSh;
+      else if ((curVal - tgtVal) > MIN_TRADE_DELTA_INR && px > 0) {
+        sellWant = Math.max(0.0, curSh - Math.floor(tgtVal / px));
+      }
+      if (sellWant <= 1e-6) continue;
+
+      if (respectLtcgShield) {
+        let allowNow = 0.0;
+        for (const lot of state.lots) {
+          if (lot.symbol !== sym) continue;
+          const dHeld = daysBetween(lot.buy_date, execDate);
+          if (dHeld >= 330 && dHeld < LTCG_DAYS) lot.shield_defer = true;
+          else allowNow += Number(lot.shares);
+        }
+        const sellQty = Math.min(sellWant, allowNow);
+        if (sellQty > 1e-6) applyFifoSell(state, sym, sellQty, px, execDate, eventType, reason, false);
+      } else {
+        applyFifoSell(state, sym, sellWant, px, execDate, eventType, reason, true);
+      }
+    }
+
+    const posAfter = computePositionsSummary(state.lots, prices).by_sym;
+    const buyList = Object.keys(targetWeights).sort((a, b) => (targetWeights[b] - targetWeights[a]) || (a < b ? -1 : a > b ? 1 : 0));
+    for (const sym of buyList) {
+      const px = finiteOrNull((prices || {})[sym]);
+      if (px === null || px <= 0) continue;
+      const curVal = (posAfter[sym] ? posAfter[sym].shares : 0.0) * px;
+      const tgtVal = targetEqInr * targetWeights[sym];
+      const diff = tgtVal - curVal;
+      if (diff > MIN_TRADE_DELTA_INR) {
+        const wantSh = Math.floor(diff / (px * (1.0 + COST_RATE)));
+        if (wantSh > 0) buyLot(state, sym, wantSh, px, execDate, eventType, reason);
+      }
+    }
+  }
+
+  function initializeAccountState(opts) {
+    const lotsCopy = [];
+    let seq = 0;
+    for (const lot of (opts.initial_lots || [])) {
+      const sh = Number(lot.shares);
+      if (!Number.isFinite(sh) || sh <= 0) continue;
+      seq += 1;
+      const sym = String(lot.symbol).toUpperCase().trim();
+      lotsCopy.push({
+        id: `L${seq}`,
+        symbol: sym,
+        asset_class: assetClass(sym),
+        shares: roundN(sh, 6),
+        buy_date: String(lot.buy_date).slice(0, 10),
+        buy_price: roundN(Number(lot.buy_price), 4),
+        shield_defer: Boolean(lot.shield_defer),
+      });
+    }
+    const initCap = Number(opts.initial_capital || 100000);
+    return {
+      account_id: opts.account_id || 'VIEW',
+      label: opts.label || 'Tracked View',
+      preset: opts.preset || 'R3',
+      slot_cap: Boolean(opts.slot_cap),
+      liquid_sweep: opts.liquid_sweep !== undefined ? Boolean(opts.liquid_sweep) : true,
+      respect_ltcg_shield: Boolean(opts.respect_ltcg_shield),
+      unhedged: Boolean(opts.unhedged),
+      do_nothing: Boolean(opts.do_nothing),
+      initial_capital: roundN(initCap, 2),
+      inception_date: null,
+      last_synced_date: null,
+      status: 'ACTIVE',
+      ended_date: null,
+      cash: Number(opts.starting_cash != null ? opts.starting_cash : initCap),
+      total_fees_cum: 0.0,
+      peak_nav: 0.0,
+      trading_days_count: 0,
+      trading_days_since_rebalance: 0,
+      last_rebalance_date: null,
+      active_eq_frac: 1.0,
+      active_def_etf: 'LIQUIDCASE',
+      basket_weights: {},
+      _lot_seq: seq,
+      lots: lotsCopy,
+      tax_state: { fy: {}, stcl_carry: 0.0, ltcl_carry: 0.0, realized_eq_tax_cum: 0.0, estimated_def_tax_cum: 0.0 },
+      ew_inception_val: null,
+      daily_history: [],
+      decision_log: [],
+      trade_log: [],
+      holdings: [],
+    };
+  }
+
+  function stepPortfolio(state, tapeEntry, prevTapeEntry = null, unhedgedNavToday = null, benchEwNavToday = null) {
+    const execDate = String(tapeEntry.date);
+    if (state.status === 'ENDED') return state;
+    if (state.last_synced_date && execDate <= state.last_synced_date) return state;
+
+    const prices = tapeEntry.prices || {};
+    const regimeToday = tapeEntry.regime || {};
+    const preset = state.preset;
+    const rule = PRESET_RULES[preset];
+    const rebPeriod = rule.rebalance_days;
+    const unhedged = Boolean(state.unhedged);
+    const doNothing = Boolean(state.do_nothing);
+
+    if (state.inception_date == null) {
+      state.inception_date = execDate;
+      const ewVal = finiteOrNull(regimeToday.ew_index_val);
+      state.ew_inception_val = (ewVal !== null && ewVal > 0) ? ewVal : 100.0;
+    }
+
+    const caEventsLogged = [];
+    for (const ev of (tapeEntry.corp_actions || [])) {
+      const sym = String(ev.symbol || '').toUpperCase();
+      const factor = finiteOrNull(ev.factor);
+      const atype = String(ev.type || 'SPLIT').toUpperCase();
+      if (!sym || factor === null || factor <= 0 || Math.abs(factor - 1.0) < 1e-6) continue;
+      let touched = false;
+      for (const lot of state.lots) {
+        if (lot.symbol === sym && lot.shares > 0) {
+          lot.shares = roundN(Number(lot.shares) / factor, 6);
+          lot.buy_price = roundN(Number(lot.buy_price) * factor, 4);
+          touched = true;
+        }
+      }
+      if (touched) {
+        const mult = roundN(1.0 / factor, 4);
+        const msg = `${atype} on ${sym} (factor ${factor}): FIFO lot shares multiplied by ${mult}x and cost basis adjusted cleanly.`;
+        caEventsLogged.push(`${atype} ${sym} ${mult}x`);
+        state.decision_log.push({ date: execDate, event_type: 'CORPORATE_ACTION', summary: msg });
+        state.trade_log.push({
+          date: execDate, event_type: 'CORPORATE_ACTION', symbol: sym, side: 'ADJUST', qty: mult,
+          price: finiteOrNull(prices[sym]), notional: 0.0, friction: 0.0, holding_days: 0,
+          realized_pnl: 0.0, tax_type: 'NONE', tax_charged: 0.0, reason: msg,
+        });
+      }
+    }
+
+    const posStart = computePositionsSummary(state.lots, prices);
+    const preTradeNav = state.cash + posStart.equity_val + posStart.gold_val + posStart.liquid_val;
+    const isInception = prevTapeEntry === null && state.daily_history.length === 0;
+    const actionTags = [...caEventsLogged];
+
+    const sigEntry = isInception ? tapeEntry : prevTapeEntry;
+    const sigRegime = sigEntry.regime || {};
+    const sigRankings = sigEntry.rankings || {};
+    const [eqFrac, goldFrac, liqFrac] = resolveTargetAllocation(sigRegime, preset, unhedged);
+    const sigDefEtf = rule.def_mode === 'GOLD_50_LIQUID_50' ? '50_50' : (goldFrac > liqFrac ? 'GOLDBEES' : 'LIQUIDCASE');
+
+    if (doNothing) {
+      state.trading_days_count += 1;
+      if (isInception) {
+        state.last_rebalance_date = execDate;
+        state.decision_log.push({
+          date: execDate, event_type: 'INCEPTION_HOLD',
+          summary: 'Started Frozen Do-Nothing baseline holding Day-0 universe lots untouched (only corporate-action lot splits adjust automatically).',
+        });
+        actionTags.push('INCEPTION_HOLD');
+      } else {
+        state.decision_log.push({
+          date: execDate, event_type: 'HOLD_CHECK',
+          summary: `Frozen Do-Nothing baseline mark-to-market (${execDate}); zero trades executed.`,
+        });
+      }
+    } else if (isInception) {
+      state.trading_days_count = 1;
+      state.trading_days_since_rebalance = 0;
+      state.last_rebalance_date = execDate;
+      const eqBudget = preTradeNav * eqFrac;
+      const targetW = computeTargetWeights(sigRankings, prices, preset, eqBudget, state.slot_cap);
+      state.basket_weights = { ...targetW };
+      const evt = state.lots.length ? 'INCEPTION_REBALANCE' : 'INCEPTION_BUY';
+      const defTag = goldFrac + liqFrac > 0 ? sigDefEtf : 'Def';
+      const reason = `Day-0 deployment under ${preset} (${state.slot_cap ? 'SlotCap ON' : 'Standard'}): ${postureLabel(eqFrac)} posture (${Math.round(eqFrac * 100)}% Eq / ${Math.round((1 - eqFrac) * 100)}% ${defTag}) across ${Object.keys(targetW).length} slots.`;
+      rebalanceToBasket(state, targetW, eqBudget, prices, execDate, evt, reason, state.respect_ltcg_shield);
+      const posMid = computePositionsSummary(state.lots, prices);
+      const midNav = state.cash + posMid.equity_val + posMid.gold_val + posMid.liquid_val;
+      syncDefensiveAndSweep(state, prices, execDate, midNav * goldFrac, midNav * liqFrac, evt, reason, state.liquid_sweep);
+      settleNegativeCash(state, prices, execDate);
+      state.active_eq_frac = eqFrac;
+      state.active_def_etf = sigDefEtf;
+      state.decision_log.push({ date: execDate, event_type: evt, summary: reason });
+      actionTags.push(evt);
+    } else {
+      state.trading_days_count += 1;
+      state.trading_days_since_rebalance += 1;
+      const isRebalanceDue = state.trading_days_since_rebalance >= rebPeriod;
+
+      if (state.respect_ltcg_shield) {
+        const targetSet = new Set(Object.keys(state.basket_weights || {}));
+        const shieldedSyms = [...new Set(state.lots.filter(l => l.shield_defer).map(l => l.symbol))].sort();
+        let anyMatured = false;
+        for (const sym of shieldedSyms) {
+          if (targetSet.has(sym)) {
+            state.lots.forEach(l => { if (l.symbol === sym) l.shield_defer = false; });
+            continue;
+          }
+          const px = finiteOrNull(prices[sym]) || 0.0;
+          if (px <= 0) continue;
+          const maturedQty = state.lots
+            .filter(l => l.symbol === sym && l.shield_defer && daysBetween(l.buy_date, execDate) >= LTCG_DAYS)
+            .reduce((s, l) => s + Number(l.shares), 0.0);
+          if (maturedQty > 1e-6) {
+            state.lots.forEach(l => { if (l.symbol === sym && daysBetween(l.buy_date, execDate) >= LTCG_DAYS) l.shield_defer = false; });
+            const msg = `LTCG Shield matured (>=365d) on ${sym}: selling deferred lot cleanly at LTCG rate.`;
+            applyFifoSell(state, sym, maturedQty, px, execDate, 'LTCG_SHIELD_MATURED', msg, false);
+            state.decision_log.push({ date: execDate, event_type: 'LTCG_SHIELD_MATURED', summary: msg });
+            anyMatured = true;
+          }
+        }
+        if (anyMatured) {
+          actionTags.push('LTCG_SHIELD_MATURED');
+          if (!isRebalanceDue) {
+            const targetEqInr = preTradeNav * eqFrac;
+            if (eqFrac > 0 && state.basket_weights && Object.keys(state.basket_weights).length) {
+              rebalanceToBasket(state, state.basket_weights, targetEqInr, prices, execDate, 'LTCG_SHIELD_MATURED', 'Reallocate matured LTCG proceeds into target equity basket', state.respect_ltcg_shield);
+            }
+            const posMid = computePositionsSummary(state.lots, prices);
+            const midNav = state.cash + posMid.equity_val + posMid.gold_val + posMid.liquid_val;
+            syncDefensiveAndSweep(state, prices, execDate, midNav * goldFrac, midNav * liqFrac, 'LTCG_SHIELD_MATURED', 'Sweep LTCG matured residual proceeds', state.liquid_sweep);
+            settleNegativeCash(state, prices, execDate);
+          }
+        }
+      }
+
+      const eqShifted = Math.abs(eqFrac - Number(state.active_eq_frac)) > 1e-6;
+      const defFlipped = (sigDefEtf !== state.active_def_etf) && (1.0 - eqFrac > 1e-6);
+
+      if (isRebalanceDue) {
+        const evt = rebPeriod <= 150 ? 'REBALANCE_6M' : 'REBALANCE_12M';
+        state.trading_days_since_rebalance = 0;
+        state.last_rebalance_date = execDate;
+        const eqBudget = preTradeNav * eqFrac;
+        const newW = computeTargetWeights(sigRankings, prices, preset, eqBudget, state.slot_cap);
+        state.basket_weights = { ...newW };
+        const reason = `Scheduled ${rebPeriod}d rebalance (${evt}): ranked Top 30 via ${preset} signals from ${sigEntry.date}; deployed ${Math.round(eqFrac * 100)}% Eq (${Object.keys(newW).length} slots).`;
+        if ((goldFrac + liqFrac) < (1.0 - state.active_eq_frac) - 1e-6) {
+          syncDefensiveAndSweep(state, prices, execDate, preTradeNav * goldFrac, preTradeNav * liqFrac, evt, reason, false);
+        }
+        rebalanceToBasket(state, newW, eqBudget, prices, execDate, evt, reason, state.respect_ltcg_shield);
+        const posMid = computePositionsSummary(state.lots, prices);
+        const midNav = state.cash + posMid.equity_val + posMid.gold_val + posMid.liquid_val;
+        syncDefensiveAndSweep(state, prices, execDate, midNav * goldFrac, midNav * liqFrac, evt, reason, state.liquid_sweep);
+        settleNegativeCash(state, prices, execDate);
+        state.active_eq_frac = eqFrac;
+        state.active_def_etf = sigDefEtf;
+        state.decision_log.push({ date: execDate, event_type: evt, summary: reason });
+        actionTags.push(evt);
+      } else if (eqShifted) {
+        const oldPct = Math.round(state.active_eq_frac * 100);
+        const newPct = Math.round(eqFrac * 100);
+        const evt = 'REGIME_SHIFT';
+        const scoreKey = rule.score_key;
+        const mf4S = finiteOrNull(sigRegime.mf4_score);
+        const mfPrefix = mf4S !== null ? `MF4 ${(mf4S >= 0 ? '+' : '') + mf4S.toFixed(2)} ` : '';
+        let msg = '';
+        if (eqFrac < state.active_eq_frac) {
+          const posCur = computePositionsSummary(state.lots, prices);
+          const curNav = state.cash + posCur.equity_val + posCur.gold_val + posCur.liquid_val;
+          const targetEqInr = curNav * eqFrac;
+          const needFree = Math.max(0.0, posCur.equity_val - targetEqInr);
+          const heldEq = Object.entries(posCur.by_sym).filter(([, i]) => i.asset_class === 'EQUITY').map(([s]) => s);
+          const getSc = (s) => finiteOrNull((sigRankings[s] || {})[scoreKey]) ?? -1e9;
+          heldEq.sort((a, b) => (getSc(a) - getSc(b)) || (a < b ? -1 : a > b ? 1 : 0));
+          const trimmedSyms = [];
+          const reasonBase = `${mfPrefix}stepped exposure ${postureLabel(state.active_eq_frac)} (${oldPct}%) -> ${postureLabel(eqFrac)} (${newPct}%); weakest-first trim into ${sigDefEtf}.`;
+          let freed = 0.0;
+          for (const sym of heldEq) {
+            if (freed >= needFree - MIN_TRADE_DELTA_INR) break;
+            const px = finiteOrNull(prices[sym]) || 0.0;
+            const curSh = posCur.by_sym[sym].shares;
+            if (px <= 0 || curSh <= 0) continue;
+            const remNeed = needFree - freed;
+            const wantSh = curSh * px <= remNeed + MIN_TRADE_DELTA_INR ? curSh : Math.max(1.0, Math.floor(remNeed / px));
+            const sold = applyFifoSell(state, sym, Math.min(curSh, wantSh), px, execDate, evt, reasonBase, !state.respect_ltcg_shield);
+            if (sold > 0) { freed += sold * px; trimmedSyms.push(sym); }
+          }
+          const posMid = computePositionsSummary(state.lots, prices);
+          const midNav = state.cash + posMid.equity_val + posMid.gold_val + posMid.liquid_val;
+          syncDefensiveAndSweep(state, prices, execDate, midNav * goldFrac, midNav * liqFrac, evt, reasonBase, state.liquid_sweep);
+          msg = reasonBase + (trimmedSyms.length ? ` Trimmed: ${trimmedSyms.join(', ')}.` : '');
+        } else {
+          const reasonBase = `${mfPrefix}stepped exposure UP ${postureLabel(state.active_eq_frac)} (${oldPct}%) -> ${postureLabel(eqFrac)} (${newPct}%); rotates defensive back into target equity basket.`;
+          const targetEqInr = preTradeNav * eqFrac;
+          syncDefensiveAndSweep(state, prices, execDate, preTradeNav * goldFrac, preTradeNav * liqFrac, evt, reasonBase, false);
+          if (!state.basket_weights || !Object.keys(state.basket_weights).length) {
+            state.basket_weights = computeTargetWeights(sigRankings, prices, preset, targetEqInr, state.slot_cap);
+          }
+          rebalanceToBasket(state, state.basket_weights, targetEqInr, prices, execDate, evt, reasonBase, state.respect_ltcg_shield);
+          if (state.liquid_sweep) {
+            const posMid = computePositionsSummary(state.lots, prices);
+            const midNav = state.cash + posMid.equity_val + posMid.gold_val + posMid.liquid_val;
+            syncDefensiveAndSweep(state, prices, execDate, midNav * goldFrac, midNav * liqFrac, evt, reasonBase, true);
+          }
+          msg = reasonBase;
+        }
+        settleNegativeCash(state, prices, execDate);
+        state.active_eq_frac = eqFrac;
+        state.active_def_etf = sigDefEtf;
+        state.decision_log.push({ date: execDate, event_type: evt, summary: msg });
+        actionTags.push(evt);
+      } else if (defFlipped) {
+        const evt = 'DEFENSIVE_GATE_FLIP';
+        const gPct = finiteOrNull(sigRegime.gold_vs_ema150_pct);
+        const gStr = gPct !== null ? `${gPct >= 0 ? '+' : ''}${gPct.toFixed(2)}%` : '';
+        const reason = `TrendGold150 gate flipped defensive sleeve from ${state.active_def_etf} -> ${sigDefEtf} (GOLDBEES ${gStr} vs EMA150; 0.15% switching fee).`;
+        syncDefensiveAndSweep(state, prices, execDate, preTradeNav * goldFrac, preTradeNav * liqFrac, evt, reason, state.liquid_sweep);
+        settleNegativeCash(state, prices, execDate);
+        state.active_def_etf = sigDefEtf;
+        state.decision_log.push({ date: execDate, event_type: evt, summary: reason });
+        actionTags.push(evt);
+      } else {
+        const daysLeft = Math.max(0, rebPeriod - state.trading_days_since_rebalance);
+        const mf4S = finiteOrNull(sigRegime.mf4_score);
+        const msg = `Hold ${postureLabel(eqFrac)} (${Math.round(eqFrac * 100)}% Eq); ${mf4S !== null ? `MF4 smooth ${(mf4S >= 0 ? '+' : '') + mf4S.toFixed(2)}; ` : ''}next rebalance in ${daysLeft} trading days; defensive=${sigDefEtf}.`;
+        state.decision_log.push({ date: execDate, event_type: 'HOLD_CHECK', summary: msg });
+      }
+    }
+
+    const posEnd = computePositionsSummary(state.lots, prices);
+    const navEnd = state.cash + posEnd.equity_val + posEnd.gold_val + posEnd.liquid_val;
+    state.peak_nav = Math.max(Number(state.peak_nav || 0.0), navEnd);
+    const ddPct = state.peak_nav > 0 ? (navEnd / state.peak_nav - 1.0) * 100.0 : 0.0;
+    const defTaxCum = Number(state.tax_state.estimated_def_tax_cum);
+    const eqTaxCum = Number(state.tax_state.realized_eq_tax_cum);
+    const navFullTax = Math.max(0.0, navEnd - defTaxCum);
+
+    if (benchEwNavToday == null) {
+      const ewCur = finiteOrNull(regimeToday.ew_index_val) || state.ew_inception_val || 100.0;
+      const ewBase = Number(state.ew_inception_val || ewCur || 100.0);
+      benchEwNavToday = ewBase > 0 ? state.initial_capital * (ewCur / ewBase) : state.initial_capital;
+    }
+
+    state.holdings = buildHoldingsRows(state, prices, execDate);
+    state.last_synced_date = execDate;
+    const eqSharePct = navEnd > 0 ? (posEnd.equity_val / navEnd) * 100.0 : 0.0;
+    state.daily_history.push({
+      date: execDate,
+      nav: roundN(navEnd, 4),
+      nav_full_tax: roundN(navFullTax, 4),
+      cash: roundN(state.cash, 4),
+      equity_val: roundN(posEnd.equity_val, 4),
+      gold_val: roundN(posEnd.gold_val, 4),
+      liquid_val: roundN(posEnd.liquid_val, 4),
+      eq_pct: roundN(eqSharePct, 2),
+      posture: String(regimeToday.posture || postureLabel(eqFrac)),
+      mf4_score: finiteOrNull(regimeToday.mf4_score),
+      active_def_etf: String(regimeToday.active_def_etf || state.active_def_etf),
+      benchmark_ew_nav: roundN(benchEwNavToday, 4),
+      unhedged_nav: unhedgedNavToday != null ? roundN(unhedgedNavToday, 4) : null,
+      drawdown_pct: roundN(ddPct, 4),
+      realized_tax_cum: roundN(eqTaxCum, 4),
+      estimated_def_tax_cum: roundN(defTaxCum, 4),
+      total_fees_cum: roundN(state.total_fees_cum, 4),
+      action_summary: actionTags.length ? actionTags.join(', ') : 'HOLD_CHECK',
+    });
+    return state;
+  }
+
+  function runSyntheticSteps(tapeEntries, opts = {}) {
+    const state = initializeAccountState(opts);
+    (tapeEntries || []).forEach((day, idx) => {
+      stepPortfolio(state, day, idx > 0 ? tapeEntries[idx - 1] : null);
+    });
+    return state;
+  }
+
+  function summarizeAccount(acc) {
+    const hist = acc.daily_history || [];
+    const last = hist.length ? hist[hist.length - 1] : {};
+    const cap = Number(acc.initial_capital || 100000);
+    const curNav = Number(last.nav != null ? last.nav : cap);
+    const curNavFt = Number(last.nav_full_tax != null ? last.nav_full_tax : curNav);
+    const ewNav = Number(last.benchmark_ew_nav != null ? last.benchmark_ew_nav : cap);
+    const unhNav = Number(last.unhedged_nav != null ? last.unhedged_nav : cap);
+    const totRet = cap > 0 ? (curNav / cap - 1.0) * 100.0 : 0.0;
+    const totRetFt = cap > 0 ? (curNavFt / cap - 1.0) * 100.0 : 0.0;
+    const ewRet = cap > 0 ? (ewNav / cap - 1.0) * 100.0 : 0.0;
+    const unhRet = cap > 0 ? (unhNav / cap - 1.0) * 100.0 : 0.0;
+    const maxDd = hist.length ? Math.min(...hist.map(h => Number(h.drawdown_pct || 0.0))) : 0.0;
+    const rebDays = PRESET_RULES[acc.preset]?.rebalance_days || 126;
+    const daysSince = Number(acc.trading_days_since_rebalance || 0);
+    return {
+      inception_date: acc.inception_date,
+      as_of_date: acc.last_synced_date,
+      trading_days: hist.length,
+      days_since_rebalance: daysSince,
+      next_rebalance_in_trading_days: Math.max(0, rebDays - daysSince),
+      nav: roundN(curNav, 2),
+      nav_full_tax: roundN(curNavFt, 2),
+      total_return_pct: roundN(totRet, 2),
+      total_return_full_tax_pct: roundN(totRetFt, 2),
+      benchmark_ew_nav: roundN(ewNav, 2),
+      benchmark_ew_return_pct: roundN(ewRet, 2),
+      unhedged_nav: roundN(unhNav, 2),
+      unhedged_return_pct: roundN(unhRet, 2),
+      alpha_vs_ew_pct: roundN(totRet - ewRet, 2),
+      max_drawdown_pct: roundN(maxDd, 2),
+      alloc_pct: {
+        equity: curNav > 0 ? roundN((Number(last.equity_val || 0) / curNav) * 100.0, 1) : 0.0,
+        gold: curNav > 0 ? roundN((Number(last.gold_val || 0) / curNav) * 100.0, 1) : 0.0,
+        liquid: curNav > 0 ? roundN((Number(last.liquid_val || 0) / curNav) * 100.0, 1) : 0.0,
+        cash: curNav > 0 ? roundN((Number(last.cash || 0) / curNav) * 100.0, 1) : 0.0,
+      },
+      total_fees_cum: roundN(acc.total_fees_cum || 0, 2),
+      realized_eq_tax_cum: roundN(acc.tax_state?.realized_eq_tax_cum || 0, 2),
+      estimated_def_tax_cum: roundN(acc.tax_state?.estimated_def_tax_cum || 0, 2),
+      held_count: (acc.holdings || []).length,
+    };
+  }
+
+  return { PRESET_RULES, computeTargetWeights, initializeAccountState, stepPortfolio, runSyntheticSteps, summarizeAccount };
+})();
+window.mmiForwardReplay = MMI_REPLAY;
+
+// ============================================================================
+// TRACKED PORTFOLIO VIEWS (localStorage) + AUTO CATCH-UP + PAPER BOT UI
+// ============================================================================
+const TRACKED_VIEWS_KEY = 'mmi_tracked_views_v1';
+
+function showToast(msg) {
+  const el = document.getElementById('toastBanner');
+  if (!el) return;
+  el.textContent = msg;
+  el.hidden = false;
+  clearTimeout(window._mmiToastTimer);
+  window._mmiToastTimer = setTimeout(() => { el.hidden = true; }, 4500);
+}
+
+function loadTrackedViewsFromStorage() {
+  try {
+    const raw = localStorage.getItem(TRACKED_VIEWS_KEY);
+    TRACKED_VIEWS = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(TRACKED_VIEWS)) TRACKED_VIEWS = [];
+  } catch {
+    TRACKED_VIEWS = [];
+  }
+  if (!PB_SELECTED_VIEW_ID && TRACKED_VIEWS.length) {
+    PB_SELECTED_VIEW_ID = TRACKED_VIEWS[0].view_id;
+  }
+  TRACKED_VIEWS.forEach(v => { if (!PB_COMPARE_IDS.size || PB_COMPARE_IDS.size < 4) PB_COMPARE_IDS.add(v.view_id); });
+}
+
+function saveTrackedViewsToStorage() {
+  try {
+    localStorage.setItem(TRACKED_VIEWS_KEY, JSON.stringify(TRACKED_VIEWS));
+  } catch {}
+  updatePbViewsBadge();
+}
+
+function updatePbViewsBadge() {
+  const el = document.getElementById('pbViewsCount');
+  if (el) el.textContent = String(TRACKED_VIEWS.length);
+}
+
+function getFallbackDay0FromState() {
+  const prices = {};
+  (STATE.universe_scores || []).forEach(u => { prices[u.sym] = u.px; });
+  Object.entries(STATE.regime?.etfs || {}).forEach(([k, v]) => { if (v?.price) prices[k] = v.price; });
+  const rankings = {};
+  (STATE.universe_scores || []).forEach(u => { rankings[u.sym] = { rk9: u.rk9, so9: u.so9, r9: u.r9, r12: u.r12, a50: u.ma50 ? 1 : 0 }; });
+  const eqTarget = (STATE.regime?.target_equity_pct ?? 100) / 100.0;
+  return {
+    date: STATE.as_of_date,
+    prices,
+    corp_actions: [],
+    regime: {
+      mf4_score: STATE.regime?.multifactor_blocks?.composite_smooth ?? 0.0,
+      posture: STATE.regime?.state || 'RISK_ON',
+      target_eq_mf4: eqTarget,
+      target_eq_dd15: eqTarget,
+      target_eq_dd75: eqTarget,
+      target_eq_dd50: eqTarget,
+      active_def_etf: STATE.regime?.active_defensive_etf || 'LIQUIDCASE',
+      gold_price: STATE.regime?.etfs?.GOLDBEES?.price,
+      gold_vs_ema150_pct: STATE.regime?.trend_gold_status?.gold_vs_ema150_pct,
+      ew_index_val: STATE.regime?.ew_index || 1000,
+    },
+    rankings,
+  };
+}
+
+function syncAllActiveTrackedViews(tapeObj) {
+  const days = tapeObj?.days || [];
+  if (!days.length) return 0;
+  let syncedSteps = 0;
+  TRACKED_VIEWS.forEach(view => {
+    const st = view.state;
+    if (!st || st.status === 'ENDED') return;
+    for (let i = 0; i < days.length; i++) {
+      const d = days[i];
+      if (st.last_synced_date && d.date <= st.last_synced_date) continue;
+      if (view.clone_spec?.inception_date && d.date < view.clone_spec.inception_date) continue;
+      const prev = i > 0 ? days[i - 1] : null;
+      MMI_REPLAY.stepPortfolio(st, d, prev);
+      syncedSteps += 1;
+    }
+    st.summary = MMI_REPLAY.summarizeAccount(st);
+  });
+  if (syncedSteps > 0) saveTrackedViewsToStorage();
+  return syncedSteps;
+}
+
+window.mmiSyncPaperTape = function(newTapeObj) {
+  FORWARD_TAPE = newTapeObj;
+  const n = syncAllActiveTrackedViews(newTapeObj);
+  renderPaperBotPage();
+  return n;
+};
+
+function switchPaperBotSubTab(sub) {
+  PB_SUBTAB = sub === 'views' ? 'views' : 'official';
+  document.getElementById('pbTabBtnOfficial').classList.toggle('active', PB_SUBTAB === 'official');
+  document.getElementById('pbTabBtnViews').classList.toggle('active', PB_SUBTAB === 'views');
+  document.getElementById('pbPaneOfficial').hidden = PB_SUBTAB !== 'official';
+  document.getElementById('pbPaneViews').hidden = PB_SUBTAB !== 'views';
+  renderPaperBotPage();
+}
+
+function renderLedgerKpis(containerId, acc, useFullTax, showFullTaxSub = true) {
+  const sum = acc.summary || MMI_REPLAY.summarizeAccount(acc);
+  const navDisp = useFullTax ? sum.nav_full_tax : sum.nav;
+  const retDisp = useFullTax ? sum.total_return_full_tax_pct : sum.total_return_pct;
+  const lastHist = (acc.daily_history || [])[Math.max(0, (acc.daily_history || []).length - 1)] || {};
+  const posture = lastHist.posture || 'RISK_ON';
+  const alloc = sum.alloc_pct || { equity: 0, gold: 0, liquid: 0, cash: 0 };
+  const totalTax = useFullTax ? (sum.realized_eq_tax_cum + sum.estimated_def_tax_cum) : sum.realized_eq_tax_cum;
+  const items = [
+    {
+      lbl: useFullTax ? 'NAV (Net of All Tax Est.)' : 'Current Portfolio Value',
+      val: fmtInrInt(navDisp),
+      cls: retDisp >= 0 ? 't-green' : 't-red',
+      note: `Return ${(retDisp >= 0 ? '+' : '') + fmtPct(retDisp)}${showFullTaxSub && !useFullTax && sum.estimated_def_tax_cum > 0 ? ` · Net def tax ${fmtInrInt(sum.nav_full_tax)}` : ''}`,
+    },
+    {
+      lbl: 'Alpha vs Midcap 150 EW',
+      val: (sum.alpha_vs_ew_pct >= 0 ? '+' : '') + fmtPct(sum.alpha_vs_ew_pct),
+      cls: sum.alpha_vs_ew_pct >= 0 ? 't-green' : 't-red',
+      note: `EW ${fmtInrInt(sum.benchmark_ew_nav)} (${(sum.benchmark_ew_return_pct >= 0 ? '+' : '') + fmtPct(sum.benchmark_ew_return_pct)})`,
+    },
+    {
+      lbl: 'Max Drawdown',
+      val: fmtPct(sum.max_drawdown_pct),
+      cls: 't-blue',
+      note: `Inception ${sum.inception_date || '—'} · ${sum.trading_days}d`,
+    },
+    {
+      lbl: 'Allocation & Posture',
+      val: `${alloc.equity}% Eq`,
+      cls: posture === 'RISK_ON' ? 't-green' : (posture === 'CAUTIOUS' ? 't-amber' : 't-red'),
+      note: `${posture} · ${alloc.gold}% Gold · ${alloc.liquid}% Liq`,
+    },
+    {
+      lbl: 'Fees & Tax / Next Rebal',
+      val: fmtInrInt(sum.total_fees_cum + totalTax),
+      cls: '',
+      note: `Fees ${fmtInrInt(sum.total_fees_cum)} · Rebal in ${sum.next_rebalance_in_trading_days}d`,
+    },
+  ];
+  document.getElementById(containerId).innerHTML = items.map(i => `
+    <div class="metric-cell">
+      <div class="metric-label">${esc(i.lbl)}</div>
+      <div class="metric-value ${i.cls}">${esc(i.val)}</div>
+      <div class="metric-note">${esc(i.note)}</div>
+    </div>`).join('');
+}
+
+function renderLedgerHoldingsTable(wrapId, acc) {
+  const rows = acc.holdings || [];
+  if (!rows.length) {
+    document.getElementById(wrapId).innerHTML = '<div class="empty-state"><p>No open holdings recorded.</p></div>';
+    return;
+  }
+  document.getElementById(wrapId).innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Symbol</th>
+          <th>Bucket</th>
+          <th class="num">Shares</th>
+          <th class="num">Avg Buy &#8377;</th>
+          <th class="num">Live &#8377;</th>
+          <th class="num">Value &#8377;</th>
+          <th class="num">Unrealized P&amp;L</th>
+          <th class="num">Days Held</th>
+          <th>LTCG Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => {
+          const pnlCls = r.unrealized_pnl >= 0 ? 't-green' : 't-red';
+          let ltcgHtml = r.ltcg_eligible
+            ? '<span class="badge badge-green">&#10003; LTCG Eligible</span>'
+            : `<span class="badge">LTCG in ${r.ltcg_days_remaining}d</span>`;
+          if (r.shield_deferred) ltcgHtml += ' <span class="badge badge-amber">Shielded</span>';
+          return `
+            <tr>
+              <td class="asset-name">${esc(r.symbol)}</td>
+              <td class="role-text">${esc(r.bucket)}</td>
+              <td class="num">${r.shares}</td>
+              <td class="num">${fmtNum(r.avg_buy)}</td>
+              <td class="num">${fmtNum(r.live_price)}</td>
+              <td class="num">${fmtInrInt(r.value)}</td>
+              <td class="num ${pnlCls}">${fmtInrInt(r.unrealized_pnl)} (${r.unrealized_pnl_pct >= 0 ? '+' : ''}${fmtPct(r.unrealized_pnl_pct)})</td>
+              <td class="num">${r.days_held}d</td>
+              <td>${ltcgHtml}</td>
+            </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderLedgerAudit(feedId, tradeWrapId, acc, decFilter, tradeFilter) {
+  const decs = [...(acc.decision_log || [])].reverse().filter(d => decFilter === 'ALL' || d.event_type !== 'HOLD_CHECK');
+  const feedEl = document.getElementById(feedId);
+  if (!decs.length) {
+    feedEl.innerHTML = '<div class="empty-state"><p>No decision events match the selected filter.</p></div>';
+  } else {
+    feedEl.innerHTML = decs.map(d => {
+      const badgeCls = d.event_type.includes('REGIME') ? 'badge-amber'
+        : d.event_type.includes('GATE') ? 'badge-blue'
+        : d.event_type.includes('CORP') ? 'badge-red'
+        : d.event_type === 'HOLD_CHECK' ? '' : 'badge-green';
+      return `
+        <div class="pb-feed-item">
+          <div>
+            <span class="badge ${badgeCls}">${esc(d.event_type)}</span>
+            <span style="margin-left:8px; font-size:13px; color:var(--ink-secondary);">${esc(d.summary)}</span>
+          </div>
+          <span style="font-family:var(--font-mono); font-size:12px; color:var(--ink-muted); white-space:nowrap;">${esc(d.date)}</span>
+        </div>`;
+    }).join('');
+  }
+
+  const trades = [...(acc.trade_log || [])].reverse().filter(t => {
+    if (tradeFilter === 'REBALANCE') return t.event_type.includes('REBALANCE') || t.event_type.includes('INCEPTION');
+    if (tradeFilter === 'REGIME') return t.event_type.includes('REGIME');
+    if (tradeFilter === 'GATE') return t.event_type.includes('GATE');
+    return true;
+  });
+  const wrapEl = document.getElementById(tradeWrapId);
+  if (!trades.length) {
+    wrapEl.innerHTML = '<div class="empty-state"><p>No trades executed for this filter yet.</p></div>';
+    return;
+  }
+  wrapEl.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Event</th>
+          <th>Side</th>
+          <th>Symbol</th>
+          <th class="num">Qty</th>
+          <th class="num">Price &#8377;</th>
+          <th class="num">Value &#8377;</th>
+          <th class="num">Fee &#8377;</th>
+          <th class="num">Realized P&amp;L</th>
+          <th class="num">Tax &#8377;</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${trades.map(t => `
+          <tr>
+            <td style="font-family:var(--font-mono); font-size:12px; white-space:nowrap;">${esc(t.date)}</td>
+            <td class="role-text">${esc(t.event_type)}</td>
+            <td class="${t.side === 'BUY' ? 't-green' : t.side === 'SELL' ? 't-red' : 't-blue'}" style="font-weight:600;">${esc(t.side)}</td>
+            <td class="asset-name">${esc(t.symbol)}</td>
+            <td class="num">${t.qty}</td>
+            <td class="num">${t.price != null ? fmtNum(t.price) : '—'}</td>
+            <td class="num">${fmtInrInt(t.notional)}</td>
+            <td class="num">${fmtNum(t.friction)}</td>
+            <td class="num ${(t.realized_pnl || 0) > 0 ? 't-green' : (t.realized_pnl || 0) < 0 ? 't-red' : 't-muted'}">${t.side === 'SELL' ? fmtInrInt(t.realized_pnl) : '—'}</td>
+            <td class="num">${t.side === 'SELL' ? fmtNum(t.tax_charged) : '—'}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderLedgerLineChart(canvasId, chartSlotKey, acc, extraBaselineAcc = null, useFullTax = false) {
+  if (typeof Chart === 'undefined') return;
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+  const hist = acc.daily_history || [];
+  if (!hist.length) return;
+  if (CHARTS[chartSlotKey]) CHARTS[chartSlotKey].destroy();
+
+  const labels = hist.map(h => h.date);
+  const botSeries = hist.map(h => useFullTax ? h.nav_full_tax : h.nav);
+  const ptRadii = hist.map(h => (h.action_summary && !h.action_summary.includes('HOLD_CHECK')) ? 5 : 2);
+  const datasets = [
+    {
+      label: acc.label || 'Strategy Bot NAV',
+      data: botSeries,
+      borderColor: '#059669',
+      backgroundColor: 'rgba(5, 150, 105, 0.10)',
+      borderWidth: 2.4,
+      pointRadius: ptRadii,
+      pointBackgroundColor: hist.map(h => String(h.action_summary || '').includes('REGIME') ? '#b45309' : '#059669'),
+      tension: 0.1,
+    },
+    {
+      label: 'Midcap 150 EW Benchmark',
+      data: hist.map(h => h.benchmark_ew_nav),
+      borderColor: '#64748b',
+      borderDash: [4, 4],
+      borderWidth: 1.75,
+      pointRadius: 2,
+      tension: 0.1,
+    },
+  ];
+  if (hist.some(h => h.unhedged_nav != null)) {
+    datasets.push({
+      label: 'Unhedged 9M Baseline',
+      data: hist.map(h => h.unhedged_nav),
+      borderColor: '#dc2626',
+      borderDash: [2, 3],
+      borderWidth: 1.5,
+      pointRadius: 1.5,
+      tension: 0.1,
+    });
+  }
+  if (extraBaselineAcc && extraBaselineAcc.daily_history?.length) {
+    const bMap = new Map(extraBaselineAcc.daily_history.map(h => [h.date, h.nav]));
+    datasets.push({
+      label: 'Do-Nothing Frozen Baseline',
+      data: labels.map(d => bMap.get(d) ?? null),
+      borderColor: '#1d4ed8',
+      borderWidth: 1.8,
+      pointRadius: 2,
+      tension: 0.1,
+    });
+  }
+
+  CHARTS[chartSlotKey] = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        y: { ticks: { color: '#64748b', callback: (v) => '₹' + Number(v).toLocaleString('en-IN') }, grid: { color: '#e2e8f0' } },
+        x: { ticks: { color: '#64748b', maxTicksLimit: 8 }, grid: { display: false } },
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#334155', usePointStyle: true, boxWidth: 8 } },
+        tooltip: {
+          callbacks: {
+            afterBody: (items) => {
+              const i = items?.[0]?.dataIndex;
+              if (i != null && hist[i]?.action_summary) return `Event: ${hist[i].action_summary}`;
+              return '';
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+function downloadLedgerCsv(acc, filePrefix) {
+  const trades = acc.trade_log || [];
+  const header = 'Date,EventType,Side,Symbol,Qty,PriceINR,NotionalINR,FrictionINR,HoldingDays,RealizedPnL,TaxType,TaxChargedINR,Reason\n';
+  const body = trades.map(t => `${t.date},${t.event_type},${t.side},${t.symbol},${t.qty},${t.price ?? ''},${t.notional},${t.friction},${t.holding_days},${t.realized_pnl},"${t.tax_type}",${t.tax_charged},"${String(t.reason || '').replace(/"/g, '""')}"`).join('\n');
+  const blob = new Blob([header + body], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${filePrefix}_${acc.last_synced_date || 'ledger'}.csv`;
+  a.click();
+}
+
+function renderOfficialBotPane() {
+  const pill = document.getElementById('pbOfficialStatusPill');
+  if (!PAPER_LEDGER || !PAPER_LEDGER.accounts?.[PB_ACCOUNT]) {
+    pill.textContent = 'Ledger initializing cleanly after next run';
+    document.getElementById('pbOfficialKpis').innerHTML = '';
+    document.getElementById('pbOfficialHoldingsWrap').innerHTML = '<div class="empty-state"><p>Run <code>python3 scripts/update_live.py</code> to initialize <code>data/paper_ledger.json</code>.</p></div>';
+    return;
+  }
+  const acc = PAPER_LEDGER.accounts[PB_ACCOUNT];
+  const sum = acc.summary || MMI_REPLAY.summarizeAccount(acc);
+  const useFullTax = document.getElementById('pbNetDefTaxToggle').checked;
+  pill.textContent = `Active since ${sum.inception_date} · ${sum.trading_days} trading days · Next 6M Rebalance in ${sum.next_rebalance_in_trading_days}d`;
+  document.getElementById('pbOfficialHeldCount').textContent = String((acc.holdings || []).length);
+
+  renderLedgerKpis('pbOfficialKpis', acc, useFullTax, true);
+  renderLedgerLineChart('pbOfficialChart', 'pbOfficialChart', acc, null, useFullTax);
+  renderLedgerHoldingsTable('pbOfficialHoldingsWrap', acc);
+  renderLedgerAudit('pbOfficialDecisionFeed', 'pbOfficialTradeWrap', acc, PB_DEC_FILTER, PB_TRADE_FILTER);
+}
+
+function renderTrackedViewsPane() {
+  const wrap = document.getElementById('pbViewsOverviewWrap');
+  const cmpPanel = document.getElementById('pbViewsComparePanel');
+  const detailPanel = document.getElementById('pbSelectedViewPanel');
+
+  if (!TRACKED_VIEWS.length) {
+    wrap.innerHTML = '<div class="empty-state"><p>No Tracked Views saved yet. Go to <strong>Rebalance &amp; Tax Diff</strong>, paste your portfolio, and click <strong>Hand Over to Bot</strong> to start live forward tracking.</p></div>';
+    cmpPanel.hidden = true;
+    detailPanel.hidden = true;
+    return;
+  }
+
+  wrap.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th style="width:36px;">Cmp</th>
+          <th>View Name</th>
+          <th>Strategy</th>
+          <th>Status</th>
+          <th>Inception</th>
+          <th>Synced</th>
+          <th class="num">Value &#8377;</th>
+          <th class="num">Return %</th>
+          <th class="num">Alpha vs EW</th>
+          <th>Controls</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${TRACKED_VIEWS.map(v => {
+          const st = v.state;
+          const sum = st.summary || MMI_REPLAY.summarizeAccount(st);
+          const isEnded = st.status === 'ENDED';
+          const isSel = v.view_id === PB_SELECTED_VIEW_ID;
+          return `
+            <tr style="${isSel ? 'background:#f0fdf4;' : ''}">
+              <td><input type="checkbox" class="pb-cmp-chk" data-view-id="${esc(v.view_id)}" ${PB_COMPARE_IDS.has(v.view_id) ? 'checked' : ''} aria-label="Compare ${esc(v.name)}" /></td>
+              <td class="asset-name">${esc(v.name)}</td>
+              <td class="role-text">${v.do_nothing ? 'Do-Nothing Frozen' : esc(v.preset + (v.respect_ltcg_shield ? ' · LTCG Shield' : ''))}</td>
+              <td>${isEnded ? `<span class="badge">ENDED ${esc(st.ended_date || '')}</span>` : '<span class="badge badge-green">ACTIVE</span>'}</td>
+              <td style="font-family:var(--font-mono); font-size:12px;">${esc(sum.inception_date || '—')}</td>
+              <td style="font-family:var(--font-mono); font-size:12px;">${esc(sum.as_of_date || '—')}</td>
+              <td class="num">${fmtInrInt(sum.nav)}</td>
+              <td class="num ${sum.total_return_pct >= 0 ? 't-green' : 't-red'}">${(sum.total_return_pct >= 0 ? '+' : '') + fmtPct(sum.total_return_pct)}</td>
+              <td class="num ${sum.alpha_vs_ew_pct >= 0 ? 't-green' : 't-red'}">${(sum.alpha_vs_ew_pct >= 0 ? '+' : '') + fmtPct(sum.alpha_vs_ew_pct)}</td>
+              <td style="white-space:nowrap;">
+                <button type="button" class="btn-secondary btn-sm pb-select-view-btn" data-view-id="${esc(v.view_id)}">${isSel ? 'Viewing' : 'Inspect'}</button>
+              </td>
+            </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+
+  wrap.querySelectorAll('.pb-select-view-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      PB_SELECTED_VIEW_ID = btn.dataset.viewId;
+      renderTrackedViewsPane();
+    });
+  });
+  wrap.querySelectorAll('.pb-cmp-chk').forEach(chk => {
+    chk.addEventListener('change', () => {
+      if (chk.checked) PB_COMPARE_IDS.add(chk.dataset.viewId);
+      else PB_COMPARE_IDS.delete(chk.dataset.viewId);
+      renderViewsComparisonChart();
+    });
+  });
+
+  renderViewsComparisonChart();
+
+  const selView = TRACKED_VIEWS.find(v => v.view_id === PB_SELECTED_VIEW_ID) || TRACKED_VIEWS[0];
+  PB_SELECTED_VIEW_ID = selView.view_id;
+  detailPanel.hidden = false;
+
+  const st = selView.state;
+  const isEnded = st.status === 'ENDED';
+  document.getElementById('pbViewDetailTitle').textContent = selView.name;
+  const statusBadge = document.getElementById('pbViewStatusBadge');
+  statusBadge.className = isEnded ? 'badge' : 'badge badge-green';
+  statusBadge.textContent = isEnded ? `ENDED ${st.ended_date || ''}` : 'ACTIVE · Auto-Syncing';
+  document.getElementById('pbViewDetailSub').textContent = selView.do_nothing
+    ? `Frozen Do-Nothing baseline anchored on ${st.inception_date}.`
+    : `${selView.preset} · ${selView.slot_cap ? 'SlotCap ON' : 'Standard'} · ${selView.liquid_sweep ? 'LIQUIDCASE Sweep ON' : 'No Sweep'}${selView.respect_ltcg_shield ? ' · 330-364d LTCG Shield ON' : ''}`;
+
+  const endBtn = document.getElementById('pbViewEndBtn');
+  endBtn.disabled = isEnded;
+  endBtn.style.opacity = isEnded ? '0.5' : '1';
+  document.getElementById('pbViewHeldCount').textContent = String((st.holdings || []).length);
+
+  renderLedgerKpis('pbViewKpis', st, false, true);
+
+  const outEl = document.getElementById('pbViewOutsideNotice');
+  if (selView.outside_holdings?.length && selView.outside_mode === 'exclude') {
+    outEl.hidden = false;
+    outEl.innerHTML = `<div><strong>Kept Outside Strategy Sleeve:</strong> ${selView.outside_holdings.map(h => `${esc(h.symbol)} (${h.shares} sh)`).join(', ')} — tracked separately outside the strategy NAV.</div>`;
+  } else {
+    outEl.hidden = true;
+  }
+
+  const companion = selView.companion_baseline_id
+    ? TRACKED_VIEWS.find(v => v.view_id === selView.companion_baseline_id)?.state || null
+    : null;
+  renderLedgerLineChart('pbViewDetailChart', 'pbViewDetailChart', st, companion, false);
+  renderLedgerHoldingsTable('pbViewHoldingsWrap', st);
+  renderLedgerAudit('pbViewDecisionFeed', 'pbViewTradeWrap', st, PB_VDEC_FILTER, 'ALL');
+}
+
+function renderViewsComparisonChart() {
+  const cmpPanel = document.getElementById('pbViewsComparePanel');
+  const chosen = TRACKED_VIEWS.filter(v => PB_COMPARE_IDS.has(v.view_id));
+  if (!chosen.length || typeof Chart === 'undefined') {
+    cmpPanel.hidden = true;
+    return;
+  }
+  cmpPanel.hidden = false;
+  const allDates = [...new Set(chosen.flatMap(v => (v.state.daily_history || []).map(h => h.date)))].sort();
+  const palette = ['#059669', '#1d4ed8', '#d97706', '#dc2626', '#7c3aed', '#0891b2'];
+  const datasets = chosen.map((v, idx) => {
+    const cap = Number(v.state.initial_capital || 100000);
+    const byDt = new Map((v.state.daily_history || []).map(h => [h.date, cap > 0 ? Number((((h.nav / cap) - 1) * 100).toFixed(2)) : 0]));
+    return {
+      label: v.name,
+      data: allDates.map(d => byDt.has(d) ? byDt.get(d) : null),
+      borderColor: palette[idx % palette.length],
+      borderWidth: 2.2,
+      borderDash: v.do_nothing ? [5, 4] : [],
+      pointRadius: 3,
+      tension: 0.1,
+    };
+  });
+  if (CHARTS.pbViewsCompare) CHARTS.pbViewsCompare.destroy();
+  CHARTS.pbViewsCompare = new Chart(document.getElementById('pbViewsCompareChart'), {
+    type: 'line',
+    data: { labels: allDates, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        y: { ticks: { color: '#64748b', callback: (v) => v + '%' }, grid: { color: '#e2e8f0' } },
+        x: { ticks: { color: '#64748b', maxTicksLimit: 8 }, grid: { display: false } },
+      },
+      plugins: { legend: { position: 'bottom', labels: { color: '#334155', usePointStyle: true, boxWidth: 8 } } },
+    },
+  });
+}
+
+function renderPaperBotPage() {
+  if (!STATE) return;
+  updatePbViewsBadge();
+  if (PB_SUBTAB === 'official') renderOfficialBotPane();
+  else renderTrackedViewsPane();
+}
+
+// Paper Bot UI Event Bindings
+document.getElementById('pbTabBtnOfficial').addEventListener('click', () => switchPaperBotSubTab('official'));
+document.getElementById('pbTabBtnViews').addEventListener('click', () => switchPaperBotSubTab('views'));
+document.getElementById('pbNewViewBtn').addEventListener('click', () => switchTab('rebalance'));
+
+document.querySelectorAll('[data-pb-account]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-pb-account]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    PB_ACCOUNT = btn.dataset.pbAccount;
+    renderOfficialBotPane();
+  });
+});
+document.getElementById('pbNetDefTaxToggle').addEventListener('change', renderOfficialBotPane);
+document.querySelectorAll('[data-pb-dec-filter]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-pb-dec-filter]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    PB_DEC_FILTER = btn.dataset.pbDecFilter;
+    renderOfficialBotPane();
+  });
+});
+document.querySelectorAll('[data-pb-trade-filter]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-pb-trade-filter]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    PB_TRADE_FILTER = btn.dataset.pbTradeFilter;
+    renderOfficialBotPane();
+  });
+});
+document.querySelectorAll('[data-pb-vdec-filter]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-pb-vdec-filter]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    PB_VDEC_FILTER = btn.dataset.pbVdecFilter;
+    renderTrackedViewsPane();
+  });
+});
+document.getElementById('pbExportOfficialCsvBtn').addEventListener('click', () => {
+  const acc = PAPER_LEDGER?.accounts?.[PB_ACCOUNT];
+  if (acc) downloadLedgerCsv(acc, `official_bot_${PB_ACCOUNT}`);
+});
+document.getElementById('pbExportViewCsvBtn').addEventListener('click', () => {
+  const v = TRACKED_VIEWS.find(x => x.view_id === PB_SELECTED_VIEW_ID);
+  if (v) downloadLedgerCsv(v.state, v.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'));
+});
+
+// Hand Over to Bot Modal Workflow
+function openHandOverModal() {
+  computeHoldingsDiff();
+  if (!LAST_DIFF_CTX || LAST_DIFF_CTX.targetPortfolioCap <= 0) {
+    showToast('Paste holdings or enter cash above before handing over to the bot.');
+    return;
+  }
+  const c = LAST_DIFF_CTX;
+  document.getElementById('hoViewNameInput').value = `My Portfolio -> ${c.preset} (${STATE.as_of_date})`;
+  document.getElementById('hoPresetSelect').value = c.preset;
+  document.getElementById('hoSlotCapCheck').checked = c.slotCap;
+  document.getElementById('hoSweepCheck').checked = c.sweep;
+  document.getElementById('hoIncludeDoNothing').checked = true;
+  const shieldHint = c.ltcgWarnCnt > 0
+    ? ` · <strong>${c.ltcgWarnCnt} sell lot(s) are 330–364d old</strong>`
+    : '';
+  document.getElementById('hoPreviewMeta').innerHTML =
+    `Starting Capital: <strong>${fmtInrInt(c.targetPortfolioCap)}</strong> (${c.inUnivLots.length} universe lot(s) + ${fmtInrInt(c.cashAvail + c.liquidateOutVal)} deployable cash)${shieldHint}`;
+  document.getElementById('handOverModal').hidden = false;
+}
+
+document.getElementById('handOverBotBtn').addEventListener('click', openHandOverModal);
+document.getElementById('hoCancelBtn').addEventListener('click', () => { document.getElementById('handOverModal').hidden = true; });
+document.getElementById('hoCancelTopBtn').addEventListener('click', () => { document.getElementById('handOverModal').hidden = true; });
+
+document.getElementById('hoSubmitBtn').addEventListener('click', () => {
+  const c = LAST_DIFF_CTX;
+  if (!c) return;
+  const name = (document.getElementById('hoViewNameInput').value || '').trim() || `Portfolio -> ${c.preset} (${STATE.as_of_date})`;
+  const preset = document.getElementById('hoPresetSelect').value;
+  const slotCap = document.getElementById('hoSlotCapCheck').checked;
+  const sweep = document.getElementById('hoSweepCheck').checked;
+  const execMode = document.querySelector('input[name="hoExecMode"]:checked')?.value || 'immediate';
+  const respectShield = execMode === 'ltcg_shield';
+  const includeBaseline = document.getElementById('hoIncludeDoNothing').checked;
+
+  const days = FORWARD_TAPE?.days || [getFallbackDay0FromState()];
+  const day0 = days[days.length - 1];
+  const uid = 'view_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+  const startCash = c.cashAvail + c.liquidateOutVal;
+  const cloneSpec = {
+    inception_date: day0.date,
+    initial_capital: c.targetPortfolioCap,
+    initial_lots: JSON.parse(JSON.stringify(c.inUnivLots)),
+    starting_cash: startCash,
+    outside_mode: c.outsideMode,
+    outside_holdings: JSON.parse(JSON.stringify(c.outsideHoldings)),
+  };
+
+  let baselineId = null;
+  let baselineView = null;
+  if (includeBaseline && c.inUnivLots.length > 0) {
+    baselineId = uid + '_base';
+    const baseState = MMI_REPLAY.initializeAccountState({
+      account_id: baselineId,
+      label: `${name} (Do-Nothing)`,
+      initial_capital: c.targetPortfolioCap,
+      preset,
+      slot_cap: false,
+      liquid_sweep: false,
+      do_nothing: true,
+      initial_lots: cloneSpec.initial_lots,
+      starting_cash: startCash,
+    });
+    MMI_REPLAY.stepPortfolio(baseState, day0, null);
+    baseState.summary = MMI_REPLAY.summarizeAccount(baseState);
+    baselineView = {
+      view_id: baselineId,
+      created_at: new Date().toISOString(),
+      name: `${name} (Do-Nothing Baseline)`,
+      preset,
+      slot_cap: false,
+      liquid_sweep: false,
+      respect_ltcg_shield: false,
+      do_nothing: true,
+      outside_mode: c.outsideMode,
+      outside_holdings: cloneSpec.outside_holdings,
+      clone_spec: cloneSpec,
+      state: baseState,
+    };
+  }
+
+  const mainState = MMI_REPLAY.initializeAccountState({
+    account_id: uid,
+    label: name,
+    initial_capital: c.targetPortfolioCap,
+    preset,
+    slot_cap: slotCap,
+    liquid_sweep: sweep,
+    respect_ltcg_shield: respectShield,
+    do_nothing: false,
+    initial_lots: cloneSpec.initial_lots,
+    starting_cash: startCash,
+  });
+  MMI_REPLAY.stepPortfolio(mainState, day0, null);
+  mainState.summary = MMI_REPLAY.summarizeAccount(mainState);
+
+  const mainView = {
+    view_id: uid,
+    created_at: new Date().toISOString(),
+    name,
+    preset,
+    slot_cap: slotCap,
+    liquid_sweep: sweep,
+    respect_ltcg_shield: respectShield,
+    do_nothing: false,
+    companion_baseline_id: baselineId,
+    outside_mode: c.outsideMode,
+    outside_holdings: cloneSpec.outside_holdings,
+    clone_spec: cloneSpec,
+    state: mainState,
+  };
+
+  TRACKED_VIEWS.unshift(mainView);
+  PB_COMPARE_IDS.add(mainView.view_id);
+  if (baselineView) {
+    TRACKED_VIEWS.splice(1, 0, baselineView);
+    PB_COMPARE_IDS.add(baselineView.view_id);
+  }
+  PB_SELECTED_VIEW_ID = mainView.view_id;
+  saveTrackedViewsToStorage();
+
+  document.getElementById('handOverModal').hidden = true;
+  switchTab('paperbot');
+  switchPaperBotSubTab('views');
+  showToast(`Created Tracked View "${name}" (anchored ${day0.date}).`);
+});
+
+// Clone View Workflow
+document.getElementById('pbViewCloneBtn').addEventListener('click', () => {
+  const src = TRACKED_VIEWS.find(v => v.view_id === PB_SELECTED_VIEW_ID);
+  if (!src) return;
+  const alt = src.preset === 'R3' ? 'S3' : 'R3';
+  document.getElementById('cloneNameInput').value = `${src.name.replace(/\s*\(Do-Nothing.*\)$/, '')} -> Clone ${alt}`;
+  document.getElementById('clonePresetSelect').value = alt;
+  document.getElementById('cloneSlotCapCheck').checked = src.slot_cap;
+  document.getElementById('cloneSweepCheck').checked = src.liquid_sweep;
+  document.getElementById('cloneViewModal').hidden = false;
+});
+document.getElementById('cloneCancelBtn').addEventListener('click', () => { document.getElementById('cloneViewModal').hidden = true; });
+document.getElementById('cloneConfirmBtn').addEventListener('click', () => {
+  const src = TRACKED_VIEWS.find(v => v.view_id === PB_SELECTED_VIEW_ID);
+  if (!src || !src.clone_spec) return;
+  const spec = src.clone_spec;
+  const preset = document.getElementById('clonePresetSelect').value;
+  const slotCap = document.getElementById('cloneSlotCapCheck').checked;
+  const sweep = document.getElementById('cloneSweepCheck').checked;
+  const name = (document.getElementById('cloneNameInput').value || '').trim() || `${src.name} (${preset})`;
+  const uid = 'view_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+
+  const clonedState = MMI_REPLAY.initializeAccountState({
+    account_id: uid,
+    label: name,
+    initial_capital: spec.initial_capital,
+    preset,
+    slot_cap: slotCap,
+    liquid_sweep: sweep,
+    respect_ltcg_shield: src.respect_ltcg_shield,
+    do_nothing: false,
+    initial_lots: spec.initial_lots,
+    starting_cash: spec.starting_cash,
+  });
+
+  const days = FORWARD_TAPE?.days || [getFallbackDay0FromState()];
+  let startIdx = days.findIndex(d => d.date >= spec.inception_date);
+  if (startIdx < 0) startIdx = days.length - 1;
+  MMI_REPLAY.stepPortfolio(clonedState, days[startIdx], null);
+  for (let i = startIdx + 1; i < days.length; i++) {
+    MMI_REPLAY.stepPortfolio(clonedState, days[i], days[i - 1]);
+  }
+  clonedState.summary = MMI_REPLAY.summarizeAccount(clonedState);
+
+  const clonedView = {
+    view_id: uid,
+    created_at: new Date().toISOString(),
+    name,
+    preset,
+    slot_cap: slotCap,
+    liquid_sweep: sweep,
+    respect_ltcg_shield: src.respect_ltcg_shield,
+    do_nothing: false,
+    companion_baseline_id: src.companion_baseline_id || null,
+    outside_mode: spec.outside_mode,
+    outside_holdings: spec.outside_holdings,
+    clone_spec: spec,
+    state: clonedState,
+  };
+  TRACKED_VIEWS.unshift(clonedView);
+  PB_COMPARE_IDS.add(uid);
+  PB_SELECTED_VIEW_ID = uid;
+  saveTrackedViewsToStorage();
+  document.getElementById('cloneViewModal').hidden = true;
+  renderTrackedViewsPane();
+  showToast(`Cloned "${name}" and replayed ${clonedState.daily_history.length} day(s).`);
+});
+
+// End / Freeze View & Delete View Confirm Modal
+function openConfirmModal(title, desc, btnText, onProceed) {
+  document.getElementById('confirmModalTitle').textContent = title;
+  document.getElementById('confirmModalDesc').textContent = desc;
+  document.getElementById('confirmProceedBtn').textContent = btnText;
+  PENDING_CONFIRM_FN = onProceed;
+  document.getElementById('confirmViewModal').hidden = false;
+}
+document.getElementById('confirmCancelBtn').addEventListener('click', () => {
+  PENDING_CONFIRM_FN = null;
+  document.getElementById('confirmViewModal').hidden = true;
+});
+document.getElementById('confirmProceedBtn').addEventListener('click', () => {
+  const fn = PENDING_CONFIRM_FN;
+  PENDING_CONFIRM_FN = null;
+  document.getElementById('confirmViewModal').hidden = true;
+  if (fn) fn();
+});
+
+document.getElementById('pbViewEndBtn').addEventListener('click', () => {
+  const v = TRACKED_VIEWS.find(x => x.view_id === PB_SELECTED_VIEW_ID);
+  if (!v || v.state.status === 'ENDED') return;
+  openConfirmModal(
+    'End / Freeze Tracked View?',
+    `Freezing "${v.name}" stops all future autonomous bot updates permanently and locks its final scorecard as of ${STATE.as_of_date}.`,
+    'End / Freeze View',
+    () => {
+      v.state.status = 'ENDED';
+      v.state.ended_date = v.state.last_synced_date || STATE.as_of_date;
+      saveTrackedViewsToStorage();
+      renderTrackedViewsPane();
+      showToast(`Ended & froze "${v.name}".`);
+    }
+  );
+});
+
+document.getElementById('pbViewDeleteBtn').addEventListener('click', () => {
+  const v = TRACKED_VIEWS.find(x => x.view_id === PB_SELECTED_VIEW_ID);
+  if (!v) return;
+  openConfirmModal(
+    'Delete Tracked View?',
+    `Permanently remove "${v.name}" and its local replay ledger from this browser?`,
+    'Delete View',
+    () => {
+      TRACKED_VIEWS = TRACKED_VIEWS.filter(x => x.view_id !== v.view_id);
+      PB_COMPARE_IDS.delete(v.view_id);
+      PB_SELECTED_VIEW_ID = TRACKED_VIEWS[0]?.view_id || null;
+      saveTrackedViewsToStorage();
+      renderTrackedViewsPane();
+      showToast(`Deleted "${v.name}".`);
+    }
+  );
+});
+
+// Export / Import All Views JSON
+document.getElementById('pbExportViewsBtn').addEventListener('click', () => {
+  const payload = { schema_version: 1, exported_at: new Date().toISOString(), views: TRACKED_VIEWS };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `midcap_tracked_views_${STATE?.as_of_date || 'backup'}.json`;
+  a.click();
+});
+document.getElementById('pbImportViewsBtn').addEventListener('click', () => {
+  document.getElementById('pbImportViewsFile').click();
+});
+document.getElementById('pbImportViewsFile').addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const parsed = JSON.parse(await file.text());
+    const incoming = Array.isArray(parsed) ? parsed : (parsed.views || []);
+    if (!Array.isArray(incoming) || !incoming.length) {
+      showToast('No valid tracked views found in JSON file.');
+      return;
+    }
+    const existingIds = new Set(TRACKED_VIEWS.map(v => v.view_id));
+    let added = 0;
+    incoming.forEach(v => {
+      if (v && v.view_id && v.state && !existingIds.has(v.view_id)) {
+        TRACKED_VIEWS.push(v);
+        PB_COMPARE_IDS.add(v.view_id);
+        added += 1;
+      }
+    });
+    if (FORWARD_TAPE) syncAllActiveTrackedViews(FORWARD_TAPE);
+    if (!PB_SELECTED_VIEW_ID && TRACKED_VIEWS.length) PB_SELECTED_VIEW_ID = TRACKED_VIEWS[0].view_id;
+    saveTrackedViewsToStorage();
+    renderTrackedViewsPane();
+    showToast(`Imported ${added} view(s) cleanly.`);
+  } catch (err) {
+    showToast('Failed to import JSON: ' + err.message);
+  }
 });
 
 init().catch(err => {
