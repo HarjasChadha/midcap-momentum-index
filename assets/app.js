@@ -1045,7 +1045,7 @@ function renderCharts() {
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       scales: {
-        y: { ticks: { color: tickColor, callback: (v) => v + '%' }, grid: { color: gridColor } },
+        y: { ticks: { color: tickColor, callback: (v) => `${Number(Number(v).toFixed(2))}%` }, grid: { color: gridColor } },
         x: { ticks: { color: tickColor, maxTicksLimit: 7 }, grid: { display: false } },
       },
       plugins: { legend: { position: 'bottom', labels: { color: legendColor, usePointStyle: true, boxWidth: 8 } } },
@@ -1071,7 +1071,7 @@ function renderCharts() {
       responsive: true,
       maintainAspectRatio: false,
       scales: {
-        y: { ticks: { color: tickColor, callback: (v) => v + '%' }, grid: { color: gridColor } },
+        y: { ticks: { color: tickColor, callback: (v) => `${Number(Number(v).toFixed(2))}%` }, grid: { color: gridColor } },
         x: { ticks: { color: tickColor }, grid: { display: false } },
       },
       plugins: { legend: { position: 'bottom', labels: { color: legendColor, usePointStyle: true, boxWidth: 8 } } },
@@ -2719,7 +2719,7 @@ function renderViewsComparisonChart() {
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       scales: {
-        y: { ticks: { color: '#64748b', callback: (v) => v + '%' }, grid: { color: '#e2e8f0' } },
+        y: { ticks: { color: '#64748b', callback: (v) => `${Number(Number(v).toFixed(2))}%` }, grid: { color: '#e2e8f0' } },
         x: { ticks: { color: '#64748b', maxTicksLimit: 8 }, grid: { display: false } },
       },
       plugins: { legend: { position: 'bottom', labels: { color: '#334155', usePointStyle: true, boxWidth: 8 } } },
