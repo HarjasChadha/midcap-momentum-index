@@ -251,6 +251,101 @@ class EngineTests(unittest.TestCase):
         pd.testing.assert_series_equal(alloc_full, alloc_via_rule, check_names=False)
         self.assertTrue(set(np.unique(alloc_full.values)).issubset({0.25, 0.60, 1.0}))
 
+    def test_delisted_mtm_never_reverts_to_cost_and_haircut_applies(self):
+        adj_df, raw_df, bench = _synthetic_market(days=340, n_stocks=32)
+        # Force STK00 to rank #1 and double by day 260, then stall/delist (NaN) after day 280
+        adj_df.loc[:, "STK00"] = 100.0 * np.exp(np.linspace(0.0, 0.70, len(adj_df)))
+        raw_df["STK00"] = adj_df["STK00"].copy()
+        peak_px = float(adj_df["STK00"].iloc[280])
+        adj_df.iloc[281:, adj_df.columns.get_loc("STK00")] = np.nan
+        raw_df.iloc[281:, raw_df.columns.get_loc("STK00")] = np.nan
+
+        def_df = build_defensive_series(bench)
+        scores = {"raw_6m": compute_score_matrix(adj_df, 126, 21, "raw")}
+        ones = pd.Series(1.0, index=adj_df.index)
+        start_dt, end_dt = adj_df.index[240], adj_df.index[-1]
+
+        res_hold = run_backtest(
+            adj_df, raw_df, scores, def_df, ones,
+            BacktestConfig(start_date=start_dt, end_date=end_dt, rebalance_days=126, delist_haircut_pct=0.0, sleeves=[{"score_key": "raw_6m", "top_n": 10, "alloc": 1.0}]),
+        )
+        res_cut = run_backtest(
+            adj_df, raw_df, scores, def_df, ones,
+            BacktestConfig(start_date=start_dt, end_date=end_dt, rebalance_days=126, delist_haircut_pct=0.25, sleeves=[{"score_key": "raw_6m", "top_n": 10, "alloc": 1.0}]),
+        )
+        # During the halt (>5d ffill exhausted at day 286), normal suspension MTM keeps last_valid_px (~peak_px), NOT initial cost (<=155)
+        self.assertGreater(res_cut["metrics"]["delisted_write_downs"], 0)
+        self.assertGreater(peak_px, float(adj_df["STK01"].iloc[240]) + 10.0)
+        self.assertLess(res_cut["metrics"]["final_value"], res_hold["metrics"]["final_value"])
+
+    def test_tax_defensive_default_true_and_regime_cost_35bps(self):
+        adj_df, raw_df, bench = _synthetic_market(days=400, n_stocks=35)
+        # Rising LIQUIDBEES ensures positive Sec 50AA debt gains when defensive sleeve shifts back to equity
+        bench["LIQUIDBEES"] = 1000.0 * (1.07 ** (np.arange(len(bench)) / 252.0))
+        bench["LIQUIDCASE"] = bench["LIQUIDBEES"]
+        def_df = build_defensive_series(bench)
+        scores = {"raw_6m": compute_score_matrix(adj_df, 126, 21, "raw")}
+        alloc = pd.Series(1.0, index=adj_df.index)
+        alloc.iloc[240:300] = 0.25  # Risk-off shift then re-entry
+
+        cfg_default = BacktestConfig(start_date=adj_df.index[200], end_date=adj_df.index[-1], rebalance_days=126, apply_tax=True, defensive_asset="LIQUID_REALISTIC", sleeves=[{"score_key": "raw_6m", "top_n": 15, "alloc": 1.0}])
+        self.assertTrue(cfg_default.tax_defensive)
+        self.assertAlmostEqual(cfg_default.regime_cost_bps_one_way, 35.0)
+
+        res_def = run_backtest(adj_df, raw_df, scores, def_df, alloc, cfg_default)
+        res_pre = run_backtest(
+            adj_df, raw_df, scores, def_df, alloc,
+            BacktestConfig(start_date=adj_df.index[200], end_date=adj_df.index[-1], rebalance_days=126, apply_tax=True, tax_defensive=False, regime_cost_bps_one_way=15.0, defensive_asset="LIQUID_REALISTIC", sleeves=[{"score_key": "raw_6m", "top_n": 15, "alloc": 1.0}]),
+        )
+        self.assertGreater(res_def["metrics"]["defensive_tax_paid"], 0.0)
+        self.assertGreater(res_def["metrics"]["regime_shift_trades"], 0)
+        self.assertLess(res_def["metrics"]["final_value"], res_pre["metrics"]["final_value"])
+
+    def test_ipo_95pct_coverage_and_unpadded_enforcement(self):
+        days = 260
+        idx = [d.strftime("%Y-%m-%d") for d in pd.bdate_range("2025-01-01", periods=days)]
+        p_full = 100.0 * np.cumprod(np.full(days, 1.002))
+        p_short = p_full.copy()
+        # Only ~90% populated (<95% threshold of 211d window) -> MUST return NaN on last bar
+        p_short[:70] = np.nan
+        df = pd.DataFrame({"FULL": p_full, "SHORT_IPO": p_short}, index=idx)
+        sc = compute_score_matrix(df, 189, 21, "risk_adj")
+        self.assertTrue(np.isfinite(float(sc.iloc[-1]["FULL"])))
+        self.assertFalse(np.isfinite(float(sc.iloc[-1]["SHORT_IPO"])))
+
+    def test_production_no_numba_scipy_and_score_parity(self):
+        import ast
+
+        for pyf in list((REPO_ROOT / "src").glob("*.py")) + [REPO_ROOT / "scripts" / "update_live.py"]:
+            tree = ast.parse(pyf.read_text())
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    for alias in node.names:
+                        self.assertNotIn(alias.name.split(".")[0], {"numba", "scipy"}, msg=str(pyf))
+                elif isinstance(node, ast.ImportFrom) and node.module:
+                    self.assertNotIn(node.module.split(".")[0], {"numba", "scipy"}, msg=str(pyf))
+
+        # Check exact numerical parity against research helpers when numba/scipy is available locally
+        adj_df, _, _ = _synthetic_market(days=260, n_stocks=15)
+        prod_rk = compute_score_matrix(adj_df, 189, 21, "risk_adj")
+        prod_so = compute_score_matrix(adj_df, 189, 21, "sortino")
+        # Independent direct formula verification (252d ann, clip [-0.40, 0.60], floors 0.08 & 0.06)
+        rets = adj_df.pct_change(fill_method=None).clip(-0.40, 0.60)
+        ret_9m = (adj_df.shift(21) / adj_df.shift(210)) - 1.0
+        vol_9m = (rets.rolling(189, min_periods=180).std().shift(21) * np.sqrt(252.0)).clip(lower=0.08)
+        sdev_9m = np.sqrt(((np.minimum(rets, 0.0) ** 2).rolling(189, min_periods=180).mean().shift(21)) * 252.0).clip(lower=0.06)
+        np.testing.assert_allclose(prod_rk.iloc[-1].values, (ret_9m / vol_9m).iloc[-1].values, rtol=1e-12, atol=1e-12)
+        np.testing.assert_allclose(prod_so.iloc[-1].values, (ret_9m / sdev_9m).iloc[-1].values, rtol=1e-12, atol=1e-12)
+
+        try:
+            from scripts.numba_research_engine import compute_extended_scores
+            pit = pd.DataFrame(True, index=adj_df.index, columns=adj_df.columns)
+            res_sc = compute_extended_scores(adj_df, pit)
+            np.testing.assert_allclose(prod_rk.iloc[-1].values, res_sc["risk_189_s21"].iloc[-1].values, rtol=1e-12, atol=1e-12)
+            np.testing.assert_allclose(prod_so.iloc[-1].values, res_sc["sortino_189_s21"].iloc[-1].values, rtol=1e-12, atol=1e-12)
+        except ImportError:
+            pass
+
 
 if __name__ == "__main__":
     unittest.main()

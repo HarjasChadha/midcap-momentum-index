@@ -8,6 +8,14 @@ from typing import Mapping
 import numpy as np
 import pandas as pd
 
+# Unified canonical parameters shared identically between research (Numba/SciPy) and production (`src/`)
+TRADING_DAYS_PER_YEAR = 252.0
+RET_CLIP_LOW = -0.40
+RET_CLIP_HIGH = 0.60
+RISK_VOL_FLOOR = 0.08
+SORTINO_VOL_FLOOR = 0.06
+MIN_LOOKBACK_COVERAGE = 0.95
+
 
 def _zscore_rows(df: pd.DataFrame) -> pd.DataFrame:
     mu = df.mean(axis=1)
@@ -21,6 +29,11 @@ def normalize_z_pdf(z_series: pd.Series) -> pd.Series:
     return s.where(s >= 0, 1.0 / (1.0 - s)).where(s < 0, 1.0 + s)
 
 
+def compute_listing_days(adj_df: pd.DataFrame) -> pd.Series:
+    """Return total valid (non-null) trading-day count up to latest bar per ticker."""
+    return adj_df.notna().sum(axis=0).astype(int)
+
+
 def compute_score_matrix(
     adj_df: pd.DataFrame,
     lookback_days: int = 189,
@@ -30,35 +43,55 @@ def compute_score_matrix(
     raw_df: pd.DataFrame | None = None,
     min_turnover_inr: float = 0.0,
 ) -> pd.DataFrame:
-    """Compute cross-sectional momentum scores aligned to each trading date t (no look-ahead)."""
-    p_end = adj_df.shift(skip_days) if skip_days > 0 else adj_df
+    """Compute cross-sectional momentum scores aligned to each trading date t (no look-ahead).
+
+    Strict IPO / lookback eligibility (shared across research and live production):
+    - Valid un-padded non-null prices at t, t - skip_days, and t - skip_days - lookback_days.
+    - At least 95% non-null trading-day coverage across [t - skip_days - lookback_days .. t].
+    - Unified 252d annualization, daily return clipping [-0.40, +0.60], and volatility floors.
+    """
     daily_rets = adj_df.pct_change(fill_method=None)
+    daily_rets_clip = daily_rets.clip(RET_CLIP_LOW, RET_CLIP_HIGH)
 
     def _raw_ret(lb: int) -> pd.DataFrame:
-        p_start = adj_df.shift(skip_days + lb)
+        s = skip_days
+        p_end = adj_df.shift(s) if s > 0 else adj_df
+        p_start = adj_df.shift(s + lb)
         ret = (p_end / p_start) - 1.0
-        # Require active stock on day t and sufficient lookback coverage
-        min_obs = max(20, int(0.85 * lb))
-        obs = adj_df.rolling(lb + skip_days, min_periods=min_obs).count()
+        win_len = lb + s + 1
+        min_obs = max(20, int(math.ceil(MIN_LOOKBACK_COVERAGE * win_len)))
+        obs = adj_df.notna().rolling(win_len, min_periods=1).sum()
         valid = adj_df.notna() & p_end.notna() & p_start.notna() & (obs >= min_obs)
         return ret.where(valid)
 
     def _risk_adj(lb: int) -> pd.DataFrame:
         ret = _raw_ret(lb)
-        vol = daily_rets.rolling(lb, min_periods=max(20, int(0.8 * lb))).std()
+        min_ret_obs = max(20, int(math.ceil(MIN_LOOKBACK_COVERAGE * lb)))
+        vol = daily_rets_clip.rolling(lb, min_periods=min_ret_obs).std()
         if skip_days > 0:
             vol = vol.shift(skip_days)
-        ann_vol = (vol * math.sqrt(252.0)).replace(0.0, np.nan)
+        ann_vol = (vol * math.sqrt(TRADING_DAYS_PER_YEAR)).clip(lower=RISK_VOL_FLOOR)
         return ret / ann_vol
 
     def _sortino_adj(lb: int) -> pd.DataFrame:
         ret = _raw_ret(lb)
-        r_clip = daily_rets.clip(-0.40, 0.60)
-        sdev2 = (np.minimum(r_clip, 0.0) ** 2).rolling(lb, min_periods=max(20, int(0.8 * lb))).mean() * 247.0
+        min_ret_obs = max(20, int(math.ceil(MIN_LOOKBACK_COVERAGE * lb)))
+        down2 = np.minimum(daily_rets_clip, 0.0) ** 2
+        sdev2 = down2.rolling(lb, min_periods=min_ret_obs).mean() * TRADING_DAYS_PER_YEAR
         if skip_days > 0:
             sdev2 = sdev2.shift(skip_days)
-        ann_sdev = np.sqrt(sdev2).clip(lower=0.06)
+        ann_sdev = np.sqrt(sdev2).clip(lower=SORTINO_VOL_FLOOR)
         return ret / ann_sdev
+
+    def _fip(lb: int) -> pd.DataFrame:
+        ret = _raw_ret(lb)
+        min_ret_obs = max(20, int(math.ceil(MIN_LOOKBACK_COVERAGE * lb)))
+        pos_f = (daily_rets_clip > 0.0005).rolling(lb, min_periods=min_ret_obs).mean()
+        neg_f = (daily_rets_clip < -0.0005).rolling(lb, min_periods=min_ret_obs).mean()
+        if skip_days > 0:
+            pos_f = pos_f.shift(skip_days)
+            neg_f = neg_f.shift(skip_days)
+        return ret * (pos_f - neg_f).clip(lower=0.0)
 
     if mode == "raw":
         scores = _raw_ret(lookback_days)
@@ -66,6 +99,8 @@ def compute_score_matrix(
         scores = _risk_adj(lookback_days)
     elif mode == "sortino":
         scores = _sortino_adj(lookback_days)
+    elif mode == "fip":
+        scores = _fip(lookback_days)
     elif mode == "blend_6_12":
         scores = 0.5 * _zscore_rows(_raw_ret(126)) + 0.5 * _zscore_rows(_raw_ret(252))
     elif mode == "blend_3_6_12":

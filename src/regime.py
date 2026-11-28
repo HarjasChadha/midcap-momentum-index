@@ -36,15 +36,19 @@ def build_defensive_series(bench_df: pd.DataFrame, liquid_annual_rate: float = 0
 
     # 1b. Realistic Regime-Varying India 91D T-Bill + Actual LIQUIDCASE (2024+)
     tbill_rates = np.array([INDIA_TBILL_REGIME_YIELD.get(int(str(d)[:4]), liquid_annual_rate) if str(d)[:4].isdigit() else liquid_annual_rate for d in idx], dtype=float)
-    tbill_daily = (1.0 + tbill_rates) ** (1.0 / 248.0) - 1.0
+    tbill_daily = (1.0 + tbill_rates) ** (1.0 / 252.0) - 1.0
     if "LIQUIDCASE" in bench_df.columns:
         lc_ret = bench_df["LIQUIDCASE"].pct_change(fill_method=None)
         tbill_daily = np.where(lc_ret.notna().values, lc_ret.fillna(0.0).values, tbill_daily)
     tbill_daily[0] = 0.0
     out["LIQUID_REALISTIC"] = 100.0 * np.cumprod(1.0 + tbill_daily)
 
-    # 2. Clean ETFs aligned to common index (strictly NO backward look-ahead bfill!)
-    for col in ("GOLDBEES", "SILVERBEES", "EBBETF0430", "EBBETF0431", "LTGILTBEES", "LICNETFGSC", "LIQUIDCASE", "NIFTYBEES", "JUNIORBEES", "BANKBEES", "HNGSNGBEES", "MON100"):
+    # 2. Clean ETFs & Indices aligned to common index (strictly NO backward look-ahead bfill!)
+    for col in (
+        "GOLDBEES", "SILVERBEES", "EBBETF0430", "EBBETF0431", "LTGILTBEES", "LICNETFGSC",
+        "LIQUIDCASE", "NIFTYBEES", "JUNIORBEES", "BANKBEES", "HNGSNGBEES", "MON100",
+        "NIFTY_MIDCAP_100", "NIFTY_MIDCAP_150",
+    ):
         if col in bench_df.columns:
             s = bench_df[col].ffill(limit=5)
             first = s.dropna()
@@ -60,8 +64,8 @@ def build_defensive_series(bench_df: pd.DataFrame, liquid_annual_rate: float = 0
         if not first.empty:
             out["MON100_STITCHED"] = stitched / first.iloc[0] * 100.0
 
-    # 3. Dynamic Trend-Filtered Gold vs Liquid (hold Gold when GOLDBEES > 50DMA at t-1, else Liquid)
-    liq_ref = out["LIQUID_REALISTIC"] if "LIQUID_REALISTIC" in out.columns else out["LIQUID_TBILL"]
+    # 3. Dynamic Trend-Filtered Gold vs Liquid (unified LIQUID_REALISTIC across ALL presets!)
+    liq_ref = out["LIQUID_REALISTIC"]
     liq_ref_ret = liq_ref.pct_change(fill_method=None).fillna(0.0).values
 
     if "GOLDBEES" in out.columns:
@@ -70,11 +74,11 @@ def build_defensive_series(bench_df: pd.DataFrame, liquid_annual_rate: float = 0
         g_ret = g.pct_change(fill_method=None).fillna(0.0)
         in_gold = (g > g_ma50).shift(1, fill_value=False).astype(bool)
         sw = (in_gold != in_gold.shift(1, fill_value=False)).astype(float) * 0.0010  # 10 bps switch friction
-        dyn_ret = np.where(in_gold, g_ret.values, daily_liq) - sw.values
+        dyn_ret = np.where(in_gold, g_ret.values, liq_ref_ret) - sw.values
         out["GOLD_OR_LIQUID"] = 100.0 * np.cumprod(1.0 + dyn_ret)
 
-        # 50/50 static Gold + Liquid
-        mix_ret = 0.5 * g_ret.values + 0.5 * daily_liq
+        # 50/50 static Gold + LIQUID_REALISTIC
+        mix_ret = 0.5 * g_ret.values + 0.5 * liq_ref_ret
         out["GOLD_50_LIQUID_50"] = 100.0 * np.cumprod(1.0 + mix_ret)
 
         # Research-validated Trend-Gated Gold (EMA150 +/-2% hysteresis band -> LIQUID_REALISTIC)
@@ -94,9 +98,10 @@ def build_defensive_series(bench_df: pd.DataFrame, liquid_annual_rate: float = 0
         sw_g150 = np.concatenate(([0.0], (lag_g150[1:] != lag_g150[:-1]).astype(float) * 0.0015))
         tg150_ret = np.where(lag_g150, g_ret.values, liq_ref_ret) - sw_g150
         out["TREND_GOLD150_OR_LIQ"] = 100.0 * np.cumprod(1.0 + tg150_ret)
+        out["TREND_GOLD150_ACTIVE"] = lag_g150.astype(float)
         out["TG70_LIQ30"] = 100.0 * np.cumprod(1.0 + (0.70 * tg150_ret + 0.30 * liq_ref_ret))
 
-    # 4. Trend-Filtered Gold vs Gilt vs Liquid (if LTGILTBEES > MA50 when Gold < MA50, else Liquid)
+    # 4. Trend-Filtered Gold vs Gilt vs LIQUID_REALISTIC
     if "GOLDBEES" in out.columns and "LTGILTBEES" in out.columns:
         g = out["GOLDBEES"]
         g_ma = g.rolling(50, min_periods=20).mean()
@@ -108,7 +113,7 @@ def build_defensive_series(bench_df: pd.DataFrame, liquid_annual_rate: float = 0
         use_lt = ((g <= g_ma) & (lt > lt_ma)).shift(1, fill_value=False).astype(bool)
         choice = np.where(use_g, 1, np.where(use_lt, 2, 0))
         sw2 = np.concatenate(([0.0], (choice[1:] != choice[:-1]).astype(float) * 0.0010))
-        rot_ret = np.where(use_g, g_ret.values, np.where(use_lt, lt_ret.values, daily_liq)) - sw2
+        rot_ret = np.where(use_g, g_ret.values, np.where(use_lt, lt_ret.values, liq_ref_ret)) - sw2
         out["TREND_GOLD_GILT_LIQ"] = 100.0 * np.cumprod(1.0 + rot_ret)
 
     return out
@@ -357,7 +362,7 @@ def compute_multifactor_state(
     ew_r = ew.pct_change(fill_method=None).fillna(0.0)
     ew_ema200 = ew.ewm(span=200, min_periods=60).mean()
     ew_ema126 = ew.ewm(span=126, min_periods=40).mean()
-    ew_v63 = np.sqrt(247.0 * (ew_r ** 2).ewm(span=63, min_periods=20).mean()).clip(lower=0.08)
+    ew_v63 = np.sqrt(252.0 * (ew_r ** 2).ewm(span=63, min_periods=20).mean()).clip(lower=0.08)
     t_ew200 = ((ew / ew_ema200) - 1.0) / ew_v63
     t_ew126 = ((ew / ew_ema126) - 1.0) / ew_v63
 
@@ -367,14 +372,14 @@ def compute_multifactor_state(
         rel = ew / nif.clip(lower=1e-4)
         rel_r = rel.pct_change(fill_method=None).fillna(0.0)
         rel_ema126 = rel.ewm(span=126, min_periods=40).mean()
-        rel_v63 = np.sqrt(247.0 * (rel_r ** 2).ewm(span=63, min_periods=20).mean()).clip(lower=0.04)
+        rel_v63 = np.sqrt(252.0 * (rel_r ** 2).ewm(span=63, min_periods=20).mean()).clip(lower=0.04)
         t_rel = ((rel / rel_ema126) - 1.0) / rel_v63
         b1 = (_causal_mad_squash(t_ew200) + _causal_mad_squash(t_ew126) + _causal_mad_squash(t_rel)) / 3.0
     else:
         b1 = 0.5 * (_causal_mad_squash(t_ew200) + _causal_mad_squash(t_ew126))
 
     neg2 = np.minimum(ew_r, 0.0) ** 2
-    semivol21 = np.sqrt(247.0 * neg2.rolling(21, min_periods=10).mean()).fillna(0.125)
+    semivol21 = np.sqrt(252.0 * neg2.rolling(21, min_periods=10).mean()).fillna(0.125)
     vix = pd.to_numeric(feat["vix"], errors="coerce").ffill() if "vix" in feat else pd.Series(16.0, index=idx)
     vix_spike = np.log((vix / vix.ewm(span=63, min_periods=20).mean()).clip(lower=0.2))
     b2 = -0.5 * (_causal_mad_squash(np.log(semivol21.clip(lower=0.04))) + _causal_mad_squash(vix_spike))
@@ -389,7 +394,7 @@ def compute_multifactor_state(
         gold = pd.to_numeric(bench_df["GOLDBEES"], errors="coerce").reindex(idx).ffill()
         g_r = gold.pct_change(fill_method=None).fillna(0.0)
         g_ema126 = gold.ewm(span=126, min_periods=40).mean()
-        g_v63 = np.sqrt(247.0 * (g_r ** 2).ewm(span=63, min_periods=20).mean()).clip(lower=0.06)
+        g_v63 = np.sqrt(252.0 * (g_r ** 2).ewm(span=63, min_periods=20).mean()).clip(lower=0.06)
         t_gold = ((gold / g_ema126) - 1.0) / g_v63
         b4 = -0.5 * (dm_raw + _causal_mad_squash(t_gold))
     else:

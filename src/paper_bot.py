@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 COST_RATE = 0.0015  # 15 bps one-way brokerage + STT + slippage
+REGIME_CUT_COST_RATE = 0.0035  # 35 bps one-way impact on DEFENSIVE/CAUTIOUS risk-off equity sales
 MIN_TRADE_DELTA_INR = 500.0
 
 LTCG_DAYS = 365
@@ -262,7 +263,12 @@ def _posture_label(eq_frac: float) -> str:
     return "DEFENSIVE"
 
 
-def _compute_positions_summary(lots: list[dict[str, Any]], prices: dict[str, Any], as_of_date: str) -> dict[str, Any]:
+def _compute_positions_summary(
+    lots: list[dict[str, Any]],
+    prices: dict[str, Any],
+    as_of_date: str,
+    last_valid_prices: dict[str, float] | None = None,
+) -> dict[str, Any]:
     by_sym: dict[str, dict[str, Any]] = {}
     eq_val = 0.0
     gold_val = 0.0
@@ -273,7 +279,12 @@ def _compute_positions_summary(lots: list[dict[str, Any]], prices: dict[str, Any
             continue
         sym = str(lot["symbol"])
         px = _finite((prices or {}).get(sym))
-        if px is None or px <= 0:
+        if px is not None and px > 0:
+            if last_valid_prices is not None:
+                last_valid_prices[sym] = round(float(px), 4)
+        elif last_valid_prices is not None and _finite(last_valid_prices.get(sym)) and float(last_valid_prices[sym]) > 0:
+            px = float(last_valid_prices[sym])
+        else:
             px = float(lot["buy_price"])
         mv = sh * px
         ac = _asset_class(sym)
@@ -291,6 +302,7 @@ def _compute_positions_summary(lots: list[dict[str, Any]], prices: dict[str, Any
                 "shares": 0.0,
                 "cost_basis_total": 0.0,
                 "market_value": 0.0,
+                "mark_price": px,
                 "oldest_buy_date": lot["buy_date"],
                 "newest_buy_date": lot["buy_date"],
                 "shielded_shares": 0.0,
@@ -299,6 +311,7 @@ def _compute_positions_summary(lots: list[dict[str, Any]], prices: dict[str, Any
         entry["shares"] += sh
         entry["cost_basis_total"] += sh * float(lot["buy_price"])
         entry["market_value"] += mv
+        entry["mark_price"] = px
         if lot["buy_date"] < entry["oldest_buy_date"]:
             entry["oldest_buy_date"] = lot["buy_date"]
         if lot["buy_date"] > entry["newest_buy_date"]:
@@ -314,13 +327,13 @@ def _compute_positions_summary(lots: list[dict[str, Any]], prices: dict[str, Any
 
 
 def _build_holdings_rows(state: dict[str, Any], prices: dict[str, Any], as_of_date: str) -> list[dict[str, Any]]:
-    pos = _compute_positions_summary(state["lots"], prices, as_of_date)
+    pos = _compute_positions_summary(state["lots"], prices, as_of_date, state.get("last_valid_prices"))
     basket = state.get("basket_weights") or {}
     rows: list[dict[str, Any]] = []
     for sym, info in pos["by_sym"].items():
         sh = info["shares"]
         avg_buy = info["cost_basis_total"] / sh if sh > 0 else 0.0
-        px = _finite((prices or {}).get(sym)) or avg_buy
+        px = float(info.get("mark_price") or avg_buy)
         mv = sh * px
         pnl = mv - info["cost_basis_total"]
         pnl_pct = (pnl / info["cost_basis_total"] * 100.0) if info["cost_basis_total"] > 0 else 0.0
@@ -363,6 +376,7 @@ def _apply_fifo_sell(
     event_type: str,
     reason: str,
     allow_shielded: bool = True,
+    cost_rate: float = COST_RATE,
 ) -> float:
     """Sell up to sell_qty of `sym` using FIFO, recording tax, fees, and trades. Returns gross shares sold."""
     if sell_qty <= 1e-6 or exec_px <= 0:
@@ -378,6 +392,7 @@ def _apply_fifo_sell(
     weighted_days = 0.0
     eq_tax_before = float(state["tax_state"]["realized_eq_tax_cum"])
     def_tax_before = float(state["tax_state"]["estimated_def_tax_cum"])
+    tax_defensive = bool(state.get("tax_defensive", True))
     new_lots: list[dict[str, Any]] = []
     ac = _asset_class(sym)
 
@@ -432,10 +447,16 @@ def _apply_fifo_sell(
             elif ac == "LIQUID_ETF":
                 def_tax = max(0.0, lot_pnl) * LIQUID_SLAB_RATE
                 state["tax_state"]["estimated_def_tax_cum"] += def_tax
+                if tax_defensive:
+                    state["tax_state"]["realized_def_tax_cum"] = float(state["tax_state"].get("realized_def_tax_cum") or 0.0) + def_tax
+                    state["cash"] -= def_tax
             else:  # GOLD_ETF / OTHER_ETF
                 rate = GOLD_LTCG_RATE if days_held >= LTCG_DAYS else GOLD_STCG_RATE
                 def_tax = max(0.0, lot_pnl) * rate
                 state["tax_state"]["estimated_def_tax_cum"] += def_tax
+                if tax_defensive:
+                    state["tax_state"]["realized_def_tax_cum"] = float(state["tax_state"].get("realized_def_tax_cum") or 0.0) + def_tax
+                    state["cash"] -= def_tax
 
             if left > 1e-6:
                 upd = dict(lot)
@@ -449,7 +470,7 @@ def _apply_fifo_sell(
 
     state["lots"] = new_lots
     gross = sold_total * exec_px
-    fee = gross * COST_RATE
+    fee = gross * float(cost_rate)
     state["cash"] += gross - fee
     state["total_fees_cum"] += fee
 
@@ -504,6 +525,7 @@ def _buy_lot(
     fee = gross * COST_RATE
     state["cash"] -= gross + fee
     state["total_fees_cum"] += fee
+    state.setdefault("last_valid_prices", {})[sym] = round(float(exec_px), 4)
     state["_lot_seq"] += 1
     state["lots"].append(
         {
@@ -550,7 +572,7 @@ def _sync_defensive_and_sweep(
     liquid_sweep: bool,
 ) -> None:
     """Rebalance GOLDBEES & LIQUIDCASE (and sweep leftover cash to LIQUIDCASE if enabled)."""
-    pos = _compute_positions_summary(state["lots"], prices, exec_date)["by_sym"]
+    pos = _compute_positions_summary(state["lots"], prices, exec_date, state.get("last_valid_prices"))["by_sym"]
     gold_px = _finite((prices or {}).get("GOLDBEES")) or 0.0
     liq_px = _finite((prices or {}).get("LIQUIDCASE")) or 0.0
 
@@ -581,7 +603,7 @@ def _sync_defensive_and_sweep(
                 _apply_fifo_sell(state, "LIQUIDCASE", sell_sh, liq_px, exec_date, event_type, reason)
 
     # Buy GOLDBEES up to target_gold_inr
-    pos2 = _compute_positions_summary(state["lots"], prices, exec_date)["by_sym"]
+    pos2 = _compute_positions_summary(state["lots"], prices, exec_date, state.get("last_valid_prices"))["by_sym"]
     cur_gold_val2 = pos2.get("GOLDBEES", {}).get("shares", 0.0) * gold_px
     if gold_px > 0 and (target_gold_inr - cur_gold_val2) > MIN_TRADE_DELTA_INR:
         want_sh = int((target_gold_inr - cur_gold_val2) // (gold_px * (1.0 + COST_RATE)))
@@ -596,7 +618,7 @@ def _sync_defensive_and_sweep(
                 if want_sh > 0:
                     _buy_lot(state, "LIQUIDCASE", want_sh, liq_px, exec_date, event_type, f"{reason} + LIQUIDCASE sweep")
         else:
-            pos3 = _compute_positions_summary(state["lots"], prices, exec_date)["by_sym"]
+            pos3 = _compute_positions_summary(state["lots"], prices, exec_date, state.get("last_valid_prices"))["by_sym"]
             cur_liq_val3 = pos3.get("LIQUIDCASE", {}).get("shares", 0.0) * liq_px
             if (target_liq_inr - cur_liq_val3) > MIN_TRADE_DELTA_INR:
                 want_sh = int((target_liq_inr - cur_liq_val3) // (liq_px * (1.0 + COST_RATE)))
@@ -629,12 +651,14 @@ def _rebalance_to_basket(
     respect_ltcg_shield: bool = False,
 ) -> None:
     """Sell excess / non-target equities first (honoring LTCG shield if enabled), then buy underweights."""
-    pos = _compute_positions_summary(state["lots"], prices, exec_date)["by_sym"]
+    pos = _compute_positions_summary(state["lots"], prices, exec_date, state.get("last_valid_prices"))["by_sym"]
     held_eq_syms = [s for s, info in pos.items() if info["asset_class"] == "EQUITY"]
 
-    # Step 1: sells (full exits of non-target or trims of overweights)
+    # Step 1: sells (full exits of non-target or trims of overweights; skip halted/unpriced equities)
     for sym in sorted(held_eq_syms):
-        px = _finite((prices or {}).get(sym)) or pos[sym]["cost_basis_total"] / max(1e-6, pos[sym]["shares"])
+        px = _finite((prices or {}).get(sym)) or 0.0
+        if px <= 0:
+            continue
         cur_sh = pos[sym]["shares"]
         cur_val = cur_sh * px
         tgt_w = target_weights.get(sym, 0.0)
@@ -668,7 +692,7 @@ def _rebalance_to_basket(
 
     # Liquidate defensive ETFs down if needed before equity buys? Handled in caller when regime adds eq.
     # Step 2: buys into underweighted target stocks (ordered highest weight -> symbol)
-    pos_after_sell = _compute_positions_summary(state["lots"], prices, exec_date)["by_sym"]
+    pos_after_sell = _compute_positions_summary(state["lots"], prices, exec_date, state.get("last_valid_prices"))["by_sym"]
     buy_list = sorted(target_weights.keys(), key=lambda s: (-target_weights[s], s))
     for sym in buy_list:
         px = _finite((prices or {}).get(sym))
@@ -693,11 +717,13 @@ def initialize_account_state(
     respect_ltcg_shield: bool = False,
     unhedged: bool = False,
     do_nothing: bool = False,
+    tax_defensive: bool = True,
     initial_lots: list[dict[str, Any]] | None = None,
     starting_cash: float | None = None,
 ) -> dict[str, Any]:
     """Create a fresh account / tracked view state container."""
     lots_copy: list[dict[str, Any]] = []
+    last_valid_prices: dict[str, float] = {}
     seq = 0
     for lot in initial_lots or []:
         seq += 1
@@ -705,6 +731,9 @@ def initialize_account_state(
         sh = float(lot["shares"])
         if sh <= 0:
             continue
+        bpx = round(float(lot["buy_price"]), 4)
+        if bpx > 0:
+            last_valid_prices[sym] = bpx
         lots_copy.append(
             {
                 "id": f"L{seq}",
@@ -712,7 +741,7 @@ def initialize_account_state(
                 "asset_class": _asset_class(sym),
                 "shares": round(sh, 6),
                 "buy_date": str(lot["buy_date"])[:10],
-                "buy_price": round(float(lot["buy_price"]), 4),
+                "buy_price": bpx,
                 "shield_defer": bool(lot.get("shield_defer", False)),
             }
         )
@@ -725,6 +754,7 @@ def initialize_account_state(
         "respect_ltcg_shield": bool(respect_ltcg_shield),
         "unhedged": bool(unhedged),
         "do_nothing": bool(do_nothing),
+        "tax_defensive": bool(tax_defensive),
         "initial_capital": round(float(initial_capital), 2),
         "inception_date": None,
         "last_synced_date": None,
@@ -739,6 +769,7 @@ def initialize_account_state(
         "active_eq_frac": 1.0,
         "active_def_etf": "LIQUIDCASE",
         "basket_weights": {},
+        "last_valid_prices": last_valid_prices,
         "_lot_seq": seq,
         "lots": lots_copy,
         "tax_state": {
@@ -747,6 +778,7 @@ def initialize_account_state(
             "ltcl_carry": 0.0,
             "realized_eq_tax_cum": 0.0,
             "estimated_def_tax_cum": 0.0,
+            "realized_def_tax_cum": 0.0,
         },
         "ew_inception_val": None,
         "daily_history": [],
@@ -774,6 +806,11 @@ def step_portfolio(
         return state
 
     prices = tape_entry.get("prices") or {}
+    lv_map = state.setdefault("last_valid_prices", {})
+    for sym_p, px_p in prices.items():
+        v_p = _finite(px_p)
+        if v_p is not None and v_p > 0:
+            lv_map[str(sym_p)] = round(float(v_p), 4)
     regime_today = tape_entry.get("regime") or {}
     preset = state["preset"]
     rule = PRESET_RULES[preset]
@@ -800,6 +837,8 @@ def step_portfolio(
                 lot["shares"] = round(float(lot["shares"]) / factor, 6)
                 lot["buy_price"] = round(float(lot["buy_price"]) * factor, 4)
                 touched = True
+        if sym in lv_map:
+            lv_map[sym] = round(float(lv_map[sym]) * factor, 4)
         if touched:
             mult = round(1.0 / factor, 4)
             msg = f"{atype} on {sym} (factor {factor}): FIFO lot shares multiplied by {mult}x and cost basis adjusted cleanly."
@@ -823,7 +862,7 @@ def step_portfolio(
                 }
             )
 
-    pos_start = _compute_positions_summary(state["lots"], prices, exec_date)
+    pos_start = _compute_positions_summary(state["lots"], prices, exec_date, state.get("last_valid_prices"))
     pre_trade_nav = state["cash"] + pos_start["equity_val"] + pos_start["gold_val"] + pos_start["liquid_val"]
 
     is_inception = prev_tape_entry is None and len(state["daily_history"]) == 0
@@ -1004,8 +1043,8 @@ def step_portfolio(
             score_key = rule["score_key"]
             mf4_s = _finite(sig_regime.get("mf4_score"))
             if eq_frac < state["active_eq_frac"]:
-                # Cut equity exposure: weakest_first trimming across held equity positions
-                pos_cur = _compute_positions_summary(state["lots"], prices, exec_date)
+                # Cut equity exposure: weakest_first trimming across held equity positions (35 bps risk-off impact)
+                pos_cur = _compute_positions_summary(state["lots"], prices, exec_date, state.get("last_valid_prices"))
                 cur_nav = state["cash"] + pos_cur["equity_val"] + pos_cur["gold_val"] + pos_cur["liquid_val"]
                 target_eq_inr = cur_nav * eq_frac
                 need_free = max(0.0, pos_cur["equity_val"] - target_eq_inr)
@@ -1016,7 +1055,7 @@ def step_portfolio(
                 reason_base = (
                     f"{'MF4 ' + f'{mf4_s:+.2f} ' if mf4_s is not None else ''}stepped exposure "
                     f"{_posture_label(state['active_eq_frac'])} ({old_pct}%) -> {_posture_label(eq_frac)} ({new_pct}%); "
-                    f"weakest-first trim into {sig_def_etf}."
+                    f"weakest-first trim into {sig_def_etf} (35 bps risk-off impact)."
                 )
                 freed = 0.0
                 for sym in held_eq:
@@ -1037,6 +1076,7 @@ def step_portfolio(
                         evt,
                         reason_base,
                         allow_shielded=not state["respect_ltcg_shield"],
+                        cost_rate=REGIME_CUT_COST_RATE,
                     )
                     if sold > 0:
                         freed += sold * px
@@ -1085,21 +1125,28 @@ def step_portfolio(
             # Quiet day: record daily hold verification
             days_left = max(0, reb_period - state["trading_days_since_rebalance"])
             mf4_s = _finite(sig_regime.get("mf4_score"))
+            day_word = "trading day" if days_left == 1 else "trading days"
             msg = (
                 f"Hold {_posture_label(eq_frac)} ({eq_frac*100:.0f}% Eq); "
                 f"{'MF4 smooth ' + f'{mf4_s:+.2f}; ' if mf4_s is not None else ''}"
-                f"next rebalance in {days_left} trading days; defensive={sig_def_etf}."
+                f"next rebalance in {days_left} {day_word}; defensive={sig_def_etf}."
             )
             state["decision_log"].append({"date": exec_date, "event_type": "HOLD_CHECK", "summary": msg})
 
     # End-of-day Valuation & History Snapshot
-    pos_end = _compute_positions_summary(state["lots"], prices, exec_date)
+    pos_end = _compute_positions_summary(state["lots"], prices, exec_date, state.get("last_valid_prices"))
     nav_end = state["cash"] + pos_end["equity_val"] + pos_end["gold_val"] + pos_end["liquid_val"]
     state["peak_nav"] = max(float(state.get("peak_nav") or 0.0), nav_end)
     dd_pct = ((nav_end / state["peak_nav"] - 1.0) * 100.0) if state["peak_nav"] > 0 else 0.0
-    def_tax_cum = float(state["tax_state"]["estimated_def_tax_cum"])
+    def_tax_cum = float(state["tax_state"].get("estimated_def_tax_cum") or 0.0)
+    realized_def_tax_cum = float(state["tax_state"].get("realized_def_tax_cum") or 0.0)
     eq_tax_cum = float(state["tax_state"]["realized_eq_tax_cum"])
-    nav_full_tax = max(0.0, nav_end - def_tax_cum)
+    if state.get("tax_defensive", True):
+        nav_full_tax = nav_end
+        nav_pre_def_tax = nav_end + realized_def_tax_cum
+    else:
+        nav_full_tax = max(0.0, nav_end - def_tax_cum)
+        nav_pre_def_tax = nav_end
 
     if bench_ew_nav_today is None:
         ew_cur = _finite(regime_today.get("ew_index_val")) or state["ew_inception_val"] or 100.0
@@ -1117,6 +1164,7 @@ def step_portfolio(
                 "date": exec_date,
                 "nav": nav_end,
                 "nav_full_tax": nav_full_tax,
+                "nav_pre_def_tax": nav_pre_def_tax,
                 "cash": state["cash"],
                 "equity_val": pos_end["equity_val"],
                 "gold_val": pos_end["gold_val"],
@@ -1130,6 +1178,7 @@ def step_portfolio(
                 "drawdown_pct": dd_pct,
                 "realized_tax_cum": eq_tax_cum,
                 "estimated_def_tax_cum": def_tax_cum,
+                "realized_def_tax_cum": realized_def_tax_cum,
                 "total_fees_cum": state["total_fees_cum"],
                 "action_summary": ", ".join(action_tags) if action_tags else "HOLD_CHECK",
             },
@@ -1151,6 +1200,7 @@ def run_synthetic_steps(
     respect_ltcg_shield: bool = False,
     unhedged: bool = False,
     do_nothing: bool = False,
+    tax_defensive: bool = True,
     initial_lots: list[dict[str, Any]] | None = None,
     starting_cash: float | None = None,
 ) -> dict[str, Any]:
@@ -1165,6 +1215,7 @@ def run_synthetic_steps(
         respect_ltcg_shield=respect_ltcg_shield,
         unhedged=unhedged,
         do_nothing=do_nothing,
+        tax_defensive=tax_defensive,
         initial_lots=initial_lots,
         starting_cash=starting_cash,
     )
@@ -1189,6 +1240,7 @@ def build_forward_tape_entry(
     reg_dd50_val: float,
     ew_index_val: float,
     corp_actions: list[dict[str, Any]] | None = None,
+    listing_days: Any = None,
 ) -> dict[str, Any]:
     """Build one compact daily forward-tape step record from live market dataframes."""
     prices: dict[str, float] = {}
@@ -1221,16 +1273,18 @@ def build_forward_tape_entry(
             continue
         a_px = _finite(adj_last.get(sym)) if adj_last is not None else None
         m50 = _finite(ma50_last.get(sym)) if ma50_last is not None else None
-        rankings[sym] = sanitize_json(
-            {
-                "rk9": round(rk9, 4) if rk9 is not None else None,
-                "so9": round(so9, 4) if so9 is not None else None,
-                "r9": round(r9 * 100.0, 2) if r9 is not None else None,
-                "r12": round(r12 * 100.0, 2) if r12 is not None else None,
-                "a50": 1 if (a_px is not None and m50 is not None and a_px > m50) else 0,
-            },
-            decimals=4,
-        )
+        ld_val = int(listing_days.get(sym, 0)) if listing_days is not None else None
+        row_rk = {
+            "rk9": round(rk9, 4) if rk9 is not None else None,
+            "so9": round(so9, 4) if so9 is not None else None,
+            "r9": round(r9 * 100.0, 2) if r9 is not None else None,
+            "r12": round(r12 * 100.0, 2) if r12 is not None else None,
+            "a50": 1 if (a_px is not None and m50 is not None and a_px > m50) else 0,
+        }
+        if ld_val is not None:
+            row_rk["ld"] = ld_val
+            row_rk["nl"] = ld_val < 378
+        rankings[sym] = sanitize_json(row_rk, decimals=4)
 
     t_mf4 = _finite(mf_diag_row["target_eq_eod"]) if "target_eq_eod" in mf_diag_row else 1.0
     t_mf4 = 1.0 if t_mf4 is None else t_mf4
@@ -1299,11 +1353,13 @@ def _summarize_account(acc: dict[str, Any], ew_series_val: float | None = None, 
     cap = float(acc.get("initial_capital") or 100_000.0)
     cur_nav = float(last.get("nav") or cap)
     cur_nav_ft = float(last.get("nav_full_tax") or cur_nav)
+    cur_nav_pre_def = float(last.get("nav_pre_def_tax") or cur_nav)
     ew_nav = float(last.get("benchmark_ew_nav") or ew_series_val or cap)
     unh_nav = float(last.get("unhedged_nav") or unhedged_val or cap)
 
     tot_ret = (cur_nav / cap - 1.0) * 100.0 if cap > 0 else 0.0
     tot_ret_ft = (cur_nav_ft / cap - 1.0) * 100.0 if cap > 0 else 0.0
+    tot_ret_pre_def = (cur_nav_pre_def / cap - 1.0) * 100.0 if cap > 0 else 0.0
     ew_ret = (ew_nav / cap - 1.0) * 100.0 if cap > 0 else 0.0
     unh_ret = (unh_nav / cap - 1.0) * 100.0 if cap > 0 else 0.0
     max_dd = min([float(h.get("drawdown_pct") or 0.0) for h in hist] or [0.0])
@@ -1322,10 +1378,13 @@ def _summarize_account(acc: dict[str, Any], ew_series_val: float | None = None, 
         "trading_days": len(hist),
         "days_since_rebalance": days_since,
         "next_rebalance_in_trading_days": next_reb_days,
+        "tax_defensive": bool(acc.get("tax_defensive", True)),
         "nav": round(cur_nav, 2),
         "nav_full_tax": round(cur_nav_ft, 2),
+        "nav_pre_def_tax": round(cur_nav_pre_def, 2),
         "total_return_pct": round(tot_ret, 2),
         "total_return_full_tax_pct": round(tot_ret_ft, 2),
+        "total_return_pre_def_tax_pct": round(tot_ret_pre_def, 2),
         "benchmark_ew_nav": round(ew_nav, 2),
         "benchmark_ew_return_pct": round(ew_ret, 2),
         "unhedged_nav": round(unh_nav, 2),

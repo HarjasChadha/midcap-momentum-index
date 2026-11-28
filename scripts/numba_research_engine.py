@@ -25,6 +25,14 @@ import sys
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
+from src.momentum import (  # noqa: E402
+    MIN_LOOKBACK_COVERAGE,
+    RET_CLIP_HIGH,
+    RET_CLIP_LOW,
+    RISK_VOL_FLOOR,
+    TRADING_DAYS_PER_YEAR,
+    compute_score_matrix,
+)
 from src.nse_archive_loader import build_2010_2026_nse_dataset  # noqa: E402
 from src.regime import build_defensive_series, build_regime_features  # noqa: E402
 
@@ -44,7 +52,7 @@ def _calc_metrics_slice(nav: np.ndarray, to_arr: np.ndarray, s_idx: int, e_idx: 
     n = e_idx - s_idx + 1
     if n < 30:
         return 0.0, 0.0, 0.0, 0.0, 0.0
-    yrs = n / 247.0  # NSE averages ~247 trading days per calendar year
+    yrs = n / 252.0
     total = nav[e_idx] / nav[s_idx]
     cagr = (total ** (1.0 / yrs) - 1.0) if total > 0 else -0.99
 
@@ -68,7 +76,7 @@ def _calc_metrics_slice(nav: np.ndarray, to_arr: np.ndarray, s_idx: int, e_idx: 
 
     mean_r = sum_r / cnt
     var_r = max(1e-12, (sum_r2 / cnt) - mean_r * mean_r)
-    ann_vol = math.sqrt(var_r * 247.0)
+    ann_vol = math.sqrt(var_r * 252.0)
     calmar = cagr / abs(max_dd) if max_dd < -1e-6 else 0.0
     sharpe = (cagr - rf) / ann_vol if ann_vol > 1e-6 else 0.0
     ann_to = (sum_to / yrs) * 100.0
@@ -318,11 +326,8 @@ def _gen_multifactor_signal(
 # ── Factor & Basket Precomputations ──────────────────────────────────────────────────────────────────
 
 def compute_extended_scores(adj_eq: pd.DataFrame, pit_mask: pd.DataFrame) -> dict[str, pd.DataFrame]:
-    """Compute canonical equity momentum & low-vol scores masked cleanly to lagged ETF-free PIT universe."""
-    rets = adj_eq.pct_change(fill_method=None)
-    # Clip extreme single-day corporate-action/data glitches when computing vol/FIP stats (already CA cleaned)
-    rets_clip = rets.clip(-0.40, 0.60)
-    down_rets2 = np.minimum(rets_clip, 0.0) ** 2
+    """Compute canonical equity momentum & low-vol scores sharing exact `src/momentum.py` math (zero drift)."""
+    rets_clip = adj_eq.pct_change(fill_method=None).clip(RET_CLIP_LOW, RET_CLIP_HIGH)
     lag_m = pit_mask.shift(1, fill_value=False)
 
     out: dict[str, pd.DataFrame] = {}
@@ -330,33 +335,12 @@ def compute_extended_scores(adj_eq: pd.DataFrame, pit_mask: pd.DataFrame) -> dic
         for skip in (0, 10, 21):
             if lb not in (126, 189, 252) and skip != 21:
                 continue
-            p_end = adj_eq.shift(skip) if skip > 0 else adj_eq
-            p_start = adj_eq.shift(skip + lb)
-            min_obs = max(20, int(0.85 * lb))
-            obs = adj_eq.rolling(lb + skip, min_periods=min_obs).count()
-            raw_ret = ((p_end / p_start) - 1.0).where(adj_eq.notna() & p_end.notna() & p_start.notna() & (obs >= min_obs))
-            out[f"raw_{lb}_s{skip}"] = raw_ret.where(lag_m)
-
+            out[f"raw_{lb}_s{skip}"] = compute_score_matrix(adj_eq, lb, skip, mode="raw").where(lag_m)
             if skip in (10, 21) or lb in (126, 189, 252):
-                vol = rets_clip.rolling(lb, min_periods=max(20, int(0.8 * lb))).std()
-                sdev = np.sqrt(down_rets2.rolling(lb, min_periods=max(20, int(0.8 * lb))).mean() * 247.0)
-                if skip > 0:
-                    vol = vol.shift(skip)
-                    sdev = sdev.shift(skip)
-                ann_vol = (vol * math.sqrt(247.0)).clip(lower=0.08)
-                sdev_clip = sdev.clip(lower=0.06)
-                out[f"risk_{lb}_s{skip}"] = (raw_ret / ann_vol).where(lag_m)
-                out[f"sortino_{lb}_s{skip}"] = (raw_ret / sdev_clip).where(lag_m)
-
+                out[f"risk_{lb}_s{skip}"] = compute_score_matrix(adj_eq, lb, skip, mode="risk_adj").where(lag_m)
+                out[f"sortino_{lb}_s{skip}"] = compute_score_matrix(adj_eq, lb, skip, mode="sortino").where(lag_m)
             if skip == 21:
-                # FIP (Frog-in-the-Pan consistency): sign(ret) -> raw * (%pos - %neg)
-                pos_f = (rets_clip > 0.0005).rolling(lb, min_periods=max(20, int(0.8 * lb))).mean()
-                neg_f = (rets_clip < -0.0005).rolling(lb, min_periods=max(20, int(0.8 * lb))).mean()
-                if skip > 0:
-                    pos_f = pos_f.shift(skip)
-                    neg_f = neg_f.shift(skip)
-                fip = raw_ret * (pos_f - neg_f).clip(lower=0.0)
-                out[f"fip_{lb}_s{skip}"] = fip.where(lag_m)
+                out[f"fip_{lb}_s{skip}"] = compute_score_matrix(adj_eq, lb, skip, mode="fip").where(lag_m)
 
     # Hybrids & Ensembles at standard skip=21
     for tag, cols_w in [
@@ -373,7 +357,8 @@ def compute_extended_scores(adj_eq: pd.DataFrame, pit_mask: pd.DataFrame) -> dic
         out[tag] = z_acc.where(lag_m)
 
     # Internal Low-Vol Equity Defense Factor (negative 63d realized volatility -> highest score = lowest vol!)
-    v63 = (rets_clip.rolling(63, min_periods=30).std() * math.sqrt(247.0)).clip(lower=0.08)
+    min_lv = max(20, int(math.ceil(MIN_LOOKBACK_COVERAGE * 63)))
+    v63 = (rets_clip.rolling(63, min_periods=min_lv).std() * math.sqrt(TRADING_DAYS_PER_YEAR)).clip(lower=RISK_VOL_FLOOR)
     out["lowvol_63"] = (-v63).where(lag_m)
     return out
 
@@ -522,27 +507,27 @@ def build_multifactor_blocks(
     ew = feat["ew_index"]
     ew_r = ew.pct_change(fill_method=None).fillna(0.0)
     ew_ema200 = ew.ewm(span=200, min_periods=60).mean()
-    ew_v63 = np.sqrt(247.0 * (ew_r ** 2).ewm(span=63, min_periods=20).mean()).clip(lower=0.08)
+    ew_v63 = np.sqrt(252.0 * (ew_r ** 2).ewm(span=63, min_periods=20).mean()).clip(lower=0.08)
     t_ew = ((ew / ew_ema200) - 1.0) / ew_v63
 
     p_s = pd.Series(port_nav, index=feat.index)
     p_r = p_s.pct_change(fill_method=None).fillna(0.0)
     p_ema126 = p_s.ewm(span=126, min_periods=40).mean()
-    p_v63 = np.sqrt(247.0 * (p_r ** 2).ewm(span=63, min_periods=20).mean()).clip(lower=0.08)
+    p_v63 = np.sqrt(252.0 * (p_r ** 2).ewm(span=63, min_periods=20).mean()).clip(lower=0.08)
     t_port = ((p_s / p_ema126) - 1.0) / p_v63
 
     nif = def_df["NIFTYBEES"].reindex(feat.index).ffill(limit=5)
     rel = ew / nif
     rel_r = rel.pct_change(fill_method=None).fillna(0.0)
     rel_ema126 = rel.ewm(span=126, min_periods=40).mean()
-    rel_v63 = np.sqrt(247.0 * (rel_r ** 2).ewm(span=63, min_periods=20).mean()).clip(lower=0.04)
+    rel_v63 = np.sqrt(252.0 * (rel_r ** 2).ewm(span=63, min_periods=20).mean()).clip(lower=0.04)
     t_rel = ((rel / rel_ema126) - 1.0) / rel_v63
 
     b1 = (causal_mad_squash(t_ew) + causal_mad_squash(t_port) + causal_mad_squash(t_rel)) / 3.0
 
     # Block 2: Downside portfolio semivol + India VIX spike ratio (negated: +1=calm, -1=stress)
     p_neg2 = np.minimum(p_r, 0.0) ** 2
-    p_semivol = np.sqrt(247.0 * p_neg2.rolling(21, min_periods=10).mean()).fillna(0.125)
+    p_semivol = np.sqrt(252.0 * p_neg2.rolling(21, min_periods=10).mean()).fillna(0.125)
     semivol_med = p_semivol.rolling(756, min_periods=63).median().fillna(0.125).values
     vix = feat["vix"] if "vix" in feat else pd.Series(16.0, index=feat.index)
     vix_ema63 = vix.ewm(span=63, min_periods=20).mean()
@@ -560,7 +545,7 @@ def build_multifactor_blocks(
     gold = def_df["GOLDBEES"].reindex(feat.index).ffill(limit=5)
     g_r = gold.pct_change(fill_method=None).fillna(0.0)
     g_ema126 = gold.ewm(span=126, min_periods=40).mean()
-    g_v63 = np.sqrt(247.0 * (g_r ** 2).ewm(span=63, min_periods=20).mean()).clip(lower=0.06)
+    g_v63 = np.sqrt(252.0 * (g_r ** 2).ewm(span=63, min_periods=20).mean()).clip(lower=0.06)
     t_gold = ((gold / g_ema126) - 1.0) / g_v63
     b4 = -(dm_raw + causal_mad_squash(t_gold)) / 2.0
 
@@ -675,7 +660,7 @@ def compute_tg_erc_returns(
                         c = 0.0
                         for k in range(t - 62, t + 1):
                             c += (def_rets[k, j] - means[j]) * (def_rets[k, l] - means[l])
-                        val = (c / 62.0) * 247.0
+                        val = (c / 62.0) * 252.0
                         if j == l:
                             cov[j, l] = max(val, 1e-6)
                         else:

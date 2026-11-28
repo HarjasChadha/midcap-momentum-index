@@ -53,7 +53,7 @@ def sim_monthly_fno_hedges(
         h = hedge_frac[t]
         basis_noise = 0.0
         # Net daily drag: 2.0%/yr carry/STT/roll when active; 30% F&O slab tax on positive hedge months approximated cleanly monthly
-        pnl = r_eq[t] - h * ew_ret[t] + h * liq_ret[t] - h * (0.020 / 247.0)
+        pnl = r_eq[t] - h * ew_ret[t] + h * liq_ret[t] - h * (0.020 / 252.0)
         sw = abs(h - hedge_frac[t - 1]) * 0.0018 + to_eq_reb[t] * 0.0030
         nav_fut[t] = nav_fut[t - 1] * (1.0 + pnl - sw)
 
@@ -294,32 +294,38 @@ def main() -> None:
 
     exact_rows = []
     exact_tests = [
-        ("PIT_SEMI | Raw_189_EW | Legacy_DD12 | GOLD_50_LIQ_50", "raw_189", "equal", 126, "Legacy_DD12", "GOLD_50_LIQUID_50", False, 100_000.0),
-        ("PIT_SEMI | Risk_189_EW | Legacy_DD15 | GOLD_50_LIQ_50", "risk_189", "equal", 126, "Legacy_DD15", "GOLD_50_LIQUID_50", False, 100_000.0),
-        ("PIT_SEMI | Sortino_189_EW | Unhedged", "sortino_189", "equal", 126, "Unhedged", "LIQUID_REALISTIC", False, 100_000.0),
-        ("PIT_SEMI | Sortino_189_EW | MF_EQ4_3State | GOLD_50_LIQ_50", "sortino_189", "equal", 126, "MF_EQ4_3State", "GOLD_50_LIQUID_50", False, 100_000.0),
-        ("PIT_SEMI | Sortino_189_EW | MF_WF4_3State | TrendGold150", "sortino_189", "equal", 126, "MF_WF4_3State", "TREND_GOLD150_OR_LIQ", False, 100_000.0),
-        ("PIT_SEMI | Sortino_189_EW | MF_WF4_3State | TG_ERC_GiltGoldLiq", "sortino_189", "equal", 126, "MF_WF4_3State", "TG_ERC_GOLD_GILT_LIQ", False, 100_000.0),
-        ("PIT_SEMI | Sortino_189_EW | MF_WF4_2State | TrendGold150", "sortino_189", "equal", 126, "MF_WF4_2State", "TREND_GOLD150_OR_LIQ", False, 100_000.0),
-        ("PIT_SEMI | Sortino_252_12M | MF_WF4_3State | TrendGold150", "sortino_252", "equal", 252, "MF_WF4_3State", "TREND_GOLD150_OR_LIQ", False, 100_000.0),
-        ("PIT_SEMI | Sortino_189_EW | MF_WF4_3State | TG_ERC_GiltGoldLiq [Disc 1L]", "sortino_189", "equal", 126, "MF_WF4_3State", "TG_ERC_GOLD_GILT_LIQ", True, 100_000.0),
-        ("PIT_SEMI | Sortino_189_EW | MF_WF4_3State | TrendGold150 [Disc 1L]", "sortino_189", "equal", 126, "MF_WF4_3State", "TREND_GOLD150_OR_LIQ", True, 100_000.0),
-        ("PIT_SEMI | Sortino_189_NormZ | MF_WF4_3State | TG_ERC_GiltGoldLiq [Disc 1L]", "sortino_189", "norm_z", 126, "MF_WF4_3State", "TG_ERC_GOLD_GILT_LIQ", True, 100_000.0),
-        ("PIT_SEMI | Sortino_189_EW | MF_WF4_3State | TG_ERC_GiltGoldLiq [Disc 25L, TaxDef]", "sortino_189", "equal", 126, "MF_WF4_3State", "TG_ERC_GOLD_GILT_LIQ", True, 2_500_000.0),
-        ("PIT_SEMI | Sortino_189_EW | MF_WF4_3State | TG_ERC_GiltGoldLiq [Stress 30bps]", "sortino_189", "equal", 126, "MF_WF4_3State", "TG_ERC_GOLD_GILT_LIQ", False, 100_000.0),
+        ("PIT_SEMI | Raw_189_EW | Legacy_DD12 | GOLD_50_LIQ_50", "raw_189", "equal", 126, "Legacy_DD12", "GOLD_50_LIQUID_50", False, 100_000.0, 1),
+        ("PIT_SEMI | Risk_189_EW | Legacy_DD15 | GOLD_50_LIQ_50", "risk_189", "equal", 126, "Legacy_DD15", "GOLD_50_LIQUID_50", False, 100_000.0, 1),
+        ("PIT_SEMI | Sortino_189_EW | Unhedged", "sortino_189", "equal", 126, "Unhedged", "LIQUID_REALISTIC", False, 100_000.0, 1),
+        ("PIT_SEMI | Sortino_189_EW | MF_EQ4_3State [ZeroFit] | GOLD_50_LIQ_50", "sortino_189", "equal", 126, "MF_EQ4_3State", "GOLD_50_LIQUID_50", False, 100_000.0, 1),
+        ("PIT_SEMI | Risk_189_EW | MF_WF4_3State | TrendGold150", "risk_189", "equal", 126, "MF_WF4_3State", "TREND_GOLD150_OR_LIQ", False, 100_000.0, 1),
+        ("PIT_SEMI | Risk_189_EW | MF_WF4_3State | TrendGold150 [Staggered 2x6M]", "risk_189", "equal", 126, "MF_WF4_3State", "TREND_GOLD150_OR_LIQ", False, 100_000.0, 2),
+        ("PIT_SEMI | Risk_189_EW | MF_WF4_3State | TrendGold150 [Stress 30bps]", "risk_189", "equal", 126, "MF_WF4_3State", "TREND_GOLD150_OR_LIQ", False, 100_000.0, 1),
+        ("PIT_SEMI | Risk_189_EW | MF_WF4_3State | TrendGold150 [PreDefTax Comparison]", "risk_189", "equal", 126, "MF_WF4_3State", "TREND_GOLD150_OR_LIQ", False, 100_000.0, 1),
+        ("PIT_SEMI | Sortino_189_EW | MF_WF4_3State | TrendGold150", "sortino_189", "equal", 126, "MF_WF4_3State", "TREND_GOLD150_OR_LIQ", False, 100_000.0, 1),
+        ("PIT_SEMI | Sortino_189_EW | MF_WF4_3State | TG_ERC_GiltGoldLiq", "sortino_189", "equal", 126, "MF_WF4_3State", "TG_ERC_GOLD_GILT_LIQ", False, 100_000.0, 1),
+        ("PIT_SEMI | Sortino_189_EW | MF_WF4_2State | TrendGold150", "sortino_189", "equal", 126, "MF_WF4_2State", "TREND_GOLD150_OR_LIQ", False, 100_000.0, 1),
+        ("PIT_SEMI | Sortino_252_12M | MF_WF4_3State | TrendGold150", "sortino_252", "equal", 252, "MF_WF4_3State", "TREND_GOLD150_OR_LIQ", False, 100_000.0, 1),
+        ("PIT_SEMI | Sortino_189_EW | MF_WF4_3State | TG_ERC_GiltGoldLiq [Disc 1L]", "sortino_189", "equal", 126, "MF_WF4_3State", "TG_ERC_GOLD_GILT_LIQ", True, 100_000.0, 1),
+        ("PIT_SEMI | Sortino_189_EW | MF_WF4_3State | TrendGold150 [Disc 1L]", "sortino_189", "equal", 126, "MF_WF4_3State", "TREND_GOLD150_OR_LIQ", True, 100_000.0, 1),
+        ("PIT_SEMI | Sortino_189_NormZ | MF_WF4_3State | TG_ERC_GiltGoldLiq [Disc 1L]", "sortino_189", "norm_z", 126, "MF_WF4_3State", "TG_ERC_GOLD_GILT_LIQ", True, 100_000.0, 1),
+        ("PIT_SEMI | Sortino_189_EW | MF_WF4_3State | TG_ERC_GiltGoldLiq [Disc 25L]", "sortino_189", "equal", 126, "MF_WF4_3State", "TG_ERC_GOLD_GILT_LIQ", True, 2_500_000.0, 1),
+        ("PIT_SEMI | Sortino_189_EW | MF_WF4_3State | TG_ERC_GiltGoldLiq [Stress 30bps]", "sortino_189", "equal", 126, "MF_WF4_3State", "TG_ERC_GOLD_GILT_LIQ", False, 100_000.0, 1),
     ]
-    for label, sk, wt, reb, rk, da, disc, cap in exact_tests:
+    for label, sk, wt, reb, rk, da, disc, cap, n_sl in exact_tests:
         slv = [{"score_key": sk, "top_n": 20, "alloc": 0.5, "weighting": wt}, {"score_key": sk, "top_n": 30, "alloc": 0.5, "weighting": wt}]
-        bps = 30.0 if "Stress 30bps" in label else 15.0
-        tx_d = "TaxDef" in label
+        is_stress = "Stress 30bps" in label
+        bps = 30.0 if is_stress else 15.0
+        reg_bps = 60.0 if is_stress else 35.0
+        tx_d = "PreDefTax" not in label
         row = {"label": label}
         for pk, (ps, pe) in PERIODS.items():
             res = run_backtest(
                 adj_eq, raw_eq, sc_exact, def_df_ext, alloc_map[rk],
                 BacktestConfig(
                     start_date=ps, end_date=pe, initial_capital=cap, rebalance_days=reb,
-                    cost_bps_one_way=bps, apply_tax=True, tax_defensive=tx_d,
-                    defensive_asset=da, trim_mode="weakest_first", sleeves=slv,
+                    cost_bps_one_way=bps, regime_cost_bps_one_way=reg_bps, apply_tax=True, tax_defensive=tx_d,
+                    defensive_asset=da, trim_mode="weakest_first", sleeves=slv, num_sleeves=n_sl,
                     discrete_shares=disc, affordability_filter=disc, sweep_idle_cash=disc, sweep_asset="LIQUID_REALISTIC",
                 ),
                 stock_ma50=ma50_pit,

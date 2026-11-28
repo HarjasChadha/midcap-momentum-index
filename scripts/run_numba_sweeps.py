@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 import time
@@ -27,12 +28,29 @@ from scripts.numba_research_engine import (  # noqa: E402
     compute_tg_erc_returns,
 )
 from src.nse_archive_loader import build_2010_2026_nse_dataset  # noqa: E402
+from src.prowess_loader import load_cmie_prowess_pit_dataset  # noqa: E402
 from src.regime import build_defensive_series, build_regime_features  # noqa: E402
 
 
-def build_clean_equity_and_pit_masks(d: dict) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Exclude ALL 419+ NSE ETFs cleanly, repair isolated missing split glitches, and build strictly LAGGED PIT masks."""
+def build_clean_equity_and_pit_masks(
+    d: dict,
+    prowess_file: str | Path | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Exclude ALL 419+ NSE ETFs cleanly, repair isolated missing split glitches, and build strictly LAGGED PIT masks.
+
+    If a CMIE Prowessdx export (`data/cmie/*.csv|.txt|.zip` or `--prowess-file`) is supplied, uses true market-cap
+    Ranks 101..250 semiannual reconstitution; otherwise constructs the NSE Bhavcopy liquidity proxy (Ranks 81..230).
+    """
     adj_all, raw_all, tv_all, bench_df = d["adj"], d["raw"], d["trdval"], d["bench"]
+
+    cmie = load_cmie_prowess_pit_dataset(REPO_ROOT, prowess_path=prowess_file, reconstitute_semiannual=True)
+    if cmie is not None:
+        adj_eq = cmie["adj"].reindex(adj_all.index).dropna(how="all", axis=1)
+        raw_eq = cmie["raw"].reindex(adj_all.index)[adj_eq.columns]
+        pit_semi = cmie["pit_mask"].reindex(adj_all.index)[adj_eq.columns].fillna(False)
+        pit_daily = cmie["pit_daily"].reindex(adj_all.index)[adj_eq.columns].fillna(False)
+        keep_cols = list(pit_daily.columns[pit_daily.any(axis=0) | pit_semi.any(axis=0)])
+        return adj_eq[keep_cols], raw_eq[keep_cols], pit_daily[keep_cols], pit_semi[keep_cols], bench_df
 
     etf_path = REPO_ROOT / "data" / "nse_archive" / "nse_etf_symbols.json"
     etf_set = set(json.loads(etf_path.read_text())) if etf_path.exists() else set()
@@ -103,13 +121,18 @@ def _summarize_nav(nav: np.ndarray, to_d: np.ndarray, bounds: np.ndarray) -> dic
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Run Numba/SciPy Multi-Period Research Sweeps")
+    parser.add_argument("--prowess-file", default=None, help="Optional path to CMIE Prowessdx OHLC/MCap export")
+    args = parser.parse_args()
+
     t_start = time.time()
     d = build_2010_2026_nse_dataset(REPO_ROOT, 2010, 2026, refresh=False)
-    adj_eq, raw_eq, pit_daily, pit_semi, bench_df = build_clean_equity_and_pit_masks(d)
+    adj_eq, raw_eq, pit_daily, pit_semi, bench_df = build_clean_equity_and_pit_masks(d, prowess_file=args.prowess_file)
     dates = adj_eq.index
     T = len(dates)
     bounds = _slice_bounds(dates)
-    print(f"Clean ETF-free PIT universe: {adj_eq.shape[1]} stocks x {T} days | Daily overlap w/ Semi: {(pit_daily & pit_semi).sum(axis=1).mean():.1f}")
+    pit_mode = "CMIE_PROWESS_MCAP_101_250" if (args.prowess_file or load_cmie_prowess_pit_dataset(REPO_ROOT) is not None) else "NSE_BHAVCOPY_LIQ_PROXY_81_230"
+    print(f"Clean ETF-free PIT universe ({pit_mode}): {adj_eq.shape[1]} stocks x {T} days | Daily overlap w/ Semi: {(pit_daily & pit_semi).sum(axis=1).mean():.1f}")
 
     # Lagged mask (ZERO day-t leak)
     def_df = build_defensive_series(bench_df)
@@ -191,10 +214,27 @@ def main() -> None:
     ew_s_st = _summarize_nav(ew_nav_s, np.zeros(T), bounds)
     ew_d_st = _summarize_nav(ew_nav_d, np.zeros(T), bounds)
 
+    # Official NSE Benchmarks (Midcap 100 full 16Y, Stitched M100->M150, Midcap 150 2019-26, NIFTYBEES 16Y)
+    official_bench = {}
+    if "NIFTY_MIDCAP_100" in def_df.columns:
+        m100_v = def_df["NIFTY_MIDCAP_100"].ffill().bfill().values
+        official_bench["NIFTY_MIDCAP_100"] = _summarize_nav(m100_v, np.zeros(T), bounds)
+    if "NIFTY_MIDCAP_100" in def_df.columns and "NIFTY_MIDCAP_150" in def_df.columns:
+        m100_r = def_df["NIFTY_MIDCAP_100"].pct_change(fill_method=None).fillna(0.0).values
+        m150_r = def_df["NIFTY_MIDCAP_150"].pct_change(fill_method=None)
+        st_r = np.where(m150_r.notna().values, m150_r.fillna(0.0).values, m100_r)
+        official_bench["NIFTY_MIDCAP_100_150_STITCHED"] = _summarize_nav(100.0 * np.cumprod(1.0 + st_r), np.zeros(T), bounds)
+    if "NIFTYBEES" in def_df.columns:
+        nif_v = def_df["NIFTYBEES"].ffill().bfill().values
+        official_bench["NIFTYBEES"] = _summarize_nav(nif_v, np.zeros(T), bounds)
+
     m1_df = pd.DataFrame(m1_rows)
     lines.append("=== MODULE 1: CLEAN ETF-FREE PIT EQUITY BASKETS (UNHEDGED POST-TAX & 15bps, ZERO LEAK) ===")
-    lines.append(f"PIT SemiAnnual EW Benchmark : P1={ew_s_st['P1_cagr']}% | P2={ew_s_st['P2_cagr']}% | P3={ew_s_st['P3_cagr']}% | FULL={ew_s_st['FULL_cagr']}% DD={ew_s_st['FULL_dd']}% Sh={ew_s_st['FULL_sh']}")
-    lines.append(f"PIT Daily Lag EW Benchmark  : P1={ew_d_st['P1_cagr']}% | P2={ew_d_st['P2_cagr']}% | P3={ew_d_st['P3_cagr']}% | FULL={ew_d_st['FULL_cagr']}% DD={ew_d_st['FULL_dd']}% Sh={ew_d_st['FULL_sh']}")
+    lines.append("NOTE: P3 (2021-07-01..2026-11-26) is labeled POST-SELECTION / PARTIALLY IN-SAMPLE for TrendGold150.")
+    lines.append(f"PIT SemiAnnual EW Benchmark : P1={ew_s_st['P1_cagr']}% | P2={ew_s_st['P2_cagr']}% | P3(Post-Sel)={ew_s_st['P3_cagr']}% | FULL={ew_s_st['FULL_cagr']}% DD={ew_s_st['FULL_dd']}% Sh={ew_s_st['FULL_sh']}")
+    lines.append(f"PIT Daily Lag EW Benchmark  : P1={ew_d_st['P1_cagr']}% | P2={ew_d_st['P2_cagr']}% | P3(Post-Sel)={ew_d_st['P3_cagr']}% | FULL={ew_d_st['FULL_cagr']}% DD={ew_d_st['FULL_dd']}% Sh={ew_d_st['FULL_sh']}")
+    for b_k, b_st in official_bench.items():
+        lines.append(f"{b_k:27s}: P1={b_st['P1_cagr']}% | P2={b_st['P2_cagr']}% | P3(Post-Sel)={b_st['P3_cagr']}% | FULL={b_st['FULL_cagr']}% DD={b_st['FULL_dd']}% Sh={b_st['FULL_sh']}")
     lines.append(f"PIT Internal LowVol30 6M    : P1={lv_st['P1_cagr']}% | P2={lv_st['P2_cagr']}% | P3={lv_st['P3_cagr']}% | FULL={lv_st['FULL_cagr']}% DD={lv_st['FULL_dd']}% Sh={lv_st['FULL_sh']}")
     lines.append(f"Risk_189_6M Delist-10% Stress: FULL={m1_dl_st['FULL_cagr']}% DD={m1_dl_st['FULL_dd']}% Sh={m1_dl_st['FULL_sh']}")
 
@@ -473,7 +513,7 @@ def main() -> None:
         hedge_frac = 1.0 - eq_sig  # e.g. 0.75 when signal defensive
         # Cash margin pledge on LIQUID_REALISTIC offsets ~half carry cost; net futures drag ~2.0% p.a. when active; midcap beta tracked by EW_ret
         ew_r_lag = np.concatenate(([0.0], (ew_nav_s[1:] / ew_nav_s[:-1] - 1.0)))
-        fut_pnl = -hedge_frac * ew_r_lag - hedge_frac * (0.020 / 247.0)
+        fut_pnl = -hedge_frac * ew_r_lag - hedge_frac * (0.020 / 252.0)
         r_fut_hedged = r_main + fut_pnl - to_main * 0.003
         nav_fut = np.cumprod(1.0 + r_fut_hedged) * 100_000.0
         st_f = _summarize_nav(nav_fut, to_main + np.abs(np.diff(np.concatenate(([0.0], hedge_frac)))), bounds)
@@ -481,7 +521,7 @@ def main() -> None:
         alt_rows.append(st_f)
 
         # Put protection floors downside of hedged slice at -5% / month, costing ~5.2% p.a. annualized theta while active
-        r_put = r_main + hedge_frac * np.maximum(0.0, -ew_r_lag - 0.0025) - hedge_frac * (0.052 / 247.0)
+        r_put = r_main + hedge_frac * np.maximum(0.0, -ew_r_lag - 0.0025) - hedge_frac * (0.052 / 252.0)
         nav_put = np.cumprod(1.0 + r_put) * 100_000.0
         st_p = _summarize_nav(nav_put, to_main, bounds)
         st_p["name"] = f"{sig_lbl} | Spot+5%OTM_BearPut(θ=-5.2%/yr active)"
@@ -542,6 +582,9 @@ def main() -> None:
     out_json = REPO_ROOT / "reports" / "numba_deep_research.json"
     out_txt.write_text("\n".join(lines))
     out_json.write_text(json.dumps({
+        "pit_source": pit_mode,
+        "p3_disclosure": "P3 (2021-07-01..2026-11-26) is Post-Selection / Partially In-Sample for TrendGold150",
+        "official_benchmarks": official_bench,
         "elapsed_sec": round(time.time() - t_start, 2),
         "pit_semi_top15": semi_df.sort_values("P1_sh", ascending=False).head(15).to_dict(orient="records"),
         "grid_21600_top12_p12": p12_top.to_dict(orient="records"),

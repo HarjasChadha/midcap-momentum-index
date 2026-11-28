@@ -139,3 +139,49 @@ def build_point_in_time_midcap150_mask(
     mask = (ranks > largecap_cutoff) & (ranks <= midcap_end)
     # Require broad listed universe on that day before applying rank slicing
     return mask.where(valid_counts >= min_stocks_for_pit, True)
+
+
+def discover_cmie_prowess_export(repo_root: str | Path) -> Path | None:
+    """Return path to a dropped CMIE Prowessdx OHLC/MCap export (.zip/.txt/.csv) inside data/cmie/, if present."""
+    cmie_dir = Path(repo_root) / "data" / "cmie"
+    if not cmie_dir.exists():
+        return None
+    for ext in ("*.zip", "*.txt", "*.csv"):
+        for p in sorted(cmie_dir.glob(ext)):
+            if p.name in {"nse_midcap150_symbols.txt", "nse_midcap150_plus_etfs.txt"}:
+                continue
+            return p
+    return None
+
+
+def load_cmie_prowess_pit_dataset(
+    repo_root: str | Path,
+    prowess_path: str | Path | None = None,
+    reconstitute_semiannual: bool = True,
+) -> dict[str, pd.DataFrame] | None:
+    """Drop-in CMIE Prowessdx reconstitution returning {adj, raw, mcap, vol, pit_mask} for Ranks 101..250 by MCap."""
+    src_path = Path(prowess_path) if prowess_path else discover_cmie_prowess_export(repo_root)
+    if src_path is None or not src_path.exists():
+        return None
+    raw_tbl = load_prowess_file(src_path)
+    panels = prowess_to_panels(raw_tbl)
+    adj, raw, mcap = panels["adj"], panels["raw"], panels["mcap"]
+    if mcap is None or adj is None:
+        raise ValueError(f"CMIE Prowess export {src_path} is missing market-capitalisation or price columns")
+    pit_daily = build_point_in_time_midcap150_mask(mcap.reindex_like(adj))
+    if not reconstitute_semiannual:
+        return {**panels, "pit_mask": pit_daily}
+
+    pit_semi = pd.DataFrame(False, index=adj.index, columns=adj.columns)
+    cur_sel = pd.Series(False, index=adj.columns)
+    prev_ym = ""
+    for dt in adj.index:
+        m = int(str(dt)[5:7])
+        ym = str(dt)[:7]
+        if m in (3, 9) and ym != prev_ym and pit_daily.loc[dt].any():
+            prev_ym = ym
+            cur_sel = pit_daily.loc[dt].copy()
+        elif cur_sel.any():
+            cur_sel = cur_sel & adj.loc[dt].ffill(limit=5).notna()
+        pit_semi.loc[dt] = cur_sel
+    return {**panels, "pit_daily": pit_daily, "pit_mask": pit_semi}

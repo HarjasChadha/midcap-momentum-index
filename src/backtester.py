@@ -19,6 +19,7 @@ class BacktestConfig:
     initial_capital: float = 100_000.0
     rebalance_days: int = 189  # ~9 months default (21 trading days/month)
     num_sleeves: int = 1  # >1 enables staggered multi-tranche rebalancing
+    phase_offset_days: int = 0  # phase shift (0..rebalance_days-1) for rebalance timing sensitivity
     sleeves: list[dict[str, Any]] | None = None  # e.g. [{"score_key": "raw_9m", "top_n": 20, "alloc": 0.5, ...}]
     cost_bps_one_way: float = 15.0  # 0.10% STT + ~0.035% charges + ~0.015% slippage
     apply_tax: bool = False  # Indian STCG 20% (<365d) / LTCG 12.5% (>=365d)
@@ -33,8 +34,10 @@ class BacktestConfig:
     discrete_shares: bool = False  # integer shares on raw_close
     affordability_filter: bool = False  # sequential slot-cap substitution when discrete_shares=True
     sweep_idle_cash: bool = False  # sweep uninvested discrete cash into sweep_asset (e.g. LIQUIDCASE)
-    sweep_asset: str = "LIQUID_TBILL"
-    tax_defensive: bool = False  # optionally apply STCG/LTCG tax on defensive ETF redemptions
+    sweep_asset: str = "LIQUID_REALISTIC"
+    tax_defensive: bool = True  # Sec 50AA 30% slab tax on liquid/debt & 12.5%/30% on Gold ETF switches
+    regime_cost_bps_one_way: float = 35.0  # elevated slippage on DEFENSIVE/CAUTIOUS risk-off liquidations
+    delist_haircut_pct: float = 0.0  # >0 forces write-down/exit if held stock vanishes past ffill limit=5
 
 
 def compute_metrics(nav: pd.Series, turnover_series: pd.Series | None = None, total_tax: float = 0.0, rf_annual: float = 0.0625) -> dict[str, Any]:
@@ -166,22 +169,33 @@ def run_backtest(
     sleeves = cfg.sleeves or [{"score_key": "raw_9m", "top_n": 30, "alloc": 1.0, "weighting": "equal"}]
     n_sl = max(1, cfg.num_sleeves)
     reb = max(1, cfg.rebalance_days)
-    sleeve_schedule_offsets = [round(k * reb / n_sl) for k in range(n_sl)]
+    base_off = int(cfg.phase_offset_days) % reb
+    sleeve_schedule_offsets = [(base_off + round(k * reb / n_sl)) % reb for k in range(n_sl)]
     sleeve_targets: list[dict[str, float]] = [{} for _ in range(n_sl)]
 
     # Portfolio holdings state: symbol -> list of lots [shares, buy_adj_price, buy_date]
-    # Note: we track in adjusted units internally (or raw shares when discrete_shares=True)
     lots: dict[str, list[list[Any]]] = {}
-    def_units = 0.0
-    def_cost_basis = 0.0
-    def_last_buy_dt = dates[0]
-    sweep_units = 0.0
+    last_valid_px: dict[str, float] = {}
+    delisted_written_down: set[str] = set()
+    delisted_write_downs = 0
+    regime_shift_trades = 0
+    def_lots: list[list[Any]] = []  # [units, cost_p, buy_date]
+    sweep_lots: list[list[Any]] = []
+    tg_active_series = (
+        def_df["TREND_GOLD150_ACTIVE"].reindex(dates).ffill().fillna(0.0)
+        if "TREND_GOLD150_ACTIVE" in def_df.columns
+        else pd.Series(0.0, index=dates)
+    )
+    prev_tg_gold: bool | None = bool(tg_active_series.iloc[0] > 0.5) if len(dates) else False
     cash = cfg.initial_capital
     stopped_out: set[str] = set()
     stock_peaks: dict[str, float] = {}
 
     cost_rate = cfg.cost_bps_one_way / 10_000.0
+    regime_cost_rate = cfg.regime_cost_bps_one_way / 10_000.0
     total_tax = 0.0
+    total_def_tax = 0.0
+    total_fees_paid = 0.0
     fy_ltcg_gains: dict[int, float] = {}
     fy_stcg_carry: float = 0.0
     fy_ltcg_carry: float = 0.0
@@ -255,6 +269,47 @@ def run_backtest(
             lots.pop(sym, None)
         return max(0.0, sold_notional)
 
+    def _def_tax_rate_for(asset_name: str, is_tg_gold: bool, days_d: int) -> float:
+        if asset_name == "TREND_GOLD150_OR_LIQ":
+            return (cfg.ltcg_rate if days_d >= 365 else 0.30) if is_tg_gold else 0.30
+        if asset_name == "GOLD_50_LIQUID_50":
+            g_r = cfg.ltcg_rate if days_d >= 365 else 0.30
+            return 0.5 * g_r + 0.5 * 0.30
+        if any(k in asset_name for k in ("GOLD", "SILVER", "NIFTY", "MON100")):
+            return cfg.ltcg_rate if days_d >= 365 else 0.30
+        return 0.30  # Sec 50AA debt/liquid ETF slab rate
+
+    def _sell_fifo_etf_lots(lot_list: list[list[Any]], sell_u: float, cur_p: float, dstr: str, asset_name: str, is_tg_gold: bool, apply_fee_rate: float) -> float:
+        nonlocal total_tax, total_def_tax, total_fees_paid
+        if sell_u <= 1e-12 or not lot_list or cur_p <= 0:
+            return 0.0
+        rem = sell_u
+        gross_tot = 0.0
+        sell_dt = pd.Timestamp(dstr)
+        kept: list[list[Any]] = []
+        for u, cp, bdt in lot_list:
+            if rem <= 1e-12:
+                kept.append([u, cp, bdt])
+                continue
+            take = min(u, rem)
+            rem -= take
+            gross = take * cur_p
+            gross_tot += gross
+            gain = take * (cur_p - cp)
+            if cfg.apply_tax and cfg.tax_defensive and gain > 0:
+                days_d = (sell_dt - pd.Timestamp(bdt)).days
+                tx = gain * _def_tax_rate_for(asset_name, is_tg_gold, days_d)
+                total_tax += tx
+                total_def_tax += tx
+                gross_tot -= tx
+            left = u - take
+            if left > 1e-10:
+                kept.append([left, cp, bdt])
+        lot_list[:] = kept
+        fee = (sell_u * cur_p) * apply_fee_rate
+        total_fees_paid += fee
+        return max(0.0, gross_tot - fee)
+
     prev_prices: pd.Series | None = None
 
     for i, dstr in enumerate(dates):
@@ -269,15 +324,54 @@ def run_backtest(
         adj_row = adj.loc[dstr]
         def_p = float(def_series.iloc[i])
         sweep_p = float(sweep_series.iloc[i])
+        cur_tg_gold = bool(tg_active_series.iloc[i] > 0.5)
 
-        # Mark-to-market total equity before today's trades
+        # If TrendGold150 rotated internally between GOLDBEES and LIQUID_REALISTIC, realize accrued FIFO defensive tax cleanly
+        if cfg.defensive_asset == "TREND_GOLD150_OR_LIQ" and i > 0 and def_lots and prev_tg_gold is not None and cur_tg_gold != prev_tg_gold:
+            tot_u = sum(l[0] for l in def_lots)
+            if cfg.apply_tax and cfg.tax_defensive and tot_u > 1e-9:
+                sell_dt_tg = pd.Timestamp(dstr)
+                for u, cp, bdt in def_lots:
+                    gain_tg = u * (def_p - cp)
+                    if gain_tg > 0:
+                        d_tg = (sell_dt_tg - pd.Timestamp(bdt)).days
+                        tx_tg = gain_tg * _def_tax_rate_for("TREND_GOLD150_OR_LIQ", prev_tg_gold, d_tg)
+                        total_tax += tx_tg
+                        total_def_tax += tx_tg
+                        cash -= tx_tg
+                def_lots = [[tot_u, def_p, dstr]]
+        prev_tg_gold = cur_tg_gold
+
+        # Handle halted/delisted held symbols (>5d halt past ffill limit=5): NEVER revert to original purchase cost!
+        for sym in list(lots.keys()):
+            px = float(p_row.get(sym, np.nan))
+            if math.isfinite(px) and px > 0:
+                last_valid_px[sym] = px
+            else:
+                base_px = last_valid_px.get(sym, 0.0)
+                if cfg.delist_haircut_pct > 0 and sym not in delisted_written_down:
+                    delisted_written_down.add(sym)
+                    delisted_write_downs += 1
+                    write_px = max(0.0, base_px * (1.0 - cfg.delist_haircut_pct))
+                    tot_sh = sum(l[0] for l in lots[sym])
+                    if write_px > 0:
+                        gross_p = _sell_symbol_fraction(sym, tot_sh, write_px, dstr)
+                        fee_d = (tot_sh * write_px) * cost_rate
+                        total_fees_paid += fee_d
+                        cash += max(0.0, gross_p - fee_d)
+                    else:
+                        lots.pop(sym, None)
+                    stock_peaks.pop(sym, None)
+
+        # Mark-to-market total equity using last valid traded price (never purchase cost)
         eq_val_before = 0.0
         for sym, sym_lots in lots.items():
             px = float(p_row.get(sym, np.nan))
-            if not math.isfinite(px) or px <= 0:
-                px = sym_lots[-1][1]
-            eq_val_before += sum(l[0] for l in sym_lots) * px
+            mtm_px = px if (math.isfinite(px) and px > 0) else last_valid_px.get(sym, 0.0)
+            eq_val_before += sum(l[0] for l in sym_lots) * mtm_px
 
+        def_units = sum(l[0] for l in def_lots)
+        sweep_units = sum(l[0] for l in sweep_lots)
         def_val_before = def_units * def_p
         sweep_val_before = sweep_units * sweep_p
         total_val = eq_val_before + def_val_before + sweep_val_before + cash
@@ -366,8 +460,9 @@ def run_backtest(
                     raw_score_row = raw_df.loc[score_date] if score_date in raw_df.index else raw_row
                     score_rows = {k: v.loc[score_date] for k, v in score_matrices.items() if score_date in v.index}
                     vrow = vol_63.loc[score_date] if score_date in vol_63.index else None
+                    sleeve_budget = (total_val / n_sl) * max(0.50, float(eq_alloc.iloc[i]))
                     sleeve_targets[s_idx] = select_affordable_blend(
-                        score_rows, sleeves, raw_score_row, total_val * max(0.50, float(eq_alloc.iloc[i])), vrow, prev_set
+                        score_rows, sleeves, raw_score_row, sleeve_budget, vrow, prev_set
                     )
                 else:
                     sub_pairs = []
@@ -425,6 +520,10 @@ def run_backtest(
         traded_notional = 0.0
 
         if rebalanced_today or regime_delta or has_stopped_held or i == 0:
+            is_risk_off_shift = (not rebalanced_today) and regime_delta and (target_eq_frac < prev_target_eq_frac - 1e-6)
+            active_cost_rate = regime_cost_rate if is_risk_off_shift else cost_rate
+            if is_risk_off_shift:
+                regime_shift_trades += 1
             prev_target_eq_frac = target_eq_frac
             # Target rupee values
             target_rupees = {sym: total_val * w for sym, w in desired_weights.items()}
@@ -446,7 +545,8 @@ def run_backtest(
                 if tgt_sh < cur_sh - 1e-9:
                     sell_sh = cur_sh - tgt_sh
                     gross_proceeds = _sell_symbol_fraction(sym, sell_sh, px, dstr)
-                    fee = (sell_sh * px) * cost_rate
+                    fee = (sell_sh * px) * active_cost_rate
+                    total_fees_paid += fee
                     traded_notional += sell_sh * px
                     cash += gross_proceeds - fee
                     if sym not in target_rupees:
@@ -456,31 +556,21 @@ def run_backtest(
             if def_val_before > target_def_rupees + 1e-6:
                 sell_def_val = def_val_before - target_def_rupees
                 sell_def_u = min(def_units, sell_def_val / def_p)
-                if cfg.apply_tax and cfg.tax_defensive and sell_def_u > 1e-9:
-                    def_gain = sell_def_u * (def_p - def_cost_basis)
-                    if def_gain > 0:
-                        days_d = (pd.Timestamp(dstr) - pd.Timestamp(def_last_buy_dt)).days
-                        rate_d = cfg.ltcg_rate if (days_d >= 365 and "GOLD" in cfg.defensive_asset) else cfg.stcg_rate
-                        def_tax = def_gain * rate_d
-                        total_tax += def_tax
-                        cash -= def_tax
-                def_units -= sell_def_u
-                if def_units <= 1e-9:
-                    def_units = 0.0
-                    def_cost_basis = 0.0
-                traded_notional += sell_def_u * def_p
-                cash += sell_def_u * def_p * (1.0 - cost_rate)
+                if sell_def_u > 1e-9:
+                    traded_notional += sell_def_u * def_p
+                    cash += _sell_fifo_etf_lots(def_lots, sell_def_u, def_p, dstr, cfg.defensive_asset, cur_tg_gold, active_cost_rate)
+                    def_units = sum(l[0] for l in def_lots)
 
             def _sell_sweep_if_needed(shortfall: float) -> None:
                 nonlocal cash, sweep_units, traded_notional
                 if not cfg.sweep_idle_cash or sweep_units <= 0 or shortfall <= 0 or sweep_p <= 0:
                     return
-                need_u = math.ceil(shortfall / (sweep_p * (1.0 - cost_rate))) if cfg.discrete_shares else shortfall / (sweep_p * (1.0 - cost_rate))
+                need_u = math.ceil(shortfall / (sweep_p * (1.0 - active_cost_rate))) if cfg.discrete_shares else shortfall / (sweep_p * (1.0 - active_cost_rate))
                 sell_sw = min(sweep_units, float(need_u))
                 if sell_sw > 1e-9:
-                    sweep_units -= sell_sw
                     traded_notional += sell_sw * sweep_p
-                    cash += sell_sw * sweep_p * (1.0 - cost_rate)
+                    cash += _sell_fifo_etf_lots(sweep_lots, sell_sw, sweep_p, dstr, sweep_col, False, active_cost_rate)
+                    sweep_units = sum(l[0] for l in sweep_lots)
 
             # 2) Execute Buys for equity
             for sym, tgt_r in target_rupees.items():
@@ -496,20 +586,23 @@ def run_backtest(
                     tgt_sh = tgt_r / px
                 if tgt_sh > cur_sh + 1e-9:
                     buy_sh = tgt_sh - cur_sh
-                    needed = buy_sh * px * (1.0 + cost_rate)
+                    needed = buy_sh * px * (1.0 + active_cost_rate)
                     if needed > cash:
                         _sell_sweep_if_needed(needed - cash)
                     if needed > cash:
                         if cfg.discrete_shares and math.isfinite(rpx) and rpx > 0:
-                            affordable_raw = int(cash // (rpx * (1.0 + cost_rate)))
+                            affordable_raw = int(cash // (rpx * (1.0 + active_cost_rate)))
                             buy_sh = (affordable_raw * rpx) / px
                         else:
-                            buy_sh = cash / (px * (1.0 + cost_rate))
-                        needed = buy_sh * px * (1.0 + cost_rate)
+                            buy_sh = cash / (px * (1.0 + active_cost_rate))
+                        needed = buy_sh * px * (1.0 + active_cost_rate)
                     if buy_sh > 1e-9:
+                        fee_b = buy_sh * px * active_cost_rate
+                        total_fees_paid += fee_b
                         cash -= needed
                         traded_notional += buy_sh * px
                         lots.setdefault(sym, []).append([float(buy_sh), px, dstr])
+                        last_valid_px[sym] = px
                         adj_px = float(adj_row.get(sym, px))
                         if math.isfinite(adj_px) and adj_px > 0:
                             stock_peaks[sym] = max(stock_peaks.get(sym, adj_px), adj_px)
@@ -518,40 +611,45 @@ def run_backtest(
             if target_def_rupees > def_val_before + cash:
                 _sell_sweep_if_needed(target_def_rupees - def_val_before - cash)
             if not cfg.discrete_shares and cash > 1.0 and target_def_rupees > 1.0:
-                buy_def_val = cash / (1.0 + cost_rate)
+                buy_def_val = cash / (1.0 + active_cost_rate)
                 add_u = buy_def_val / def_p
-                total_cost_val = def_units * def_cost_basis + add_u * def_p
-                def_units += add_u
-                def_cost_basis = total_cost_val / def_units if def_units > 0 else def_p
-                def_last_buy_dt = dstr
+                fee_db = buy_def_val * active_cost_rate
+                total_fees_paid += fee_db
+                def_lots.append([float(add_u), def_p, dstr])
                 traded_notional += buy_def_val
                 cash = 0.0
-            elif cfg.discrete_shares and target_def_rupees > def_p and cash > def_p * (1.0 + cost_rate):
-                buy_def_u = int(min(cash, target_def_rupees) // (def_p * (1.0 + cost_rate)))
+            elif cfg.discrete_shares and target_def_rupees > def_p and cash > def_p * (1.0 + active_cost_rate):
+                buy_def_u = int(min(cash, target_def_rupees) // (def_p * (1.0 + active_cost_rate)))
                 if buy_def_u > 0:
-                    cash -= buy_def_u * def_p * (1.0 + cost_rate)
-                    total_cost_val = def_units * def_cost_basis + buy_def_u * def_p
-                    def_units += buy_def_u
-                    def_cost_basis = total_cost_val / def_units
-                    def_last_buy_dt = dstr
+                    fee_db = buy_def_u * def_p * active_cost_rate
+                    total_fees_paid += fee_db
+                    cash -= buy_def_u * def_p + fee_db
+                    def_lots.append([float(buy_def_u), def_p, dstr])
                     traded_notional += buy_def_u * def_p
 
-            # 4) Sweep any residual uninvested discrete cash into LIQUID_TBILL / LIQUIDCASE if enabled
-            if cfg.discrete_shares and cfg.sweep_idle_cash and sweep_p > 0 and cash > sweep_p * (1.0 + cost_rate):
-                buy_sw_u = int(cash // (sweep_p * (1.0 + cost_rate)))
+            # 4) Sweep any residual uninvested discrete cash into LIQUID_REALISTIC / LIQUIDCASE if enabled
+            if cfg.discrete_shares and cfg.sweep_idle_cash and sweep_p > 0 and cash > sweep_p * (1.0 + active_cost_rate):
+                buy_sw_u = int(cash // (sweep_p * (1.0 + active_cost_rate)))
                 if buy_sw_u > 0:
-                    cash -= buy_sw_u * sweep_p * (1.0 + cost_rate)
-                    sweep_units += buy_sw_u
+                    fee_sb = buy_sw_u * sweep_p * active_cost_rate
+                    total_fees_paid += fee_sb
+                    cash -= buy_sw_u * sweep_p + fee_sb
+                    sweep_lots.append([float(buy_sw_u), sweep_p, dstr])
                     traded_notional += buy_sw_u * sweep_p
 
-        # End-of-day mark to market
+        # End-of-day mark to market (strictly last valid traded close; NEVER purchase lot cost)
         eq_val_after = 0.0
         for sym, sym_lots in lots.items():
             px = float(p_row.get(sym, np.nan))
-            if not math.isfinite(px) or px <= 0:
-                px = sym_lots[-1][1]
-            eq_val_after += sum(l[0] for l in sym_lots) * px
-        def_val_after = def_units * def_p + sweep_units * sweep_p
+            if math.isfinite(px) and px > 0:
+                last_valid_px[sym] = px
+                mtm_px = px
+            else:
+                mtm_px = last_valid_px.get(sym, 0.0)
+            eq_val_after += sum(l[0] for l in sym_lots) * mtm_px
+        def_units_end = sum(l[0] for l in def_lots)
+        sweep_units_end = sum(l[0] for l in sweep_lots)
+        def_val_after = def_units_end * def_p + sweep_units_end * sweep_p
         nav_after = eq_val_after + def_val_after + cash
 
         nav_list.append(nav_after)
@@ -568,4 +666,8 @@ def run_backtest(
     metrics["avg_eq_pct"] = round(float(np.mean(eq_wt_list) * 100.0), 1)
     metrics["avg_def_pct"] = round(float(np.mean(def_wt_list) * 100.0), 1)
     metrics["avg_holdings"] = round(float(np.mean(avg_holdings_list)), 1)
+    metrics["total_fees_paid"] = round(total_fees_paid, 2)
+    metrics["defensive_tax_paid"] = round(total_def_tax, 2)
+    metrics["delisted_write_downs"] = int(delisted_write_downs)
+    metrics["regime_shift_trades"] = int(regime_shift_trades)
     return {"nav": nav_s, "turnover": to_s, "eq_wt": pd.Series(eq_wt_list, index=dates), "metrics": metrics}

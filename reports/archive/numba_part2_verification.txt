@@ -1,0 +1,91 @@
+=== LOW-TURNOVER MULTI-FACTOR HYSTERESIS ON CLEAN SORTINO_189 (TO<=280%, TrendGold150) ===
+                                                     name  switches_16y  P1_cagr  P1_dd  P2_cagr  P2_dd  P3_cagr  P3_dd  FULL_cagr  FULL_dd  FULL_cal  FULL_sh  FULL_to
+EQ4_ZeroFit|t=10/30|th=-0.25/-0.25/0.08|fl=0.3/0.65|mh=42            74    12.27 -24.86    14.73 -37.97    20.24 -29.69      15.72   -37.97      0.41     0.54    332.3
+EQ4_ZeroFit|t=10/30|th=-0.25/-0.25/0.08|fl=0.3/0.65|mh=15            74    12.43 -24.86    14.19 -37.97    20.24 -29.69      15.60   -37.97      0.41     0.53    332.3
+EQ4_ZeroFit|t=10/30|th=-0.25/-0.25/0.08|fl=0.3/0.65|mh=25            74    12.27 -24.86    14.46 -37.97    20.24 -29.69      15.63   -37.97      0.41     0.53    332.3
+   EQ4_ZeroFit|t=5/15|th=-0.3/-0.1/0.18|fl=0.25/1.0|mh=42            48    12.77 -27.61    17.50 -33.27    19.04 -30.85      16.39   -33.27      0.49     0.57    340.0
+   EQ4_ZeroFit|t=8/22|th=-0.3/-0.1/0.18|fl=0.25/1.0|mh=25            48    12.08 -26.56    15.68 -37.22    19.46 -32.50      15.70   -37.22      0.42     0.53    343.9
+   EQ4_ZeroFit|t=8/22|th=-0.3/-0.1/0.18|fl=0.25/1.0|mh=42            48    11.89 -26.48    16.23 -36.23    19.46 -32.50      15.81   -36.23      0.44     0.53    343.9
+   EQ4_ZeroFit|t=8/22|th=-0.3/-0.1/0.18|fl=0.25/1.0|mh=15            48    12.08 -26.56    14.88 -39.37    19.46 -32.50      15.45   -39.37      0.39     0.51    343.9
+  EQ4_ZeroFit|t=10/30|th=-0.3/-0.1/0.18|fl=0.25/1.0|mh=25            48    10.76 -26.63    15.78 -37.87    18.79 -33.20      15.05   -37.87      0.40     0.49    343.9
+  EQ4_ZeroFit|t=10/30|th=-0.3/-0.1/0.18|fl=0.25/1.0|mh=42            48    10.45 -26.51    16.24 -37.37    18.79 -33.20      15.09   -37.37      0.40     0.49    343.9
+  EQ4_ZeroFit|t=10/30|th=-0.3/-0.1/0.18|fl=0.25/1.0|mh=15            48    10.76 -26.63    14.75 -40.59    18.79 -33.20      14.72   -40.59      0.36     0.47    343.9
+EQ4_ZeroFit|t=10/30|th=-0.25/-0.25/0.08|fl=0.25/0.6|mh=15            74    12.49 -24.87    14.01 -38.35    20.26 -29.80      15.57   -38.35      0.41     0.53    344.5
+EQ4_ZeroFit|t=10/30|th=-0.25/-0.25/0.08|fl=0.25/0.6|mh=25            74    12.32 -24.87    14.28 -38.35    20.26 -29.80      15.60   -38.35      0.41     0.53    344.5
+EQ4_ZeroFit|t=10/30|th=-0.25/-0.25/0.08|fl=0.25/0.6|mh=42            74    12.32 -24.87    14.55 -38.35    20.26 -29.80      15.69   -38.35      0.41     0.53    344.5
+   P1_Opt_WF4|t=10/30|th=-0.3/-0.1/0.18|fl=0.25/1.0|mh=15            50    12.68 -28.13    16.44 -39.13    19.21 -28.33      16.07   -39.13      0.41     0.55    346.3
+   P1_Opt_WF4|t=10/30|th=-0.3/-0.1/0.18|fl=0.25/1.0|mh=25            50    12.68 -28.13    16.44 -39.13    19.21 -28.33      16.07   -39.13      0.41     0.55    346.3
+
+=== CROSS-FACTOR x REGIME x DEFENSIVE SHOOTOUT (CLEAN ETF-FREE SEMIANNUAL PIT 2011-26) ===
+                                                                         name  switches  P1_cagr  P1_dd  P2_cagr  P2_dd  P3_cagr  P3_dd  FULL_cagr  FULL_dd  FULL_cal  FULL_sh  FULL_to
+              Sortino_252_R252 | MF_WF4_3State_LowChurn | TrendGold150_or_Liq       130    15.07 -20.07    18.14 -31.96    23.50 -25.01      18.86   -31.96      0.59     0.77    361.7
+              Sortino_189_R126 | MF_WF4_3State_LowChurn | TrendGold150_or_Liq       130    13.10 -23.09    17.88 -30.49    24.29 -22.73      18.35   -30.49      0.60     0.74    410.3
+        Sortino_189_NormZ_R126 | MF_WF4_3State_LowChurn | TrendGold150_or_Liq       130    13.09 -23.73    17.64 -37.30    25.21 -23.15      18.54   -37.30      0.50     0.73    414.4
+                  EnsRisk_R126 | MF_WF4_3State_LowChurn | TrendGold150_or_Liq       130    11.74 -23.05    18.38 -29.02    24.97 -22.63      18.25   -29.02      0.63     0.73    408.2
+                 Risk_189_R126 | MF_WF4_3State_LowChurn | TrendGold150_or_Liq       130    13.37 -23.11    17.42 -30.54    23.97 -23.04      18.19   -30.54      0.60     0.72    409.8
+                             EnsRisk_R126 | Legacy_DD15 | TrendGold150_or_Liq        22    11.17 -30.10    22.06 -28.67    21.28 -33.36      17.99   -33.36      0.54     0.69    208.0
+                            Risk_189_R126 | Legacy_DD15 | TrendGold150_or_Liq        22    12.39 -30.10    21.18 -28.74    19.84 -32.17      17.68   -32.17      0.55     0.68    210.0
+                         Sortino_252_R252 | Legacy_DD15 | TrendGold150_or_Liq        22    11.56 -26.38    23.80 -31.95    18.72 -35.57      17.78   -35.57      0.50     0.68    156.8
+                         Sortino_189_R126 | Legacy_DD15 | TrendGold150_or_Liq        22    12.52 -29.12    21.01 -28.88    19.94 -32.51      17.70   -32.51      0.54     0.68    210.5
+                   Sortino_189_NormZ_R126 | Legacy_DD15 | TrendGold150_or_Liq        22    12.78 -30.39    21.43 -34.04    20.37 -35.46      18.03   -35.46      0.51     0.68    214.8
+      Sortino_252_R252 | MF_WF4_3State_LowChurn | TG_ERC(Gold+Gilt+MON20+Liq)       130    13.30 -19.70    18.24 -32.58    17.04 -26.08      16.12   -32.58      0.49     0.68    361.7
+                     Sortino_252_R252 | MF_WF4_3State_LowChurn | 50Gold_50Liq       130    13.49 -20.14    16.85 -31.29    18.25 -25.95      16.15   -31.29      0.52     0.67    361.7
+            Sortino_252_R252 | MF_WF4_3State_LowChurn | TG_ERC(Gold+Gilt+Liq)       130    13.42 -19.54    17.99 -32.34    16.60 -25.89      15.93   -32.34      0.49     0.66    361.7
+      Sortino_189_R126 | MF_WF4_3State_LowChurn | TG_ERC(Gold+Gilt+MON20+Liq)       130    11.35 -22.97    17.99 -28.50    17.77 -19.87      15.61   -28.50      0.55     0.64    410.3
+                   Sortino_189_NormZ_R126 | Legacy_DD12 | TrendGold150_or_Liq        30    13.31 -29.61    21.52 -25.69    16.53 -32.10      16.95   -32.10      0.53     0.64    241.7
+              Sortino_189_R126 | MF_EQ4_3State_LowChurn | TrendGold150_or_Liq       140    12.49 -22.24    18.16 -31.31    18.11 -25.52      16.18   -31.31      0.52     0.63    430.5
+         Sortino_252_R252 | MF_WF4_2State_UltraLowChurn | TrendGold150_or_Liq        54    13.74 -24.22    15.51 -44.74    23.13 -28.08      17.41   -44.74      0.39     0.63    311.5
+          EnsRisk_R126 | MF_WF4_3State_LowChurn | TG_ERC(Gold+Gilt+MON20+Liq)       130    10.01 -23.28    18.50 -27.04    18.41 -21.42      15.52   -27.04      0.57     0.63    408.2
+Sortino_189_NormZ_R126 | MF_WF4_3State_LowChurn | TG_ERC(Gold+Gilt+MON20+Liq)       130    11.35 -23.54    17.75 -36.13    18.64 -20.10      15.80   -36.13      0.44     0.63    414.4
+                             EnsRisk_R126 | Legacy_DD12 | TrendGold150_or_Liq        30    11.71 -29.03    21.35 -21.46    17.12 -29.71      16.57   -29.71      0.56     0.63    235.8
+        Sortino_189_NormZ_R126 | MF_EQ4_3State_LowChurn | TrendGold150_or_Liq       140    12.65 -22.87    18.21 -37.12    19.00 -26.02      16.53   -37.12      0.45     0.63    434.4
+                     Sortino_189_R126 | MF_WF4_3State_LowChurn | 50Gold_50Liq       130    11.54 -22.94    16.59 -27.54    18.99 -20.05      15.65   -27.54      0.57     0.63    410.3
+               Sortino_189_NormZ_R126 | MF_WF4_3State_LowChurn | 50Gold_50Liq       130    11.54 -23.51    16.36 -34.51    19.87 -20.28      15.84   -34.51      0.46     0.62    414.4
+            Sortino_189_R126 | MF_WF4_3State_LowChurn | TG_ERC(Gold+Gilt+Liq)       130    11.47 -22.57    17.74 -30.93    17.33 -19.77      15.43   -30.93      0.50     0.62    410.3
+                            Risk_189_R126 | Legacy_DD12 | TrendGold150_or_Liq        30    12.74 -28.92    20.96 -21.16    15.80 -28.46      16.37   -28.92      0.57     0.62    237.6
+                        Risk_189_R126 | MF_WF4_3State_LowChurn | 50Gold_50Liq       130    11.80 -23.68    16.14 -27.49    18.68 -20.61      15.50   -27.49      0.56     0.62    409.8
+                 Risk_189_R126 | MF_EQ4_3State_LowChurn | TrendGold150_or_Liq       140    12.65 -22.23    17.58 -31.57    17.93 -25.64      16.00   -31.57      0.51     0.62    430.1
+                         Sortino_189_R126 | Legacy_DD12 | TrendGold150_or_Liq        30    12.79 -28.95    20.80 -21.25    15.81 -28.88      16.33   -28.95      0.56     0.62    237.8
+                         EnsRisk_R126 | MF_WF4_3State_LowChurn | 50Gold_50Liq       130    10.20 -23.39    17.09 -25.83    19.64 -21.60      15.55   -25.83      0.60     0.62    408.2
+              Sortino_252_R252 | MF_EQ4_3State_LowChurn | TrendGold150_or_Liq       140    12.45 -19.97    18.71 -32.22    17.05 -27.29      15.98   -32.22      0.50     0.62    381.2
+
+=== REALISTIC MONTHLY F&O HEDGES (VIX-SCALED OTM PUT / SPREAD / SHORT FUTURES) ===
+                                       name  P1_cagr  P1_dd  P2_cagr  P2_dd  P3_cagr  P3_dd  FULL_cagr  FULL_dd  FULL_cal  FULL_sh  FULL_to
+Spot+ShortFutHedge(₹25L+,net -2%/yr active)    18.16 -26.97    21.79 -32.40    18.46 -32.08      19.42   -32.40      0.60     0.82    158.1
+ Spot+Monthly5%OTM_Put(VIX-scaled θ+30%tax)    11.50 -30.05    15.63 -46.60    20.21 -32.52      15.73   -46.60      0.34     0.48    158.1
+   Spot+Monthly5-15%BearPutSpread(θ+30%tax)    13.37 -29.69    17.48 -44.00    21.66 -31.83      17.46   -44.00      0.40     0.57    158.1
+Spot+ShortFutHedge(₹25L+,net -2%/yr active)    18.07 -30.69    20.91 -31.01    19.69 -31.10      19.52   -31.10      0.63     0.84    158.1
+ Spot+Monthly5%OTM_Put(VIX-scaled θ+30%tax)     9.62 -30.05    16.36 -43.76    21.96 -31.88      15.86   -43.76      0.36     0.49    158.1
+   Spot+Monthly5-15%BearPutSpread(θ+30%tax)    13.07 -29.69    18.28 -41.35    22.79 -31.42      17.98   -41.35      0.43     0.60    158.1
+
+=== HISTORICAL CRASH & 2026 GOLD SLUMP ANATOMY (SORTINO_189 + MF_WF4_3STATE vs LEGACY) ===
+         defensive_strategy  2011_Bear_ret  2011_Bear_dd  2018_19_NBFC_ret  2018_19_NBFC_dd  2020_COVID_ret  2020_COVID_dd  2022_RateHike_ret  2022_RateHike_dd  2024_25_MidBear_ret  2024_25_MidBear_dd  2026_GoldSlump_ret  2026_GoldSlump_dd
+            Unhedged_Equity          -25.7         -25.7             -31.2            -35.4            -8.8          -35.2              -16.7             -24.9                -29.6               -31.5                25.9              -13.5
+         Legacy_DD15_50G50L            5.9          -6.6             -17.7            -25.3             3.6          -16.2              -20.8             -25.8                -19.7               -21.8                25.9              -13.5
+        Static_50Gold_50Liq          -14.8         -15.4             -20.8            -25.7             0.8          -18.4              -17.4             -20.0                -14.0               -15.3                 1.9              -14.3
+              Pure_GOLDBEES          -13.4         -16.5             -19.1            -28.0             5.4          -20.7              -16.5             -18.9                -11.1               -14.7                -5.9              -22.7
+      Pure_LIQUID_REALISTIC          -15.7         -16.6             -22.7            -24.1            -3.7          -16.2              -18.2             -20.9                -16.8               -17.4                10.9               -7.8
+       TrendGold(EMA100±2%)          -13.4         -16.5             -20.1            -28.8             5.4          -20.7              -16.5             -18.9                -11.1               -14.6                -7.9              -22.9
+       TrendGold(EMA150±2%)          -13.4         -16.5             -20.1            -28.8             5.4          -20.7              -16.5             -18.9                -11.1               -14.7                -2.9              -22.7
+      TG_ERC(Gold+Gilt+Liq)          -15.7         -16.6             -20.3            -29.6             3.9          -19.6              -17.4             -19.8                -15.4               -16.5                 7.4               -8.7
+TG_ERC(Gold+Gilt+MON20+Liq)          -15.7         -16.6             -21.4            -27.5             2.2          -19.6              -17.6             -19.9                -14.8               -15.9                 9.3               -8.6
+
+=== EXACT PYTHON FIFO-LOT BACKTESTER VERIFICATION (CLEAN ETF-FREE SEMIANNUAL PIT 2011-2026) ===
+                                                                        label  P1_cagr  P1_dd  P2_cagr  P2_dd  P3_cagr  P3_dd  FULL_cagr  FULL_dd  FULL_cal  FULL_sh  FULL_to   FULL_tax
+                         PIT_SEMI | Raw_189_EW | Legacy_DD12 | GOLD_50_LIQ_50     7.08 -26.42    25.07 -19.05    12.52 -31.37      11.16   -27.47      0.41     0.32    206.5   78763.21
+                        PIT_SEMI | Risk_189_EW | Legacy_DD15 | GOLD_50_LIQ_50     8.24 -28.72    28.92 -19.35    18.59 -32.43      15.17   -28.72      0.53     0.61    188.9  135574.71
+                                         PIT_SEMI | Sortino_189_EW | Unhedged    11.11 -30.04    23.33 -41.32    21.82 -32.07      14.89   -30.04      0.50     0.51    133.0   73437.49
+         PIT_SEMI | Sortino_189_EW | MF_EQ4_3State [ZeroFit] | GOLD_50_LIQ_50    11.05 -21.50    24.03 -22.35     9.60 -24.65      13.14   -24.42      0.54     0.51    384.2  173486.28
+                        PIT_SEMI | Risk_189_EW | MF_WF4_3State | TrendGold150    11.86 -22.01    23.88 -25.19    17.59 -25.58      15.64   -28.87      0.54     0.62    368.6  262325.09
+       PIT_SEMI | Risk_189_EW | MF_WF4_3State | TrendGold150 [Staggered 2x6M]    10.15 -19.94    19.96 -25.09    18.51 -24.42      13.83   -27.25      0.51     0.52    381.6  214361.17
+         PIT_SEMI | Risk_189_EW | MF_WF4_3State | TrendGold150 [Stress 30bps]    10.26 -22.84    22.20 -27.91    15.73 -26.66      14.04   -31.58      0.44     0.51    367.6  220920.12
+ PIT_SEMI | Risk_189_EW | MF_WF4_3State | TrendGold150 [PreDefTax Comparison]    13.30 -21.96    25.70 -23.58    21.28 -24.72      17.62   -28.28      0.62     0.75    369.0  160542.05
+                     PIT_SEMI | Sortino_189_EW | MF_WF4_3State | TrendGold150    11.67 -22.96    23.40 -26.36    17.72 -25.09      15.44   -30.19      0.51     0.60    370.1  261085.24
+               PIT_SEMI | Sortino_189_EW | MF_WF4_3State | TG_ERC_GiltGoldLiq    11.00 -22.48    23.88 -26.59    13.25 -24.60      14.02   -30.55      0.46     0.57    368.9  178168.28
+                     PIT_SEMI | Sortino_189_EW | MF_WF4_2State | TrendGold150    10.99 -25.80    21.01 -36.69    19.82 -29.42      14.35   -35.03      0.41     0.51    307.6  183849.49
+                    PIT_SEMI | Sortino_252_12M | MF_WF4_3State | TrendGold150    19.43 -19.97    13.86 -42.95    16.90 -23.19      19.75   -34.43      0.57     0.84    316.4  403478.44
+     PIT_SEMI | Sortino_189_EW | MF_WF4_3State | TG_ERC_GiltGoldLiq [Disc 1L]     8.95 -21.29    21.55 -28.32    12.07 -20.69      12.43   -32.26      0.39     0.46    366.1  141712.32
+           PIT_SEMI | Sortino_189_EW | MF_WF4_3State | TrendGold150 [Disc 1L]     9.54 -21.93    20.97 -29.09    16.40 -25.56      13.79   -32.16      0.43     0.50    368.4  208299.95
+  PIT_SEMI | Sortino_189_NormZ | MF_WF4_3State | TG_ERC_GiltGoldLiq [Disc 1L]     8.77 -21.89    28.18 -20.74    13.66 -22.03      12.99   -40.02      0.32     0.48    367.8  168114.77
+    PIT_SEMI | Sortino_189_EW | MF_WF4_3State | TG_ERC_GiltGoldLiq [Disc 25L]    10.51 -22.62    23.87 -26.59    13.12 -24.52      13.61   -30.85      0.44     0.54    368.6 4599885.49
+PIT_SEMI | Sortino_189_EW | MF_WF4_3State | TG_ERC_GiltGoldLiq [Stress 30bps]     9.46 -23.33    22.18 -28.68    11.43 -25.69      12.42   -33.06      0.38     0.45    366.4  150110.46

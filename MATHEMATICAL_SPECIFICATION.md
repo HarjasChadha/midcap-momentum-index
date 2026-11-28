@@ -10,10 +10,10 @@ The application has **four distinct computational layers**. Nothing is magic or 
 
 | Layer | Where It Lives | When It Runs | What It Produces | Uses Paid/Secret Keys? |
 |---|---|---|---|---|
-| **1. Historical Research & Parameter Discovery *(Offline)*** | [`scripts/numba_research_engine.py`](scripts/numba_research_engine.py), [`scripts/run_numba_sweeps.py`](scripts/run_numba_sweeps.py), [`scripts/run_final_verification_suite.py`](scripts/run_final_verification_suite.py) | Manual research runs on Mac/Colab | Proved `risk_9m`/`sortino_9m`, SciPy `MF4` weights `[0.44, 0.10, 0.34, 0.12]`, `TrendGold150` gate; writes [`reports/numba_*.json`](reports/numba_deep_research.json) & [`reports/src_exact_16yr_verification.json`](reports/src_exact_16yr_verification.json) | No |
-| **2. Daily Live Production Engine *(Automated CI)*** | [`scripts/update_live.py`](scripts/update_live.py) calling [`src/`](src/) (`nse_mcp`, `data_loader`, `momentum`, `regime`, `backtester`) | **Mon–Fri `13:20 UTC` (`6:50 PM IST`)** via [`.github/workflows/daily_update.yml`](.github/workflows/daily_update.yml) | Fetches NSE EOD quotes (`159` symbols + VIX), runs **13 full `2018–current` backtests**, updates **Top-150 scores**, T+1 `MF4` & `TrendGold150` live signals, `₹1L` orders, and writes [`data/live_state.json`](data/live_state.json) | No (public NSE MCP + Yahoo) |
-| **3. Browser Presentation & Custom Sizer *(Client JS)*** | [`index.html`](index.html) | Every page load & input edit | Fetches [`data/live_state.json`](data/live_state.json); recomputes custom capital slot sizing (`Sequential-SlotCap`), `SIM_CAUTIOUS`/`SIM_CRASH`, `HOLD/BUY/SELL` holdings diff (`localStorage`), and renders Chart.js charts | Zero backend |
-| **4. Static Configuration & Tests** | [`config/strategy.json`](config/strategy.json), [`tests/test_engine.py`](tests/test_engine.py), [`scripts/verify_dashboard_ui.py`](scripts/verify_dashboard_ui.py) | On every CI run & pre-push | Enforces strict NaN-free JSON schema, causality (`no look-ahead`), Sortino/TrendGold unit tests, and desktop/mobile Playwright E2E | No |
+| **1. Historical Research & Parameter Discovery *(Offline)*** | `scripts/numba_research_engine.py`, `scripts/run_numba_sweeps.py`, `scripts/run_final_verification_suite.py`, `scripts/run_16yr_exact_verification.py` | Manual research runs on Mac/Colab | Tests `risk_9m`/`sortino_9m`, SciPy `MF4` weights `[0.44, 0.10, 0.34, 0.12]`, `TrendGold150` gate, delisting & 2x cost stress; writes `reports/src_exact_16yr_verification.json` & `reports/numba_*.json` | No |
+| **2. Daily Live Production Engine *(Automated CI)*** | `scripts/update_live.py` + `src/` (`nse_mcp`, `data_loader`, `momentum`, `regime`, `backtester`, `paper_bot`) | **Mon–Fri `13:20 UTC` (`6:50 PM IST`)** via `.github/workflows/daily_update.yml` | Fetches NSE EOD quotes (`159` symbols + VIX), runs **`16` `2018–current` backtests** (`tax_defensive=True`, `15/35 bps`), updates **Top-150 scores & listing days**, writes `data/live_state.json`, `data/forward_tape.json`, and `data/paper_ledger.json` | No (public NSE MCP + Yahoo) |
+| **3. Browser Presentation & Replay *(Client JS)*** | `index.html`, `assets/styles.css`, `assets/app.js` | Every page load & input edit | Fetches JSON data; computes `Sequential-SlotCap`, `HOLD/BUY/SELL` tax diff, and 1:1 `MMI_REPLAY` Tracked Views in `localStorage` | Zero backend |
+| **4. Static Configuration & Tests** | `config/strategy.json`, `tests/test_engine.py`, `tests/test_paper_bot.py`, `scripts/verify_dashboard_ui.py` | On every CI run & pre-push | Enforces NaN-free JSON, MTM/Sec-50AA/IPO/parity invariants, and Playwright desktop/mobile E2E | No |
 
 > **Important separation (`ponytail` CI constraint):** Production [`src/`](src/) and [`scripts/update_live.py`](scripts/update_live.py) use **only pure Python, `numpy`, and `pandas`** — `numba` and `scipy` are never imported in production CI ([`requirements.txt`](requirements.txt)).
 
@@ -35,7 +35,7 @@ Handled by [`src/data_loader.py`](src/data_loader.py) and [`scripts/update_live.
      - `get_bulk_quote(all_syms)` in chunks of `50` across all `150` stocks + `9` ETFs (`159` symbols).
      - `get_index_history("Nifty Midcap 150", months=12)`.
    - **Auto-Corporate Action Protection on Daily Append:** If any symbol exhibits $|C_{\text{new}}/C_{\text{prev}} - 1| > 0.20$ on `nse_date >= last_cached`, Python calls `get_corporate_actions(sym)`. If `actionType in {"SPLIT", "BONUS"}` with $0 < f < 1$ on `exDate == nse_date`, all pre-`ex_dt` prices in `adj_df` and `raw_df` are scaled by $f$.
-   - Forward fill at end-of-series is strictly capped (`raw_df.ffill(limit=5)` for trade execution pricing, `adj_df.ffill(limit=2)` for signal computation).
+   - Forward fill at end-of-series is strictly capped (`raw_df.ffill(limit=5)` for trade execution pricing only; `compute_score_matrix` uses strictly un-padded `adj_df` with zero forward-fill padding).
 
 ### 1.2 16-Year Official NSE Archive Dataset (`2010–2026`, Used in Research)
 Handled by [`src/nse_archive_loader.py`](src/nse_archive_loader.py) (`4,171` trading days from `2010-01-04` to `2026-11-26` across `4,047` equities):
@@ -60,19 +60,16 @@ Handled by [`src/nse_archive_loader.py`](src/nse_archive_loader.py) (`4,171` tra
 
 Given clean adjusted price panel $P_{t, i}$ (`adj_df`), let daily simple return be $r_{t, i} = \frac{P_{t,i}}{P_{t-1,i}} - 1$, lookback window $L \in \{126, 189, 252\}$ trading days, and skip window $s = 21$ days ($\approx 1$ calendar month short-term reversal avoidance).
 
-### 2.1 Scoring Formulas (`compute_score_matrix`)
-For date $t$ and stock $i$, require $P_{t,i}, P_{t-s,i}, P_{t-s-L,i}$ finite and $\text{count}(P_{t-L-s+1..t,i}) \ge \max(20, \lfloor 0.85 L \rfloor)$:
+### 2.1 Scoring Formulas (`compute_score_matrix` — Shared Identically by Research & Production)
+For date $t$ and stock $i$, require un-padded valid prices at $P_{t,i}$, $P_{t-s,i}$, and $P_{t-s-L,i}$ AND at least `95%` non-null bar coverage (`count >= ceil(0.95 * (L + s + 1))` for return window, `ceil(0.95 * L)` for volatility windows), using canonical `TRADING_DAYS_PER_YEAR = 252.0` and daily simple return clipping $r^{\text{clip}}_{u,i} = \operatorname{clip}(r_{u,i}, -0.40, +0.60)$:
 
 1. **Raw Momentum (`raw`):**
    $$R_{t,i}(L, s) = \frac{P_{t-s, i}}{P_{t-s-L, i}} - 1$$
 2. **Volatility-Adjusted Risk Momentum (`risk_adj` — Default `R3` / `R2`):**
-   - In production [`src/momentum.py`](src/momentum.py#L46-L52):
-     $$\sigma^{\text{ann}}_{t,i}(L, s) = \sqrt{252} \cdot \operatorname{std}\!\left(r_{t-s-L+1..t-s, i}\right), \qquad S^{\text{risk}}_{t,i} = \frac{R_{t,i}(L, s)}{\sigma^{\text{ann}}_{t,i}(L, s)}$$
-     *(requiring at least $\max(20, \lfloor 0.8 L \rfloor)$ observations).*
-   - *(Note on research script [`scripts/numba_research_engine.py`](scripts/numba_research_engine.py#L324-L348): uses $r^{\text{clip}} = \operatorname{clip}(r, -0.40, 0.60)$, $\sqrt{247}$, and denominator floor $\max(\sigma^{\text{ann}}, 0.08)$ before FIFO re-verification with exact production `src/momentum.py`.)*
+   $$\sigma^{\text{ann}}_{t,i}(L, s) = \max\!\left(0.08,\; \sqrt{252} \cdot \operatorname{std}\!\left(r^{\text{clip}}_{t-s-L+1..t-s, i}\right)\right), \qquad S^{\text{risk}}_{t,i} = \frac{R_{t,i}(L, s)}{\sigma^{\text{ann}}_{t,i}(L, s)}$$
 3. **Downside Sortino Momentum (`sortino` — Runner-Up `S3`):**
-   $$r^{\text{clip}}_{u,i} = \operatorname{clip}(r_{u,i}, -0.40, +0.60)$$
-   $$\sigma^{-}_{t,i}(L, s) = \max\!\left(0.06,\; \sqrt{247 \cdot \frac{1}{|W|}\sum_{u=t-s-L+1}^{t-s} \min\!\left(r^{\text{clip}}_{u,i}, 0\right)^2}\right), \qquad S^{\text{sortino}}_{t,i} = \frac{R_{t,i}(L, s)}{\sigma^{-}_{t,i}(L, s)}$$
+   $$\sigma^{-}_{t,i}(L, s) = \max\!\left(0.06,\; \sqrt{252 \cdot \frac{1}{|W|}\sum_{u=t-s-L+1}^{t-s} \min\!\left(r^{\text{clip}}_{u,i}, 0\right)^2}\right), \qquad S^{\text{sortino}}_{t,i} = \frac{R_{t,i}(L, s)}{\sigma^{-}_{t,i}(L, s)}$$
+*(Both `src/momentum.py` and `scripts/numba_research_engine.py` call the exact same `compute_score_matrix` helper: verified `max_abs_diff = 0.0` and `exact_nan_mask_match = True` across 16 years.)*
 4. **PDF Normalized Z-Score Weighting (`norm_z` — Preset `R7`):**
    Over all valid scores on day $t$ with cross-sectional mean $\mu_t$ and std $\sigma_t$:
    $$z_{t,i} = \frac{S_{t,i} - \mu_t}{\sigma_t}, \qquad \phi(z_{t,i}) = \begin{cases} 1 + z_{t,i} & z_{t,i} \ge 0 \\ \frac{1}{1 - z_{t,i}} & z_{t,i} < 0 \end{cases}, \qquad w^{\text{sleeve}}_i = \frac{\phi(z_{t,i})}{\sum_{j \in \text{Top } N} \phi(z_{t,j})}$$
@@ -112,28 +109,28 @@ $$\tilde{x}_t = \tanh\!\left(0.5 \cdot \frac{x_t - \text{med}_t}{\max(\text{MAD}
 *(No full-sample mean/std ever enters the calculation.)*
 
 ### 3.3 The Four Orthogonal Macro/Internal Blocks
-Let `EMA_k(x)` denote pandas `ewm(span=k).mean()`, `vix` denote India VIX, and $\sigma^{(63)}(x) = \sqrt{247 \cdot \text{EMA}_{63}\!\left((r^x)^2\right)}$:
+Let `EMA_k(x)` denote pandas `ewm(span=k).mean()`, `vix` denote India VIX, and $\sigma^{(63)}(x) = \sqrt{252 \cdot \text{EMA}_{63}\!\left((r^x)^2\right)}$:
 
 1. **Block 1 — Trend & Relative Strength ($w_1 = 0.44$):**
    $$t^{(200)}_t = \frac{\text{EW}_t / \text{EMA}_{200}(\text{EW})_t - 1}{\max(0.08, \sigma^{(63)}_{\text{EW}, t})}, \quad t^{(126)}_t = \frac{\text{EW}_t / \text{EMA}_{126}(\text{EW})_t - 1}{\max(0.08, \sigma^{(63)}_{\text{EW}, t})}, \quad t^{\text{rel}}_t = \frac{\text{Rel}_t / \text{EMA}_{126}(\text{Rel})_t - 1}{\max(0.04, \sigma^{(63)}_{\text{Rel}, t})}$$
    where $\text{Rel}_t = \text{EW}_t / \max(\text{NIFTYBEES}_t, 10^{-4})$, and:
-   $$B_{1,t} = \frac{\tilde{t}^{(200)}_t + \tilde{t}^{(126)}_t + \tilde{t}^{\text{rel}}_t}{3}$$
+   $$B_{1}(t) = \frac{\tilde{t}^{(200)}_t + \tilde{t}^{(126)}_t + \tilde{t}^{\text{rel}}_t}{3}$$
    *(or $\frac{1}{2}(\tilde{t}^{(200)}_t + \tilde{t}^{(126)}_t)$ if `NIFTYBEES` is absent).*
 
 2. **Block 2 — Downside Semivolatility & VIX Stress ($w_2 = 0.10$, higher = calmer):**
-   $$\sigma^{-}_{21, t} = \sqrt{247 \cdot \frac{1}{21}\sum_{u=t-20}^{t}\min(r^{\text{EW}}_u, 0)^2}, \qquad \nu_t = \ln\!\left(\max\!\left(0.2,\; \frac{\text{VIX}_t}{\text{EMA}_{63}(\text{VIX})_t}\right)\right)$$
-   $$B_{2,t} = -\frac{1}{2}\left(\widetilde{\ln \max(\sigma^{-}_{21,t}, 0.04)} + \tilde{\nu}_t\right)$$
+   $$\sigma^{-}_{21, t} = \sqrt{252 \cdot \frac{1}{21}\sum_{u=t-20}^{t}\min(r^{\text{EW}}_u, 0)^2}, \qquad \nu_t = \ln\!\left(\max\!\left(0.2,\; \frac{\text{VIX}_t}{\text{EMA}_{63}(\text{VIX})_t}\right)\right)$$
+   $$B_{2}(t) = -\frac{1}{2}\left(\widetilde{\ln \max(\sigma^{-}_{21,t}, 0.04)} + \tilde{\nu}_t\right)$$
 
 3. **Block 3 — Market Breadth & Zweig Velocity ($w_3 = 0.34$):**
-   $$\Delta b_t = \text{EMA}_5(b^{50})_t - \text{EMA}_5(b^{50})_{t-21}, \qquad B_{3,t} = \frac{1}{2}\left(\widetilde{b^{50}_t} + \widetilde{\Delta b_t}\right)$$
+   $$\Delta b_t = \text{EMA}_5(b^{50})_t - \text{EMA}_5(b^{50})_{t-21}, \qquad B_{3}(t) = \frac{1}{2}\left(\widetilde{b^{50}_t} + \widetilde{\Delta b_t}\right)$$
 
 4. **Block 4 — Daniel–Moskowitz Momentum Crash Risk & Gold Risk-Off Trend ($w_4 = 0.12$):**
    $$\text{DM}_t = \mathbf{1}\!\left\{t^{(200)}_t < 0\right\} \cdot \max\!\left(0,\; \widetilde{\ln \max(\sigma^{-}_{21,t}, 0.04)}\right), \qquad t^{\text{gold}}_t = \frac{\text{Gold}_t / \text{EMA}_{126}(\text{Gold})_t - 1}{\max(0.06, \sigma^{(63)}_{\text{Gold}, t})}$$
-   $$B_{4,t} = -\frac{1}{2}\left(\text{DM}_t + \tilde{t}^{\text{gold}}_t\right)$$
-   *(If `GOLDBEES` is missing, $B_{4,t} = -\text{DM}_t$.)*
+   $$B_{4}(t) = -\frac{1}{2}\left(\text{DM}_t + \tilde{t}^{\text{gold}}_t\right)$$
+   *(If `GOLDBEES` is missing, $B_{4}(t) = -\text{DM}_t$.)*
 
 **Composite Score:**
-$$C^{\text{raw}}_t = 0.44 B_{1,t} + 0.10 B_{2,t} + 0.34 B_{3,t} + 0.12 B_{4,t}$$
+$$C^{\text{raw}}_t = 0.44 B_{1}(t) + 0.10 B_{2}(t) + 0.34 B_{3}(t) + 0.12 B_{4}(t)$$
 
 ### 3.4 Asymmetric EWMA, Breadth Thrust & 3-State Hysteresis FSM
 At each daily close $t$:
@@ -155,9 +152,9 @@ At each daily close $t$:
 
 ## 4. Defensive Assets, `LIQUID_REALISTIC` & `TrendGold150` Gate (`src/regime.py`)
 
-### 4.1 Liquid Cash Benchmark Series
-- **`LIQUID_TBILL`:** Constant $6.25\%$ annualized ($r_d = 1.0625^{1/252} - 1$). Note: Legacy `GOLD_50_LIQUID_50` and `GOLD_OR_LIQUID` in `build_defensive_series` use `daily_liq` ($6.25\%$) for historical compatibility with `R2`/`F2` presets.
-- **`LIQUID_REALISTIC` *(Used by `R3`/`S3` sweep & defensive series)*:** Uses `INDIA_TBILL_REGIME_YIELD` per calendar year (`2010: 5.50%`, `2011: 7.75%`, `2012–13: 8.15%`, `2014: 8.40%`, `2015: 7.50%`, `2016: 6.60%`, `2017: 6.15%`, `2018: 6.40%`, `2019: 5.65%`, `2020: 3.65%`, `2021: 3.45%`, `2022: 5.10%`, `2023: 6.75%`, `2024: 6.60%`, `2025: 6.15%`, `2026: 5.75%`, daily $r_d = (1+r_y)^{1/248} - 1$), and **automatically replaces synthetic yields with actual `LIQUIDCASE` daily returns** starting `2024-01-24` whenever `LIQUIDCASE` is present!
+### 4.1 Unified Liquid Cash Benchmark Series
+- **`LIQUID_REALISTIC` *(Used uniformly across ALL defensive presets `R3`, `S3`, `R2`, `F2`, `GOLD_50_LIQUID_50`, and `GOLD_OR_LIQUID`)*:** Uses `INDIA_TBILL_REGIME_YIELD` per calendar year (`2010: 5.50%`, `2011: 7.75%`, `2012–13: 8.15%`, `2014: 8.40%`, `2015: 7.50%`, `2016: 6.60%`, `2017: 6.15%`, `2018: 6.40%`, `2019: 5.65%`, `2020: 3.65%`, `2021: 3.45%`, `2022: 5.10%`, `2023: 6.75%`, `2024: 6.60%`, `2025: 6.15%`, `2026: 5.75%`, daily $r_d = (1+r_y)^{1/252} - 1$), and **automatically replaces synthetic yields with actual `LIQUIDCASE` daily returns** starting `2024-01-24` whenever `LIQUIDCASE` is present.
+- **`LIQUID_TBILL`:** Constant $6.25\%$ ($252$-day basis) risk-free reference curve preserved solely for annualized Sharpe/Sortino hurdle comparisons.
 
 ### 4.2 Causal `TrendGold150` Hysteresis Gate (`get_trend_gold_status` & `TREND_GOLD150_OR_LIQ`)
 Let $G_t$ be `GOLDBEES` (ffill `limit=5`) and $E^{(150)}_t = \text{EMA}_{150}(G)_t$ (`min_periods=30`), starting in `state_g = False` (`LIQUIDCASE`):
@@ -170,20 +167,18 @@ $$r^{\text{TG150}}_t = \left(g_{t-1} r^{\text{Gold}}_t + (1 - g_{t-1}) r^{\text{
 ## 5. Event-Driven Backtester, Friction, Tax Lots & Metrics (`src/backtester.py`)
 
 Executed by `run_backtest(...)`:
-1. **Delisting / Halt Handling:** Bounded `ffill(limit=5)` on `adj`, `raw`, and `def_series` avoids carrying ghost valuations on long-delisted tickers past 5 trading days. Note: when an held stock disappears (`not isfinite(px)` or `<= 0`), mark-to-market falls back cleanly to its last lot cost price `sym_lots[-1][1]` until traded out.
-2. **Scheduled Rebalance vs Regime Switch:**
+1. **Delisting / Halt Handling & Forced Write-Down Stress:** Bounded `ffill(limit=5)` on `adj`, `raw`, and `def_series` prevents stale ghost fills beyond 5 days. When an active stock lacks a valid finite quote (`not isfinite(px)` or `px <= 0`), mark-to-market uses `last_valid_px[sym]` (never reverting to purchase lot cost). Setting `delist_haircut_pct > 0` (stressed at `-15%` and `-25%`) forces write-down & permanent liquidation of stalled holdings at `last_valid_px * (1 - haircut)`.
+2. **Scheduled Rebalance vs Staggered Tranches vs Regime Switch:**
    - Signal observation strictly uses `score_date = dates[i - 1]` (or `first_prev_date` on `i = 0`).
-   - Trades trigger only on: `i == 0`, scheduled rebalance `(i - off) % reb == 0`, regime allocation change $|\text{target\_eq\_frac}_i - \text{prev\_target\_eq\_frac}| > 0.02$, or active `stopped_out` symbol.
-3. **`weakest_first` Trimming (`R3`, `S3`, `R2`, `F2`, `F4`):** When `target_eq_frac < active_sum - 1e-6`, Python sorts all currently active targets **descending by yesterday's primary momentum score** (`score_matrices[sleeves[0]["score_key"]].loc[score_date]`) and fills rupee weights greedily from rank 1 downward until `target_eq_frac` is reached. Ranks 16–30 absorb defensive trims first, preserving winners' 365-day holding clocks.
-4. **Costs & Integer Shares (`discrete_shares=True`):**
-   - One-way friction rate `c = 15.0 / 10_000 = 0.0015` debited on every buy notional ($+c$) and credited off every sell notional ($-c$), covering STT, stamp/exchange fees, and impact.
-   - Discrete target shares convert rupee targets to raw integer units: $n^{\text{raw}}_i = \lfloor (\text{TotalVal}_i \cdot w_i) / P^{\text{raw}}_{i,\text{sym}} \rfloor$, mapped to adjusted lot units via $n^{\text{adj}} = n^{\text{raw}} \cdot P^{\text{raw}} / P^{\text{adj}}$. Residual cash sweeps into `LIQUID_REALISTIC` / `LIQUIDCASE` when `sweep_idle_cash=True`.
-5. **FIFO Tax Accounting (`apply_tax=True`):**
+   - Supports staggered multi-tranche rebalancing (`num_sleeves = 2` splits `126d` 6M rebalance into `2` equal 50% sub-sleeves every `63d` to halve timing luck dispersion) and `phase_offset_days` for phase sensitivity audits.
+3. **`weakest_first` Trimming (`R3`, `S3`, `R2`, `F2`, `F4`):** When `target_eq_frac < active_sum - 1e-6`, Python sorts all currently active targets **descending by yesterday's primary momentum score** and fills rupee weights greedily from rank 1 downward until `target_eq_frac` is reached. Ranks 16–30 absorb defensive trims first, preserving winners' 365-day holding clocks.
+4. **Regime-Conditional Costs (`15 / 35 bps`) & Integer Shares:**
+   - Standard scheduled rebalance friction is `15 bps` (`0.0015`) one-way. Unscheduled risk-off equity cuts (`DEFENSIVE`/`CAUTIOUS` transitions) deduct **`35 bps` (`0.0035`)** one-way impact (`regime_cost_bps_one_way=35.0`), stress-tested at **`30 / 60 bps` (2x friction)**.
+   - Discrete target shares convert rupee targets to raw integer units: $n^{\text{raw}}_i = \lfloor (\text{TotalVal}_i \cdot w_i) / P^{\text{raw}}_{i,\text{sym}} \rfloor$. Residual cash sweeps into `LIQUID_REALISTIC` / `LIQUIDCASE` when `sweep_idle_cash=True`.
+5. **Dual FIFO Tax Accounting (`apply_tax=True`, `tax_defensive=True` Default):**
    - Indian Fiscal Year: $\text{FY}(d) = \text{year}(d)$ if month $\ge 4$ else $\text{year}(d) - 1$.
-   - Every sale pops lots in **FIFO order**:
-     - If holding days $\ge 365$: realized gain/loss offsets `fy_ltcg_carry`; positive net LTCG adds to `fy_ltcg_gains[FY]`, taxing only marginal excess above `₹1,25,000` annual exemption at **`12.5%` (`0.125`)**. Negative balance carries forward indefinitely.
-     - If holding days $< 365$: realized gain/loss offsets `fy_stcg_carry`; positive net STCG is taxed immediately at **`20.0%` (`0.20`)**. Negative balance carries forward.
-   - *(Model boundary: `tax_defensive=False` in `update_live.py` & main `run_backtest` calls unless explicitly enabled via `tax_defensive=True`, which taxes defensive redemptions at `12.5%` if `"GOLD" in defensive_asset` & `>=365d` else `30%`/`stcg`. However, all **Numba research optimization runs explicitly charged `30%` Sec 50AA slab tax on `LIQUID_REALISTIC`/Gilt and `12.5%` on Gold** every single switch!)*
+   - Equity FIFO sells realize **`20%` STCG** ($< 365\text{d}$) and **`12.5%` LTCG** ($\ge 365\text{d}$ above `₹1,25,000` annual FY exemption) with STCL/LTCL carry-forwards.
+   - Defensive & idle-sweep FIFO lots (`tax_defensive=True` default across primary runs and paper bot) charge **`30%` Sec 50AA slab tax** on `LIQUIDCASE`/`LIQUID_REALISTIC` debt redemptions and **`12.5%` ($\ge 365\text{d}$) / `30%` ($< 365\text{d}$)** on `GOLDBEES` switches (including internal `TrendGold150` flips). Pre-defensive-tax (`tax_defensive=False`) is retained only as a comparison column.
 6. **Summary Metrics (`compute_metrics`, $r_f = 6.25\%$):**
    - Calendar years $Y = (\text{Date}_{\text{end}} - \text{Date}_{\text{start}}).\text{days} / 365.2425$, effective trading days/yr $D = N / Y$.
    - $\text{CAGR} = (V_N / V_0)^{1/Y} - 1$, $\sigma_{\text{ann}} = \operatorname{std}(r) \sqrt{D}$, $\text{Sharpe} = \frac{\text{CAGR} - 0.0625}{\sigma_{\text{ann}}}$, $\text{Sortino} = \frac{\text{CAGR} - 0.0625}{\operatorname{std}(r_{r<0})\sqrt{D}}$, $\text{Calmar} = \frac{\text{CAGR}}{|\min \text{DD}|}$, $\text{Ulcer} = \sqrt{\frac{1}{N}\sum (100\cdot \text{DD}_t)^2}$, $\text{AnnTurnover} = \frac{\sum (\frac{1}{2}\text{Notional}_t / V_t)}{Y} \times 100\%$.
@@ -195,8 +190,8 @@ Executed by `run_backtest(...)`:
 ### 6.1 Fast Numba Overlay Simulator (`_sim_overlay_core` in `scripts/numba_research_engine.py`)
 Used to scan `21,600+` parameter sets in ~20 seconds:
 - Approximates holding clock via weighted-average `hold_days` (`+= 1.47` calendar days per trading day) and weighted cost basis (`eq_cost_basis`, `def_basis`), charging $2 \cdot |\Delta w| \cdot 0.0015$ friction + `0.20` (`<365d`) / `0.125` (`>=365d`) equity tax scaled by `0.85`/`0.80` exemption calibration factor, and exact per-day defensive tax rate (`0.125` Gold vs `0.30` Liquid/Gilt).
-- Metrics in Numba use exact `247.0` NSE average trading days per year (`yrs = N / 247.0`).
-- **Critical Validation Step:** Every finalist found in Numba (`R3`, `S3`, `R2`, `F2`) was then re-evaluated from scratch using the **exact Python FIFO-lot engine** (`src/backtester.py`) in `run_final_verification_suite.py` and `reports/src_exact_16yr_verification.json`.
+- Metrics in Numba use canonical `252.0` trading days per year (`yrs = N / 252.0`).
+- **Critical Validation Step:** Every finalist (`R3`, `S3`, `R2`, `F2`, `R3_Staggered_2x6M`, `ZeroFit_EQ4`) and stress test was evaluated from scratch using the **exact Python FIFO-lot engine** (`src/backtester.py`) in `scripts/run_16yr_exact_verification.py` and `scripts/run_final_verification_suite.py`.
 
 ### 6.2 SciPy Walk-Forward Block Weights Optimization (`_wf_opt_weights`)
 Optimized `w = softmax(logits)` ($\sum_{k=1}^4 w_k = 1,\; w_k \ge 0$) via **6 random-seed Nelder–Mead optimizations** (`maxiter = 140` each) minimizing `-mean(Sharpe)` across specified slices:
@@ -205,7 +200,7 @@ Optimized `w = softmax(logits)` ($\sum_{k=1}^4 w_k = 1,\; w_k \ge 0$) via **6 ra
 
 ### 6.3 Realistic Monthly F&O Hedging Model (`sim_monthly_fno_hedges`)
 Evaluated on `21`-trading-day monthly expiry cycles (`hedge_frac = 1 - eq_frac` while spot stays invested):
-1. **Short Index Futures Overlay:** $r_{\text{fut},t} = r_{\text{eq},t} - h_t r^{\text{EW}}_t + h_t r^{\text{Liq}}_t - h_t \frac{0.020}{247}$ minus switch cost `0.0018 * |dh|` + spot rebalance `0.0030 * to_eq` (models ~`2.0%` p.a. net active carry/roll/Apr-2026 STT drag after earning T-bill on liquid collateral; requires **`₹25L–₹1Cr+`** due to `₹16.5L` NSE minimum futures lot notional + MTM cash buffer + `30%` F&O slab tax).
+1. **Short Index Futures Overlay:** $r_{\text{fut},t} = r_{\text{eq},t} - h_t r^{\text{EW}}_t + h_t r^{\text{Liq}}_t - h_t \frac{0.020}{252}$ minus switch cost `0.0018 * |dh|` + spot rebalance `0.0030 * to_eq` (models ~`2.0%` p.a. net active carry/roll/Apr-2026 STT drag after earning T-bill on liquid collateral; requires **`₹25L–₹1Cr+`** due to `₹16.5L` NSE minimum futures lot notional + MTM cash buffer + `30%` F&O slab tax).
 2. **Monthly `5%` OTM Bear Put & `5%–15%` Bear Put Spread:** At every `21d` expiry when $h_{\text{start}} > 0.05$, charges VIX-scaled Black–Scholes premium + STT/impact using lagged start-of-month VIX (`v_t = clip(VIX_{t-21}, 12, 60)`):
    - Single `5%` OTM Put cost $= h_{\text{start}} \cdot (0.011 \cdot \frac{v_t}{16} + 0.0015)$, payoff $= h_{\text{start}} \cdot \max(0, -0.05 - R_{\text{month}}) \times 0.70$ *(post `30%` slab tax)*.
    - `5%–15%` Bear Put Spread cost $= h_{\text{start}} \cdot (0.0065 \cdot \frac{v_t}{16} + 0.0015)$, payoff $= h_{\text{start}} \cdot \min(0.10, \max(0, -0.05 - R_{\text{month}})) \times 0.70$.
@@ -214,79 +209,90 @@ Evaluated on `21`-trading-day monthly expiry cycles (`hedge_frac = 1 - eq_frac` 
 
 ## 7. Verified Empirical Benchmarks (`src/backtester.py` Exact FIFO Results)
 
-### 7.1 Clean ETF-Free 16-Year Zero-Survivorship PIT (`2011-01-03` to `2026-11-26`, `15bps` Cost + Indian Tax)
-Source: [`reports/src_exact_16yr_verification.json`](reports/src_exact_16yr_verification.json) & [`reports/numba_deep_research.txt`](reports/numba_deep_research.txt):
+### 7.1 Clean ETF-Free 16-Year Zero-Survivorship PIT (`2011-01-03` to `2026-11-26`, Net Sec 50AA + `15/35 bps`)
+Source: `scripts/run_16yr_exact_verification.py` → `reports/src_exact_16yr_verification.json` *(Note: `P3 (2021–26)` is explicitly labeled **Post-Selection / Partially In-Sample** for `TrendGold150`)*:
 
-| Strategy (`15bps` + STCG/LTCG Tax) | P1 `11–16` | P2 `16–21` | P3 `21–26` | Full 16Y CAGR | 16Y MaxDD | Calmar | Sharpe | Turnover |
+| Strategy / Benchmark (`tax_defensive=True`, `15/35 bps`) | P1 `11–16` | P2 `16–21` | P3 `21–26` (Post-Sel) | Full 16Y CAGR | 16Y MaxDD | Calmar | Sharpe | Turnover |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| **Passive EW Midcap 150 (`pit_semi` Bench)** | `0.40%` | `15.23%` | `14.58%` | **9.77%** | `-54.08%` | `—` | `0.18` | `—` |
-| **`R3_src_Frac` (`Risk 9M · MF4 · TrendGold150`)** | **13.76%** (`-25.20%`) | `25.69%` (`-25.79%`) | `21.26%` (`-26.41%`) | **18.16%** | **`-26.93%`** | **`0.67`** | **`0.78`** | `374.1%` |
-| **`R3_src_Disc1L` (`₹1L SlotCap + Liq Sweep`)** | `11.00%` | `23.85%` | `20.87%` | **16.83%** | `-29.47%` | `0.57` | `0.69` | `381.2%` |
-| **`S3_src_Frac` (`Sortino 9M · MF4 · TrendGold150`)** | `13.16%` (`-25.63%`) | `25.10%` (`-27.63%`) | **22.28%** (`-25.22%`) | **17.21%** | `-28.69%` | `0.60` | `0.72` | `371.9%` |
-| **`S3_src_Disc1L` (`₹1L SlotCap + Liq Sweep`)** | `10.99%` | `23.02%` | `20.96%` | `15.78%` | `-31.72%` | `0.50` | `0.63` | `375.0%` |
-| **`R3_NormZ_Frac` (`NormZ Risk 9M`)** | `11.99%` | `31.43%` | `22.04%` | `17.52%` | `-37.10%` | `0.47` | `0.73` | `366.5%` |
-| **`R2_src_Frac` (`Risk 9M · DD>15% · 50/50`)** | `8.94%` (`-28.44%`) | `30.64%` (`-19.35%`) | `19.20%` (`-31.63%`) | `15.79%` | `-28.44%` | `0.56` | `0.67` | `186.2%` |
-| **`F2_src_Frac` (`Raw 9M · DD>12% · 50/50`)** | `8.04%` (`-25.99%`) | `26.13%` (`-18.82%`) | `13.87%` (`-30.46%`) | `12.04%` | `-27.58%` | `0.44` | `0.39` | `205.3%` |
-| **`Unhedged_Risk9M` (`No Regime Hedge`)** | `11.47%` | `23.82%` (`-41.64%`) | `20.54%` | `15.17%` | `-31.20%` | `0.49` | `0.52` | `134.2%` |
+| **Bench: Clean PIT EW (`772` Eqs)** | `0.40%` | `15.23%` | `14.57%` | **9.76%** | `-54.08%` | `0.18` | `0.18` | `—` |
+| **Bench: Official NSE Nifty Midcap 100 (`16Y`)** | `7.03%` | `11.23%` | `16.65%` | **12.95%** | `-45.83%` | `0.28` | `0.31` | `—` |
+| **Bench: Stitched Midcap 100 -> 150 (`16Y`)** | `6.84%` | `8.29%` | `15.99%` | `10.32%` | `-44.74%` | `0.23` | `0.24` | `—` |
+| **Bench: Official Nifty Midcap 150 (`2019–26`)** | `—` | `—` | `15.99%` | **17.77%** | `-38.67%` | `0.46` | `0.63` | `—` |
+| **`R3_src_Frac` (`Risk9M · MF4 · TrendGold150`)** | **11.43%** | `23.31%` | `16.78%` | **15.61%** | **`-28.78%`** | **`0.54`** | **`0.61`** | `376.9%` |
+| **`R3_PreDefTax_Comparison` (`Sec 50AA Off`)** | `13.15%` | `25.14%` | `20.48%` | `17.73%` | `-28.45%` | `0.62` | `0.75` | `377.3%` |
+| **`R3_Staggered_2x6M` (`50%` Every `3M`)** | `9.82%` | `19.63%` | `18.19%` | `13.48%` | **`-27.46%`** | `0.49` | `0.49` | `387.0%` |
+| **`R3_Stress_30bps_2xCost` (`30 / 60 bps`)** | `9.87%` | `21.61%` | `14.88%` | `13.95%` | `-31.14%` | `0.45` | `0.50` | `374.2%` |
+| **`R3_Delist_Haircut_15pct` (`11` write-downs)** | `11.03%` | `23.08%` | `16.70%` | `15.91%` | `-34.23%` | `0.46` | `0.57` | `429.8%` |
+| **`R3_Delist_Haircut_25pct` (`11` write-downs)** | `10.80%` | `22.77%` | `16.66%` | `15.66%` | `-34.23%` | `0.46` | `0.56` | `429.9%` |
+| **`R3_src_Disc1L` (`₹1L` SlotCap + Sweep)** | `8.83%` | `21.64%` | `16.08%` | **14.08%** | `-30.53%` | `0.46` | `0.51` | `375.2%` |
+| **`S3_src_Frac` (`Sortino9M · MF4 · TrendGold150`)** | `11.07%` | `23.04%` | `17.67%` | `14.74%` | `-30.03%` | `0.49` | `0.56` | `368.8%` |
+| **`R2_src_Frac` (`Risk9M · DD>15% · 50/50`)** | `8.24%` | `28.92%` | `18.59%` | `15.17%` | `-28.72%` | `0.53` | `0.61` | `188.9%` |
+| **`F2_src_Frac` (`Raw9M · DD>12% · 50/50`)** | `7.08%` | `25.07%` | `12.52%` | `11.16%` | `-27.47%` | `0.41` | `0.32` | `206.5%` |
+| **`ZeroFit_EQ4_GoldLiq50` (`[0.25]*4` Ablation)** | `9.15%` | `24.68%` | `11.77%` | `13.44%` | `-28.84%` | `0.47` | `0.52` | `353.9%` |
+| **`ZeroFit_EQ4_Liquid` (`[0.25]*4` Ablation)** | `9.32%` | `23.79%` | `9.58%` | `12.65%` | `-27.30%` | `0.46` | `0.48` | `353.0%` |
+| **`Unhedged_Risk9M` (`No Regime Hedge`)** | `11.47%` | `24.18%` | `20.74%` | `15.50%` | `-30.84%` | `0.50` | `0.54` | `134.8%` |
 
-- **6-Phase Start-Date Rebalance Sensitivity (`0, +21, +42, +63, +84, +105d`):** `R3` CAGRs = `[18.16%, 19.30%, 20.64%, 17.99%, 16.42%, 17.21%]` (`4.22%` spread, `18.29%` mean); `S3` = `[17.21%, 19.80%, 20.40%, 17.29%, 15.99%, 16.86%]` (`4.41%` spread).
+- **6-Phase Start-Date Rebalance Sensitivity (`0, +21, +42, +63, +84, +105d`):**
+  - `R3`: CAGRs = `[15.61%, 15.87%, 17.35%, 14.64%, 12.75%, 13.81%]` (`15.01%` mean, `4.60%` spread).
+  - **`R3_Staggered_2x6M`**: CAGRs = `[13.48%, 14.07%, 15.09%, 14.38%, 14.15%, 15.44%]` (`14.44%` mean, **`1.96%` spread** — cuts timing sensitivity by more than half).
+  - `S3`: `[14.74%, 16.35%, 17.19%, 14.37%, 12.80%, 13.39%]` (`14.81%` mean, `4.39%` spread); `R2`: `15.77%` mean (`3.77%` spread).
 
-### 7.2 Live Synchronized Matrix (`2018-01-02` to `2026-11-27`)
-Source: [`scripts/update_live.py`](scripts/update_live.py) -> [`data/live_state.json`](data/live_state.json):
+### 7.2 Live Synchronized Current-Constituent Panel (`2018-01-02` to `2026-11-27`, Survivorship-Biased Disclosure)
+Source: `scripts/update_live.py` → `data/live_state.json` *(Backtests today's 150 constituents historically with `tax_defensive=True` & `35 bps` risk-off slippage)*:
 
-| Scenario | Ending ₹ (`₹1L` Start) | CAGR% | MaxDD% | Calmar | Sharpe | Sortino | Avg Eq% | Turn% | Tax (₹) |
+| Scenario | Ending Value | CAGR% | MaxDD% | Calmar | Sharpe | Sortino | Avg Eq% | Turn% | Total Tax |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| **`R3_Disc1L_SlotCap`** | **₹11,83,539** | **32.02%** | **`-20.68%`** | **`1.55`** | **`1.47`** | `1.72` | `65.1%` | `380.9%` | `₹93,428` |
-| **`R3_Risk9m_6M_MF4_TrendGold150`** | ₹11,49,728 | **31.59%** | `-21.10%` | `1.50` | `1.43` | `1.68` | `68.4%` | `380.0%` | `₹87,582` |
-| **`S3_Sortino9m_6M_MF4_TrendGold150`** | ₹11,86,845 | **32.06%** | `-21.02%` | `1.53` | `1.46` | `1.72` | `68.4%` | `384.1%` | `₹96,544` |
-| **`S3_Disc1L_SlotCap`** | ₹11,81,794 | **32.00%** | `-21.13%` | `1.51` | `1.48` | `1.73` | `64.8%` | `385.0%` | `₹96,175` |
-| **`R7_NormZ_Risk9m_6M_DD15_Sh75_GoldLiq50`** | ₹8,71,111 | `27.55%` | `-27.51%` | `1.00` | `1.15` | `1.41` | `90.3%` | `199.2%` | `₹47,025` |
-| **`R2_Risk9m_6M_DD15_Sh75_GoldLiq50`** | — | `26.55%` | `-26.25%` | `1.01` | `1.12` | — | `90.2%` | — | — |
-| **`F2_9m_6M_DD12_Sh75_GoldLiq50`** | — | `25.28%` | `-24.57%` | `1.03` | `1.05` | — | `86.0%` | — | — |
-| **`Unhedged_9m_6M`** | — | `27.71%` | `-37.85%` | `0.73` | `1.01` | — | `100.0%` | — | — |
-| **`Midcap150_EW_Universe`** | ₹5,70,291 | `21.60%` | `-36.97%` | `0.58` | `0.87` | — | `100.0%` | `—` | `—` |
+| **`R3_Risk9m_6M_MF4_TrendGold150`** | `₹8,69,568` | **27.53%** | `-26.00%` | `1.06` | `1.19` | `1.39` | `68.4%` | `380.7%` | `₹1,98,465` |
+| `R3_PreDefTax_Comparison` (`Sec 50AA Off`) | `₹10,91,905` | `30.83%` | `-22.91%` | `1.35` | `1.39` | `—` | `68.4%` | `380.1%` | `₹83,985` |
+| **`R3_Staggered_2x6M`** | `₹7,96,689` | `26.28%` | **`-21.68%`** | **`1.21`** | `1.16` | `—` | `68.4%` | `391.8%` | `₹1,98,173` |
+| **`R3_Stress_30bps_2xCost`** | `₹7,66,143` | `25.75%` | `-29.55%` | `0.87` | `1.09` | `—` | `68.4%` | `380.9%` | `₹1,79,861` |
+| **`R3_Disc1L_SlotCap`** *(2018–26 Luck Caveat)* | `₹8,75,465` | `27.62%` | `-25.05%` | `1.10` | `1.22` | `—` | `64.7%` | `381.8%` | `₹2,03,113` |
+| **`S3_Sortino9m_6M_MF4_TrendGold150`** | **`₹8,98,283`** | **27.99%** | `-25.04%` | `1.12` | `1.22` | `—` | `68.4%` | `384.7%` | `₹2,07,903` |
+| **`R2_Risk9m_6M_DD15_Sh75_GoldLiq50`** | `₹7,59,110` | `25.60%` | `-26.39%` | `0.97` | `1.06` | `—` | `90.3%` | `195.0%` | `₹58,103` |
+| **`F2_9m_6M_DD12_Sh75_GoldLiq50`** | `₹6,77,852` | `24.01%` | `-25.26%` | `0.95` | `0.97` | `—` | `86.0%` | `255.1%` | `₹58,858` |
+| **`Unhedged_9m_6M`** | `₹8,81,036` | `27.71%` | `-37.85%` | `0.73` | `1.01` | `—` | `100.0%` | `114.8%` | `₹37,294` |
+| **`Midcap150_EW_Universe`** *(Biased)* | `₹5,70,291` | `21.60%` | `-36.97%` | `0.58` | `0.87` | `—` | `100.0%` | `0.0%` | `₹0` |
+| **`NIFTY_MIDCAP_150`** *(Official `2019–26`)* | `₹3,62,058` | `17.76%` | `-38.67%` | `0.46` | `0.63` | `—` | `—` | `—` | `—` |
+
+> **Small-Sample ₹1L SlotCap Clarification:** Over `2018–26`, `R3_Disc1L_SlotCap` nudged unconstrained `R3` by `+0.09%` (`27.62%` vs `27.53%`) purely due to avoiding a handful of high-priced laggards. Over the 16-year zero-survivorship PIT archive, slot capping incurs a realistic `-1.53%` annual drag (`14.08%` vs `15.61%`).
 
 ---
 
-## 8. Client-Side Website Logic (`index.html`)
+## 8. Client-Side Website Logic (`index.html`, `assets/app.js`, `assets/styles.css`)
 
-All calculations on the Execution Calculator tab happen purely in your browser using `STATE.universe_scores` and `STATE.regime` from `data/live_state.json`:
-1. **Preset Routing (`getLatestComputedOrders`):**
-   - `R3`: `rk9` scores, `MF4` live equity %, defensive goes `100%` to `STATE.regime.active_defensive_etf` (`LIQUIDCASE` or `GOLDBEES`).
-   - `S3`: `so9` scores, `MF4` live equity %, defensive `100%` to `active_defensive_etf`.
-   - `R2` / `R7` / `F2` / `F4`: uses `rk9`/`r9`/`r12`, legacy EW `DD252` trigger (`-15%` or `-12%`), splits defensive `50% GOLDBEES + 50% LIQUIDCASE` on crash simulation.
-2. **Posture Override:** `LIVE` reads today's EOD posture; `SIM_CAUTIOUS` forces `60% Eq / 40% Def`; `SIM_CRASH` forces `25% Eq / 75% Def` (`50/50` for `F4`).
-3. **Holdings Diff (`computeHoldingsDiff`):** Parses your local `SYMBOL,SHARES,YYYY-MM-DD` CSV in `localStorage`, skips trades whose rupee value `< ₹500` *(unless full exit `tgt === 0`)*, and raises a **LTCG warning** (`⚠ Held {d}d — LTCG in {365-d}d!`) whenever selling a lot held `330–364` days.
+All calculations execute purely in the browser against `data/live_state.json`, `data/forward_tape.json`, and `data/paper_ledger.json`:
+1. **Preset Routing (`getLatestComputedOrders`):** Maps `R3`/`S3`/`R2`/`R7`/`F2`/`F4` cleanly with dynamic positive-block diagnostics (`composite_smooth` vs `-0.10` cautious threshold) and SEBI-safe Model Posture / Model Target Qty terminology.
+2. **Holdings Diff & Tracked Views (`computeHoldingsDiff`, `MMI_REPLAY`):** Maintains 1:1 parity with `src/paper_bot.py` (`COST_RATE = 0.0015`, `REGIME_CUT_COST_RATE = 0.0035`, `tax_defensive = True`, `last_valid_prices` MTM retention, FIFO LTCG Shield, and `#pbNetDefTaxToggle` checked by default).
 
 ---
 
-## 9. Explicit Parameter Provenance & Known Limitations
+## 9. Explicit Parameter Provenance & System Boundaries
 
-| Parameter / Choice | Exact Value | How Determined? *(Empirical vs Design Choice)* | Key Limitation / Assumption |
+| Parameter / Choice | Exact Value | Provenance & Empirical Verification | Key Operating Boundary |
 |---|---|---|---|
-| **Momentum Lookback & Skip** | `189d` (`9M`) / `21d` skip | Empirical curve `[63..252d]` in `numba_deep_research.txt` (`Sortino_189` / `Risk_189` lead at `6M` cadence) | Assumes 1-month short-term reversal persists in Indian midcaps |
-| **Sleeve Structure** | `50% Top-20 + 50% Top-30` | Structural constraint preserving PDF/user split while verifying vs `20/20`, `30/30`, `15/25`, `NormZ` | Slightly higher idiosyncratic weight in Top 20 (`4.17%`) vs pure EW-30 (`3.33%`) |
-| **Rebalance Interval** | `126` trading days (`6M`) | Empirical tradeoff (`EXP 2`: cuts `398%` monthly STCG drag while rotating fast enough) | Any fixed rebalance day exhibits `~4.2%` 6-phase CAGR dispersion across start dates |
-| **MF4 Block Weights** | `[0.44, 0.10, 0.34, 0.12]` | **Out-of-sample SciPy optimization** strictly on `P1 (2011–16)` (`[0.44, 0.10, 0.34, 0.11]`), confirmed identical on `P1+P2` | Weights `NIFTYBEES` in B1 & `GOLDBEES` in B4; assumes macro/breadth crisis correlations remain informative |
-| **EWMA & Hysteresis Thresholds** | `tau 8/22`, `[-0.25, -0.10, +0.18]`, `25d` hold, `[0.25, 0.60, 1.00]` | Sweep across 3-state low-churn grid targeting controlled turnover (`~374%` vs `480%` un-hysteresed) | Turns `31.6%–35%` of time into defense (`2018–26 avg eq 65%–68%`) — can underperform sudden melt-ups when `comp_smooth` lags |
-| **`TrendGold150` Band** | `GOLDBEES` vs `EMA150 ±2%` | Empirical shootout (`EMA 50/100/150`) solving static Gold's `-31.7%` 2026 bear market | Can still take initial `-2%` to `-4%` stop-out heat before `EMA150` `-2%` triggers |
-| **Transaction Cost** | `15 bps` (`0.15%`) one-way | Indian delivery STT (`0.10%`) + exchange/SEBI/stamp (`~0.035%`) + limit slippage (`~0.015%`) | Assumes liquid Midcap 150 fills at closing auction/15:20 IST match daily close within `1.5 bps` impact (stress-tested at `30 bps` too) |
-| **Taxation in Backtester** | `20%` STCG, `12.5%` LTCG (`₹1.25L` exempt) | Union Budget 2024 Indian equity tax rates applied retroactively cleanly on uniform basis | `update_live.py` default `tax_defensive=False` omits 30% debt tax on ETF switches inside the live equity curve *(though Numba research & stress runs explicitly modeled Sec 50AA `30%` debt tax!)*; dividends ignored (Price-Return bhavcopy equity series underestimate total-return by ~`0.8%–1.2%`/yr dividend yield) |
-| **Delisted Stock Pricing (`ffill limit=5`)** | Halted `>5d` falls back to last lot cost basis in MTM | Prevents carried frozen prices after delisting | True bankruptcies (e.g., permanent wipeout before semi-annual exit) are stress-tested separately (`-10%` delisting haircut lowered unhedged `Risk_189` FULL CAGR slightly from `14.97%` to `14.62%` in `numba_deep_research.txt`) |
-| **PIT Proxy Universe (`2011–26`)** | `NET_TRDVAL` Ranks `81..230` (`>= ₹20`) | Proxy for NSE Nifty Midcap 150 full-market-cap ranks (`NSE PR` archives omit historical share count / float MCap) | Turnover ranks track large-midcap liquidity well (`772` equities) without survivorship bias, though micro-differences vs free-float MCap index reconstitutions remain |
+| **Momentum Lookback & Skip** | `189d` (`9M`), `21d` skip, `252d` ann, `>=95%` coverage | Empirical `[63..252d]` curve in `run_numba_sweeps.py`; unified across `src/momentum.py` & Numba (`0.0` drift) | Short-term `1M` reversal assumption in midcap equities |
+| **Sleeve Blend** | `50% Top-20 + 50% Top-30` | Yields `30` unique stocks (`4.17%` Ranks `1–20`, `1.67%` Ranks `21–30`) vs `20/20`, `30/30`, `NormZ` | Slightly higher concentration (`4.17%`) in top 20 leaders |
+| **Rebalance Cadence** | `126d` (`6M`) & `Staggered 2x6M` option | Balances turnover tax drag vs staleness; staggered `2`-tranche shrinks 6-phase spread from `4.60%` to `1.96%` | Fixed phase-0 rebalance varies across start dates |
+| **MF4 Block Weights** | `[0.44, 0.10, 0.34, 0.12]` | Out-of-sample SciPy walk-forward on `P1 (2011–16)` alone (`[0.44, 0.10, 0.34, 0.11]`), confirmed on `P1+P2`; beats Zero-Fit `EQ4` (`15.61%` vs `13.44%`) | Uses causal `756d` rolling median/MAD normalization |
+| **EWMA & Schmitt Hysteresis** | `tau 8/22`, `[-0.25, -0.10, +0.18]`, `25d` hold | Targets controlled turnover (`376.9%`) and Zweig thrust recovery (`>= +25%` 21d surge at breadth `>= 50%`) | `P3 (2021–26)` is disclosed as Post-Selection / Partially In-Sample |
+| **`TrendGold150` Gate** | `GOLDBEES` vs `EMA150 +/- 2%` | Empirical EMA sweep (`50/100/150`) switching defensive reserves to `LIQUIDCASE` below `EMA150 - 2%` | Post-selection on `2026_GoldSlump`; incurs `2–4%` initial stop band |
+| **Transaction Impact** | `15 bps` scheduled / `35 bps` risk-off | Models STT + fees + elevated market-impact slippage during stress trims (`30 / 60 bps` stress verified at `13.95%` 16Y CAGR) | Assumes liquid Midcap 150 execution near closing auction |
+| **Indian FIFO & Sec 50AA Taxes** | `20%` STCG, `12.5%` LTCG, `30%` Sec 50AA debt, `12.5%/30%` Gold | Default `tax_defensive=True` in both `src/backtester.py` and `src/paper_bot.py` (`pre-def-tax` retained as comparison column only) | Price-return bhavcopy omits `~0.8–1.2%`/yr cash dividends |
+| **Delisted MTM & Write-Downs** | `last_valid_px` (`ffill <= 5d`) | Never reverts halted/delisted stocks to purchase cost; `-15%` and `-25%` forced write-down stress tests reported cleanly (`-34.23%` DD) | Permanent wipeout timing depends on semi-annual purge |
+| **PIT Universe Reconstruction** | `NET_TRDVAL` Ranks `81..230` (or CMIE MCap `101..250`) | Semi-annual zero-survivorship reconstitution across `772` liquid midcaps; drop-in CMIE Prowessdx loader wired in `src/prowess_loader.py` | Proxy uses turnover ranks alongside Official Midcap 100/150 benchmarks |
 
 ---
 
 ## 10. Autonomous Paper Trading Bot, Forward Tape & Tracked Views (`2026-11-27+`)
 
 1. **Official Autonomous Ledger (`src/paper_bot.py` → `data/paper_ledger.json`):**
-   - Executed daily at EOD by `scripts/update_live.py` (CI Mon–Fri `13:20 UTC` / `6:50 PM IST`), tracking **`R3_1L_SlotCap`** (`₹1,00,000`, `SlotCap` ON, `LIQUIDCASE` sweep ON) and **`R3_10L_Standard`** (`₹10,00,000`, unconstrained whole-share sizing, `LIQUIDCASE` sweep ON) alongside forward baselines **`Midcap150_EW`** and **`Unhedged_Risk9M`** from `inception_date`.
-   - Enforces strict **`T+1` causality** (signals observed at Day `t-1` close execute at Day `t` closing raw prices; Day-0 inception deploys cleanly at `inception_date`), `126`-trading-day 6M rebalances, daily `MF4` regime transitions (`weakest_first` trims on equity cuts), `TrendGold150` ETF flips (`GOLDBEES` vs `LIQUIDCASE`), `0.15%` one-way brokerage/slippage friction, corporate-action FIFO lot adjustments (`SPLIT` / `BONUS` factor `f` updates `shares /= f, buy_price *= f`), and full Indian FY FIFO capital-gains accounting (`20%` STCG `<365d`, `12.5%` LTCG `>=365d` above `₹1,25,000` annual exemption, STCL/LTCL carry-forwards).
-   - **Dual Defensive Tax Transparency:** Reports both **`nav`** (`nav_equity_tax_only`, matching `src/backtester.py`) and **`nav_full_tax`** (additionally deducting estimated Sec 50AA `30%` slab tax on `LIQUIDCASE` gains and `12.5%`/`30%` LTCG/STCG on `GOLDBEES` realizations).
-   - **Idempotency:** Re-running on an already processed `as_of_date` leaves `data/paper_ledger.json` and `data/forward_tape.json` byte-identical.
-2. **Compact Forward Tape (`data/forward_tape.json`):**
-   - Append-only daily JSON log containing closing `prices` (`150` midcaps + `9` ETFs), `corp_actions`, multi-preset `regime` states (`target_eq_mf4`, `target_eq_dd15`, `target_eq_dd75`, `target_eq_dd50`, `active_def_etf`, `ew_index_val`), and per-symbol momentum `rankings` (`rk9`, `so9`, `r9`, `r12`, `a50`).
-3. **Private Client-Side Tracked Views (`index.html` → `window.mmiForwardReplay` & `localStorage`):**
-   - **1:1 Engine Parity:** Implements a deterministic JavaScript mirror of `src/paper_bot.py` (`stepPortfolio`, `computeTargetWeights`, FIFO lot tax, corporate actions, `330–364d` LTCG Shield deferral with automatic liquidation on Day `365+`, and Frozen `"Do-Nothing"` baselines).
-   - **Hand Over to Bot Workflow:** `Rebalance & Tax Diff` accepts `SYMBOL,SHARES,YYYY-MM-DD[,AVG_BUY_PRICE]`, `Available Cash (₹)`, per-preset strategy overrides, `Outside Midcap 150` liquidation/exclusion handling, and spawns persistent Tracked Views in `localStorage` (`mmi_tracked_views_v1`) that auto-replay new tape days until explicitly frozen via **End / Freeze View**, with full JSON Export/Import portability.
+   - Executed daily at EOD by `scripts/update_live.py` (`Mon–Fri 13:20 UTC` / `6:50 PM IST`), tracking **`R3_1L_SlotCap`** (`₹1,00,000`) and **`R3_10L_Standard`** (`₹10,00,000`) alongside live baselines **`Midcap150_EW`** and **`Unhedged_Risk9M`**.
+   - Enforces `T+1` causality, corporate actions, `tax_defensive=True` Sec 50AA / Gold tax deductions from cash (`nav_full_tax` default, `nav_pre_def_tax` comparison), `15 bps` scheduled / `35 bps` risk-off sales friction, `last_valid_prices` MTM retention, and byte-identical idempotency.
+2. **Compact Forward Tape (`data/forward_tape.json`) & Tracked Views (`window.mmiForwardReplay`):**
+   - Stores daily prices, `corp_actions`, multi-preset regimes, `listing_days` (`ld`) and `new_listing` (`nl`) flags, synced cleanly with the browser JS engine (`assets/app.js`).
+
+---
+
+*Personal Quantitative Research & Paper-Trading Sandbox — Not Investment Advice / Not SEBI Registered.*
+
 

@@ -123,10 +123,23 @@ class PaperBotTests(unittest.TestCase):
         nav_post = st["daily_history"][4]["nav"]
         self.assertLess(abs(nav_post / nav_pre - 1.0), 0.03)
 
-        # Verify defensive ETF tax estimated transparently separately from equity nav
+        # Verify defensive ETF tax is deducted by default (tax_defensive=True)
+        self.assertTrue(st.get("tax_defensive", True))
         self.assertGreater(st["tax_state"]["estimated_def_tax_cum"], 0.0)
+        self.assertGreater(st["tax_state"]["realized_def_tax_cum"], 0.0)
         last_h = st["daily_history"][-1]
-        self.assertLess(last_h["nav_full_tax"], last_h["nav"])
+        self.assertAlmostEqual(last_h["nav_full_tax"], last_h["nav"], places=4)
+        self.assertGreater(last_h["nav_pre_def_tax"], last_h["nav"])
+
+        # Verify optional pre-defensive-tax comparison mode (tax_defensive=False)
+        st_pre = run_synthetic_steps(tape, initial_capital=1_000_000.0, preset="R3", slot_cap=False, liquid_sweep=True, tax_defensive=False)
+        last_pre = st_pre["daily_history"][-1]
+        self.assertLess(last_pre["nav_full_tax"], last_pre["nav"])
+        self.assertAlmostEqual(last_pre["nav_pre_def_tax"], last_pre["nav"], places=4)
+
+        # Verify 35 bps regime-cut cost rate vs standard 15 bps sale
+        reg_sell = next(t for t in st["trade_log"] if t["event_type"] == "REGIME_SHIFT" and t["side"] == "SELL")
+        self.assertAlmostEqual(reg_sell["friction"], reg_sell["notional"] * 0.0035, places=2)
 
     def test_126_day_scheduled_rebalance_trigger(self):
         import datetime as _dt
@@ -227,6 +240,35 @@ class PaperBotTests(unittest.TestCase):
         self.assertLess(s32["realized_pnl"], 0)
         expected_net = s33["realized_pnl"] + s32["realized_pnl"]
         self.assertAlmostEqual(s33["tax_charged"], max(0.0, expected_net) * 0.20, places=2)
+
+    def test_halted_mtm_uses_last_valid_price_and_singular_day_grammar(self):
+        import datetime as _dt
+
+        tape = build_synthetic_parity_tape()
+        d0 = json.loads(json.dumps(tape[0]))
+        d0["date"] = "2026-11-02"
+        # Deploy at initial price of STK01 (200) -> Day 1 rallies to 340 -> Day 2 STK01 missing (halted)
+        d1 = json.loads(json.dumps(d0))
+        d1["date"] = "2026-11-03"
+        d1["prices"]["STK01"] = 340.0
+        d2 = json.loads(json.dumps(d1))
+        d2["date"] = "2026-11-04"
+        del d2["prices"]["STK01"]
+
+        st = run_synthetic_steps([d0, d1, d2], initial_capital=1_000_000.0, preset="R3", slot_cap=False, liquid_sweep=True)
+        stk01_row = next(h for h in st["holdings"] if h["symbol"] == "STK01")
+        # MTM on halted day MUST hold last valid price 340.0, never revert to buy price 200.0
+        self.assertAlmostEqual(stk01_row["live_price"], 340.0, places=2)
+
+        # Verify singular "1 trading day" grammar when next_rebalance_in_trading_days == 1 (day 125)
+        days126 = []
+        for i in range(126):
+            d = json.loads(json.dumps(d0))
+            d["date"] = (_dt.date(2026, 1, 1) + _dt.timedelta(days=i)).isoformat()
+            days126.append(d)
+        st126 = run_synthetic_steps(days126, initial_capital=250_000.0, preset="R3", slot_cap=False, liquid_sweep=True)
+        last_hold = [x for x in st126["decision_log"] if x["event_type"] == "HOLD_CHECK"][-1]
+        self.assertIn("1 trading day;", last_hold["summary"])
 
     def test_committed_json_files_valid_and_nan_free(self):
         def _reject_nan(val):

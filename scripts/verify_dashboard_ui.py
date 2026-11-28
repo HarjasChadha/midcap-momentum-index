@@ -93,18 +93,83 @@ def verify_target(url: str, shot_dir: Path | None = None, is_local: bool = True)
         assert len(as_of) == 10, f"Unexpected as_of_date: {as_of}"
         assert page.locator("#ordersTable tbody tr").count() >= 10, "Too few orders rendered"
 
+        # 0. P2 Content, SEBI Disclaimer, Dynamic Banner & Header checks on Action & Orders
+        sidebar_disc = page.inner_text("#sidebarDisclaimer")
+        footer_disc = page.inner_text("#footerDisclaimer")
+        assert "Not SEBI Registered" in sidebar_disc and "Not Investment Advice" in footer_disc
+        regime_sub = page.inner_text("#regimeSubtitle")
+        assert "All 4 market health signals support" not in regime_sub, f"Contradictory static banner still present: {regime_sub}"
+        assert "Composite score" in regime_sub and "-0.10 cautious threshold" in regime_sub
+        assert "Model Target Qty" in page.inner_text("#ordersTable thead")
+
+        # Test explicit negative composite_smooth / mixed blocks dynamic banner case cleanly
+        banner_diag = page.evaluate(
+            """() => {
+                const orig = JSON.parse(JSON.stringify(STATE.regime));
+                STATE.regime.state = 'RISK_ON';
+                STATE.regime.multifactor_blocks.b1_trend = -0.45;
+                STATE.regime.multifactor_blocks.b2_vol = 0.12;
+                STATE.regime.multifactor_blocks.b3_breadth = 0.40;
+                STATE.regime.multifactor_blocks.b4_macro_gold = 0.25;
+                STATE.regime.multifactor_blocks.composite_smooth = -0.04;
+                renderHeaderAndRegime();
+                const txt = document.getElementById('regimeSubtitle').textContent;
+                STATE.regime = orig;
+                renderHeaderAndRegime();
+                return txt;
+            }"""
+        )
+        assert "All 4 market health signals support" not in banner_diag
+        assert "3 of 4 blocks positive" in banner_diag
+
         # 1. Exact Python-vs-JS Engine Parity Check
         assert_python_js_parity(page)
 
-        # 2. Walk every sidebar tab cleanly
+        # 2. Walk every sidebar tab cleanly + verify P2 Tab requirements
         for tab in ("charts", "rankings", "research", "paperbot"):
             page.click(f'button.nav-btn[data-tab="{tab}"]')
             page.wait_for_timeout(350)
             assert page.locator(f"#tab-{tab}.active").count() == 1, f"Tab {tab} did not activate"
 
+        # Verify Performance & Risk tab (16Y Hero first + Survivorship disclosure + ? tooltips + no 4-line key)
+        page.click('button.nav-btn[data-tab="charts"]')
+        page.wait_for_timeout(250)
+        assert page.locator("#pitPerfSummaryGrid .metric-cell").count() >= 4
+        assert "Survivorship-Biased" in page.inner_text("#survivorshipBadge")
+        assert "Survivorship-Bias Disclosure" in page.inner_text("#survivorshipDisclosureBanner")
+        assert page.locator("#tab-charts .intuition-key").count() == 0, "Old bulky glossary block should be removed in favor of ? tooltips"
+        assert page.locator("#pitPerfSummaryGrid .tooltip-q").count() >= 4
+
+        # Verify Top 60 Stocks headers & New Listing metadata
+        page.click('button.nav-btn[data-tab="rankings"]')
+        page.wait_for_timeout(250)
+        rk_head = page.inner_text("#rankingsTable thead")
+        assert "Above 50-DMA (Trim Signal)" in rk_head
+        assert "Listing Days" in rk_head
+        assert "New Listing" in page.inner_text("#rankingsTable tbody")
+
+        # Verify Strategy & Proof PDF path & Post-Selection P3 label
+        page.click('button.nav-btn[data-tab="research"]')
+        page.wait_for_timeout(250)
+        pdf_href = page.locator('#tab-research a[href$=".pdf"]').get_attribute("href")
+        assert pdf_href == "./docs/Momentum_Strategy_Mathematical_Specification.pdf", f"Unexpected PDF href: {pdf_href}"
+        assert "2021–26 (Post-Selection)" in page.inner_text("#pitResearchTable thead")
+
+        # Return to Paper Trading Bot for Tab A & Tab B checks
+        page.click('button.nav-btn[data-tab="paperbot"]')
+        page.wait_for_timeout(250)
+
         # 3. Verify Paper Trading Bot -> Tab A (Official Autonomous Bot)
+        assert page.is_checked("#pbNetDefTaxToggle"), "#pbNetDefTaxToggle must default to checked (tax_defensive=True)"
         assert page.locator("#pbOfficialKpis .metric-cell").count() == 5
-        assert "Active since" in page.inner_text("#pbOfficialStatusPill")
+        pill_txt = page.inner_text("#pbOfficialStatusPill")
+        assert "Active since" in pill_txt
+        assert "1 trading days" not in pill_txt, f"Plural typo on 1 trading day: {pill_txt}"
+        # Check Early-Inception Summary state renders cleanly when < 5 trading days
+        early_days = page.evaluate("() => (PAPER_LEDGER?.accounts?.R3_1L_SlotCap?.daily_history || []).length")
+        if early_days < 5:
+            assert not page.locator("#pbOfficialEarlyState").is_hidden(), "Expected Early-Inception card for <5 days"
+            assert page.locator("#pbOfficialChartWrap").is_hidden(), "Chart wrap should be hidden when <5 days"
         assert page.locator("#pbOfficialHoldingsWrap tbody tr").count() >= 25
         page.click('button[data-pb-account="R3_10L_Standard"]')
         page.wait_for_timeout(250)

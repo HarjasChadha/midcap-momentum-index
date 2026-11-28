@@ -17,7 +17,13 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from src.backtester import BacktestConfig, compute_metrics, run_backtest  # noqa: E402
 from src.data_loader import BENCHMARK_TICKERS, fetch_and_cache_all, load_universe  # noqa: E402
-from src.momentum import combine_sleeves, compute_score_matrix, select_affordable_blend, select_sleeve_weights  # noqa: E402
+from src.momentum import (  # noqa: E402
+    combine_sleeves,
+    compute_listing_days,
+    compute_score_matrix,
+    select_affordable_blend,
+    select_sleeve_weights,
+)
 from src.nse_mcp import NseMcpClient  # noqa: E402
 from src.paper_bot import (  # noqa: E402
     build_forward_tape_entry,
@@ -243,12 +249,14 @@ def build_live_state() -> dict[str, Any]:
     feat = build_regime_features(adj_df, bench_df)
     def_df = build_defensive_series(bench_df)
     stock_ma50 = adj_df.rolling(50, min_periods=30).mean()
+    listing_days_s = compute_listing_days(adj_df)
 
+    # Enforce strict un-padded >=95% IPO lookback coverage (shared canonical scoring)
     scores = {
-        "raw_9m": compute_score_matrix(adj_df.ffill(limit=2), 189, 21, "raw"),
-        "raw_12m": compute_score_matrix(adj_df.ffill(limit=2), 252, 21, "raw"),
-        "risk_9m": compute_score_matrix(adj_df.ffill(limit=2), 189, 21, "risk_adj"),
-        "sortino_9m": compute_score_matrix(adj_df.ffill(limit=2), 189, 21, "sortino"),
+        "raw_9m": compute_score_matrix(adj_df, 189, 21, "raw"),
+        "raw_12m": compute_score_matrix(adj_df, 252, 21, "raw"),
+        "risk_9m": compute_score_matrix(adj_df, 189, 21, "risk_adj"),
+        "sortino_9m": compute_score_matrix(adj_df, 189, 21, "sortino"),
     }
 
     last_dt = str(adj_df.index[-1])
@@ -275,23 +283,36 @@ def build_live_state() -> dict[str, Any]:
         return [{"score_key": key, "top_n": 20, "alloc": 0.5, "weighting": wt}, {"score_key": key, "top_n": 30, "alloc": 0.5, "weighting": wt}]
 
     sweep_col = "LIQUID_REALISTIC" if "LIQUID_REALISTIC" in def_df.columns else "LIQUID_TBILL"
+    # (sleeves, reb_days, alloc, def_asset, trim_mode, discrete_slotcap, sweep, extra_cfg_kwargs)
     curve_specs = {
-        "R3_Risk9m_6M_MF4_TrendGold150": (_slv("risk_9m", "equal"), 126, reg_mf4, "TREND_GOLD150_OR_LIQ", "weakest_first", False, False),
-        "R3_Disc1L_SlotCap": (_slv("risk_9m", "equal"), 126, reg_mf4, "TREND_GOLD150_OR_LIQ", "weakest_first", True, True),
-        "S3_Sortino9m_6M_MF4_TrendGold150": (_slv("sortino_9m", "equal"), 126, reg_mf4, "TREND_GOLD150_OR_LIQ", "weakest_first", False, False),
-        "S3_Disc1L_SlotCap": (_slv("sortino_9m", "equal"), 126, reg_mf4, "TREND_GOLD150_OR_LIQ", "weakest_first", True, True),
-        "R2_Risk9m_6M_DD15_Sh75_GoldLiq50": (_slv("risk_9m", "equal"), 126, reg_dd15, "GOLD_50_LIQUID_50", "weakest_first", False, False),
-        "R2_Disc1L_SlotCap": (_slv("risk_9m", "equal"), 126, reg_dd15, "GOLD_50_LIQUID_50", "weakest_first", True, True),
-        "R7_NormZ_Risk9m_6M_DD15_Sh75_GoldLiq50": (_slv("risk_9m", "norm_z"), 126, reg_dd15, "GOLD_50_LIQUID_50", "weakest_first", False, False),
-        "F2_9m_6M_DD12_Sh75_GoldLiq50": (_slv("raw_9m", "equal"), 126, reg_dd75, "GOLD_50_LIQUID_50", "weakest_first", False, False),
-        "F2_Disc1L_SlotCap": (_slv("raw_9m", "equal"), 126, reg_dd75, "GOLD_50_LIQUID_50", "weakest_first", True, True),
-        "F7_NormZ_9m_6M_DD12_Sh75_GoldLiq50": (_slv("raw_9m", "norm_z"), 126, reg_dd75, "GOLD_50_LIQUID_50", "weakest_first", False, False),
-        "F1_9m_6M_DD12_Sh50_GoldLiq50": (_slv("raw_9m", "equal"), 126, reg_dd50, "GOLD_50_LIQUID_50", "weakest_first", False, False),
-        "F4_12m_12M_DD12_Sh50_GoldLiq50": (_slv("raw_12m", "equal"), 252, reg_dd50, "GOLD_50_LIQUID_50", "weakest_first", False, False),
-        "Unhedged_9m_6M": (_slv("raw_9m", "equal"), 126, reg_none, "GOLD_50_LIQUID_50", "weakest_first", False, False),
+        "R3_Risk9m_6M_MF4_TrendGold150": (_slv("risk_9m", "equal"), 126, reg_mf4, "TREND_GOLD150_OR_LIQ", "weakest_first", False, False, {}),
+        "R3_Disc1L_SlotCap": (_slv("risk_9m", "equal"), 126, reg_mf4, "TREND_GOLD150_OR_LIQ", "weakest_first", True, True, {}),
+        "R3_Staggered_2x6M": (_slv("risk_9m", "equal"), 126, reg_mf4, "TREND_GOLD150_OR_LIQ", "weakest_first", False, False, {"num_sleeves": 2}),
+        "R3_Stress_30bps_2xCost": (
+            _slv("risk_9m", "equal"),
+            126,
+            reg_mf4,
+            "TREND_GOLD150_OR_LIQ",
+            "weakest_first",
+            False,
+            False,
+            {"cost_bps_one_way": 30.0, "regime_cost_bps_one_way": 60.0},
+        ),
+        "R3_PreDefTax_Comparison": (_slv("risk_9m", "equal"), 126, reg_mf4, "TREND_GOLD150_OR_LIQ", "weakest_first", False, False, {"tax_defensive": False}),
+        "S3_Sortino9m_6M_MF4_TrendGold150": (_slv("sortino_9m", "equal"), 126, reg_mf4, "TREND_GOLD150_OR_LIQ", "weakest_first", False, False, {}),
+        "S3_Disc1L_SlotCap": (_slv("sortino_9m", "equal"), 126, reg_mf4, "TREND_GOLD150_OR_LIQ", "weakest_first", True, True, {}),
+        "R2_Risk9m_6M_DD15_Sh75_GoldLiq50": (_slv("risk_9m", "equal"), 126, reg_dd15, "GOLD_50_LIQUID_50", "weakest_first", False, False, {}),
+        "R2_Disc1L_SlotCap": (_slv("risk_9m", "equal"), 126, reg_dd15, "GOLD_50_LIQUID_50", "weakest_first", True, True, {}),
+        "R7_NormZ_Risk9m_6M_DD15_Sh75_GoldLiq50": (_slv("risk_9m", "norm_z"), 126, reg_dd15, "GOLD_50_LIQUID_50", "weakest_first", False, False, {}),
+        "F2_9m_6M_DD12_Sh75_GoldLiq50": (_slv("raw_9m", "equal"), 126, reg_dd75, "GOLD_50_LIQUID_50", "weakest_first", False, False, {}),
+        "F2_Disc1L_SlotCap": (_slv("raw_9m", "equal"), 126, reg_dd75, "GOLD_50_LIQUID_50", "weakest_first", True, True, {}),
+        "F7_NormZ_9m_6M_DD12_Sh75_GoldLiq50": (_slv("raw_9m", "norm_z"), 126, reg_dd75, "GOLD_50_LIQUID_50", "weakest_first", False, False, {}),
+        "F1_9m_6M_DD12_Sh50_GoldLiq50": (_slv("raw_9m", "equal"), 126, reg_dd50, "GOLD_50_LIQUID_50", "weakest_first", False, False, {}),
+        "F4_12m_12M_DD12_Sh50_GoldLiq50": (_slv("raw_12m", "equal"), 252, reg_dd50, "GOLD_50_LIQUID_50", "weakest_first", False, False, {}),
+        "Unhedged_9m_6M": (_slv("raw_9m", "equal"), 126, reg_none, "GOLD_50_LIQUID_50", "weakest_first", False, False, {}),
     }
 
-    for key, (slv, reb, alloc, def_a, trim, af, sw) in curve_specs.items():
+    for key, (slv, reb, alloc, def_a, trim, af, sw, extra_kw) in curve_specs.items():
         res = run_backtest(
             adj_df,
             raw_df,
@@ -303,11 +324,14 @@ def build_live_state() -> dict[str, Any]:
                 end_date=last_dt,
                 initial_capital=100_000.0,
                 rebalance_days=reb,
-                cost_bps_one_way=15.0,
+                cost_bps_one_way=extra_kw.get("cost_bps_one_way", 15.0),
+                regime_cost_bps_one_way=extra_kw.get("regime_cost_bps_one_way", 35.0),
                 apply_tax=True,
+                tax_defensive=extra_kw.get("tax_defensive", True),
                 defensive_asset=def_a,
                 trim_mode=trim,
                 sleeves=slv,
+                num_sleeves=extra_kw.get("num_sleeves", 1),
                 discrete_shares=af,
                 affordability_filter=af,
                 sweep_idle_cash=sw,
@@ -318,10 +342,26 @@ def build_live_state() -> dict[str, Any]:
         presets_summary[key] = res["metrics"]
         nav_curves[key] = res["nav"]
 
-    # Add benchmarks indexed to ₹1,00,000 on 2018-01-02
+    # Add benchmarks indexed to ₹1,00,000 on 2018-01-02 (plus Official NSE Midcap 100 & 150)
     ew_series = build_ew_index(adj_df).loc[clean_start:last_dt]
     nav_curves["Midcap150_EW_Universe"] = ew_series / float(ew_series.iloc[0]) * 100_000.0
     presets_summary["Midcap150_EW_Universe"] = compute_metrics(nav_curves["Midcap150_EW_Universe"])
+
+    if "NIFTY_MIDCAP_100" in def_df.columns:
+        m100_series = def_df["NIFTY_MIDCAP_100"].loc[clean_start:last_dt].dropna()
+        if len(m100_series) > 10:
+            m100_aligned = m100_series.reindex(ew_series.index).ffill().bfill()
+            nav_curves["NIFTY_MIDCAP_100"] = m100_aligned / float(m100_aligned.iloc[0]) * 100_000.0
+            presets_summary["NIFTY_MIDCAP_100"] = compute_metrics(nav_curves["NIFTY_MIDCAP_100"])
+
+    if "NIFTY_MIDCAP_150" in def_df.columns:
+        m150_series = def_df["NIFTY_MIDCAP_150"].loc[clean_start:last_dt].dropna()
+        if len(m150_series) > 50:
+            m150_norm = m150_series / float(m150_series.iloc[0]) * 100_000.0
+            presets_summary["NIFTY_MIDCAP_150"] = {
+                **compute_metrics(m150_norm),
+                "period": f"{m150_series.index[0]}..{m150_series.index[-1]}",
+            }
 
     gold50_series = def_df["GOLD_50_LIQUID_50"].loc[clean_start:last_dt].dropna()
     nav_curves["GOLD_50_LIQUID_50"] = gold50_series / float(gold50_series.iloc[0]) * 100_000.0
@@ -381,6 +421,7 @@ def build_live_state() -> dict[str, Any]:
         px = float(raw_last.get(sym, np.nan))
         adx = float(adj_live.loc[last_dt, sym]) if pd.notna(adj_live.loc[last_dt, sym]) else float("nan")
         m50 = float(ma50_last.get(sym, np.nan))
+        ld_cnt = int(listing_days_s.get(sym, 0))
         rankings_top60.append(
             {
                 "rank_risk9m": r_risk,
@@ -389,6 +430,8 @@ def build_live_state() -> dict[str, Any]:
                 "rank_12m": rank12_map.get(sym),
                 "symbol": sym,
                 "price": px,
+                "listing_days": ld_cnt,
+                "new_listing": ld_cnt < 378,
                 "risk_9m": float(sr9[sym]),
                 "sortino_9m": float(ss9[sym]) if pd.notna(ss9.get(sym)) else None,
                 "raw_9m_pct": float(s9[sym] * 100.0) if pd.notna(s9.get(sym)) else None,
@@ -409,10 +452,13 @@ def build_live_state() -> dict[str, Any]:
         px = float(raw_last.get(sym, np.nan))
         if not math.isfinite(px) or px <= 0:
             continue
+        ld_cnt = int(listing_days_s.get(sym, 0))
         universe_scores.append(
             {
                 "sym": sym,
                 "px": round(px, 2),
+                "ld": ld_cnt,
+                "nl": ld_cnt < 378,
                 "rk9": round(float(sr9[sym]), 4),
                 "so9": round(float(ss9[sym]), 4) if pd.notna(ss9.get(sym)) else None,
                 "r9": round(float(s9[sym]) * 100.0, 2) if pd.notna(s9.get(sym)) else None,
@@ -432,8 +478,11 @@ def build_live_state() -> dict[str, Any]:
 
     # Synchronize Clean Backtest Matrix directly with live 2018-26 curve simulations
     clean_matrix_specs = [
-        ("R3 Recommended (₹1L SlotCap)", "R3_Disc1L_SlotCap"),
-        ("R3 Optimal MF (Frac)", "R3_Risk9m_6M_MF4_TrendGold150"),
+        ("R3 Optimal MF (Net Sec 50AA + 35 bps Risk-Off)", "R3_Risk9m_6M_MF4_TrendGold150"),
+        ("R3 Staggered 2-Tranche 6M (50% Every 3M)", "R3_Staggered_2x6M"),
+        ("R3 Stress Test (30 bps / 2x Friction)", "R3_Stress_30bps_2xCost"),
+        ("R3 Comparison (Pre-Def-Tax Toggle Off)", "R3_PreDefTax_Comparison"),
+        ("R3 Discrete ₹1L SlotCap (2018-26 Luck Caveat)", "R3_Disc1L_SlotCap"),
         ("S3 Runner-Up (₹1L SlotCap)", "S3_Disc1L_SlotCap"),
         ("S3 Sortino MF (Frac)", "S3_Sortino9m_6M_MF4_TrendGold150"),
         ("R7 Concentrated NormZ", "R7_NormZ_Risk9m_6M_DD15_Sh75_GoldLiq50"),
@@ -442,7 +491,9 @@ def build_live_state() -> dict[str, Any]:
         ("F2 Legacy V1 (Frac)", "F2_9m_6M_DD12_Sh75_GoldLiq50"),
         ("F4 Large Cap 12M", "F4_12m_12M_DD12_Sh50_GoldLiq50"),
         ("Baseline Unhedged 9M", "Unhedged_9m_6M"),
-        ("Benchmark", "Midcap150_EW_Universe"),
+        ("Benchmark: Current Universe EW (Biased 2018-26)", "Midcap150_EW_Universe"),
+        ("Benchmark: Official Nifty Midcap 100", "NIFTY_MIDCAP_100"),
+        ("Benchmark: Official Nifty Midcap 150 (2019-26)", "NIFTY_MIDCAP_150"),
         ("Defensive Gate ETF", "TREND_GOLD150_OR_LIQ"),
         ("Defensive 50/50", "GOLD_50_LIQUID_50"),
     ]
@@ -463,6 +514,11 @@ def build_live_state() -> dict[str, Any]:
         research_v3["src_exact_16yr"] = src16
         lbl_map = {
             "R3_src_Frac": "R3 Optimal (Risk9M · 4-Block MF · TrendGold150)",
+            "R3_Staggered_2x6M": "R3 Staggered 2-Tranche 6M (50% Every 3M)",
+            "R3_Stress_30bps_2xCost": "R3 Stress Test (30 bps / 2x Friction)",
+            "R3_PreDefTax_Comparison": "R3 Pre-Def-Tax Comparison (Sec 50AA Off)",
+            "R3_Delist_Haircut_15pct": "R3 Delist/Halt Stress (-15% Write-Down)",
+            "R3_Delist_Haircut_25pct": "R3 Delist/Halt Stress (-25% Write-Down)",
             "R3_src_Disc1L": "R3 Optimal ₹1L Discrete SlotCap",
             "S3_src_Frac": "S3 Sortino9M · 4-Block MF · TrendGold150",
             "S3_src_Disc1L": "S3 Sortino9M ₹1L Discrete SlotCap",
@@ -470,33 +526,30 @@ def build_live_state() -> dict[str, Any]:
             "R2_src_Frac": "R2 Simple Trigger (Risk9M · DD>15% · 50/50 Gold+Liq)",
             "R2_src_Disc1L": "R2 Simple Trigger ₹1L Discrete SlotCap",
             "F2_src_Frac": "F2 Legacy V1 (Raw9M · DD>12% · 50/50 Gold+Liq)",
+            "ZeroFit_EQ4_GoldLiq50": "Zero-Fit Ablation (Equal 25%x4 MF · 50/50 Gold+Liq)",
+            "ZeroFit_EQ4_Liquid": "Zero-Fit Ablation (Equal 25%x4 MF · 100% Liquid)",
             "Unhedged_Risk9M": "Unhedged Risk9M EW (No Regime Hedge)",
             "Unhedged_Sortino9M": "Unhedged Sortino9M EW (No Regime Hedge)",
+            "PIT_EW_Benchmark": "Passive Liquid Midcap PIT EW Benchmark (Proxy)",
+            "NIFTY_MIDCAP_100": "Official NSE Nifty Midcap 100 Index (Full 16Y)",
+            "NIFTY_MIDCAP_100_150_STITCHED": "Official Stitched Midcap 100 -> Midcap 150",
+            "NIFTY_MIDCAP_150_2019_26": "Official NSE Nifty Midcap 150 Index (2019-26)",
+            "NIFTYBEES": "Official Nifty 50 ETF (NIFTYBEES)",
         }
-        pit_validation_16yr.append(
-            {
-                "universe": "Clean ETF-Free PIT (772 Eqs)",
-                "strategy": "Passive Midcap 150 EW Benchmark (Zero-Leak)",
-                "p1_cagr": 0.40,
-                "p2_cagr": 15.23,
-                "p3_cagr": 14.58,
-                "full_cagr": 9.77,
-                "full_dd": -54.08,
-                "full_sh": 0.18,
-            }
-        )
-        for row in src16.get("rows", []):
-            disp = lbl_map.get(row["lbl"], row["lbl"])
+        for row in src16.get("benchmarks", []) + src16.get("rows", []):
+            disp = lbl_map.get(row["lbl"], row.get("label") or row["lbl"])
             pit_validation_16yr.append(
                 {
-                    "universe": "Clean ETF-Free PIT (772 Eqs)",
+                    "id": row["lbl"],
+                    "universe": row.get("universe", "Clean ETF-Free PIT (772 Eqs)"),
                     "strategy": disp,
-                    "p1_cagr": row["P1_cagr"],
-                    "p2_cagr": row["P2_cagr"],
-                    "p3_cagr": row["P3_cagr"],
-                    "full_cagr": row["FULL_cagr"],
-                    "full_dd": row["FULL_dd"],
-                    "full_sh": row["FULL_sh"],
+                    "p1_cagr": row.get("P1_cagr"),
+                    "p2_cagr": row.get("P2_cagr"),
+                    "p3_cagr": row.get("P3_cagr"),
+                    "full_cagr": row.get("FULL_cagr"),
+                    "full_dd": row.get("FULL_dd"),
+                    "full_sh": row.get("FULL_sh"),
+                    "full_cal": row.get("FULL_cal"),
                 }
             )
     if deep_r1_path.exists():
@@ -604,6 +657,7 @@ def build_live_state() -> dict[str, Any]:
         reg_dd50_val=float(reg_dd50.loc[last_dt]),
         ew_index_val=ew_cur,
         corp_actions=nse_telemetry.get("corp_actions_checked") or [],
+        listing_days=listing_days_s,
     )
     tape_path = REPO_ROOT / "data" / "forward_tape.json"
     ledger_path = REPO_ROOT / "data" / "paper_ledger.json"
