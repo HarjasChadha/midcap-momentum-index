@@ -25,9 +25,11 @@
     </div>
 
     <nav class="sidebar-nav">
-      <div class="nav-group-label">Daily Action</div>
       <button class="nav-btn active" data-tab="portfolio">
         <span>Action &amp; Orders</span>
+      </button>
+      <button class="nav-btn" data-tab="guide">
+        <span>Start Here · Guide</span>
       </button>
       <button class="nav-btn" data-tab="rebalance">
         <span>Rebalance &amp; Tax Diff</span>
@@ -35,8 +37,6 @@
       <button class="nav-btn" data-tab="paperbot">
         <span>Paper Trading Bot</span>
       </button>
-
-      <div class="nav-group-label">Explore &amp; Verify</div>
       <button class="nav-btn" data-tab="charts">
         <span>Performance &amp; Risk</span>
       </button>
@@ -76,6 +76,213 @@
     </header>
 
     <main class="workspace" id="appRoot">
+      <!-- ================================================================ -->
+      <!-- VIEW 0: START HERE · BEGINNER INTERACTIVE GUIDE                  -->
+      <!-- ================================================================ -->
+      <section class="tab-panel" id="tab-guide" aria-label="Start Here Beginner Interactive Guide">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Start Here: Plain-English Interactive Guide</h1>
+              <p class="panel-desc">First time visiting? Everything this strategy does, how the 6 presets differ, when it exits to Gold or Cash, and when it steps back into stocks.</p>
+            </div>
+            <div class="segmented" style="flex-wrap:wrap;">
+              <a href="./docs/Momentum_Strategy_Mathematical_Specification.pdf" download="Momentum_Strategy_Mathematical_Specification.pdf" class="btn-primary btn-sm" id="guideTopPdfBtn">Download Math PDF &darr;</a>
+              <a href="https://github.com/HarjasChadha/midcap-momentum-index" target="_blank" rel="noopener" class="btn-secondary btn-sm">GitHub Code &nearr;</a>
+            </div>
+          </div>
+
+          <div class="three-col" style="margin-bottom: 18px;">
+            <div class="step-block">
+              <div class="step-num">1. What Is Happening?</div>
+              <div class="step-title">Hold the 30 steadiest climbers</div>
+              <p class="step-copy">Every weekday after NSE closes, Python scores all 150 Nifty Midcap stocks by their 9-month return divided by volatility (skipping the noisy last month). You hold <strong>Top 20 (4.17% each) + Ranks 21–30 (1.67% each) = 30 stocks</strong>, refreshed once every 6 months.</p>
+            </div>
+            <div class="step-block">
+              <div class="step-num">2. When Do We Exit?</div>
+              <div class="step-title">Step down at 40% then 75%</div>
+              <p class="step-copy">Instead of panic-selling on one random dip, <strong>4 daily market-health signals (MF4)</strong> score the market from <strong>-1 to +1</strong>. Crossing <strong>-0.10</strong> trims the weakest 40% into safe havens; crossing <strong>-0.25</strong> trims 75%, leaving only top leaders.</p>
+            </div>
+            <div class="step-block">
+              <div class="step-num">3. When Do We Come Back?</div>
+              <div class="step-title">25-day cooldown or Breadth Thrust</div>
+              <p class="step-copy">To avoid costly fake rebounds, returning to 100% equity normally requires waiting <strong>25 trading days</strong> AND score rising above <strong>+0.18</strong> — unless a rare <strong>Zweig Breadth Thrust</strong> (+25% broad 21-day rally above 50-DMA) overrides early.</p>
+            </div>
+          </div>
+
+          <div class="notice-strip" id="guideLiveWeatherBanner" style="margin-bottom: 0;">
+            <span>Loading live market posture snapshot...</span>
+          </div>
+        </div>
+
+        <!-- Interactive Simulator: Market Weather, Exit, Safe-Haven & Recovery -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Interactive Simulator: When We Exit, How Much &amp; When We Come Back</h2>
+              <p class="panel-desc">Drag the market health slider or click a weather scenario to see exactly how much moves out of stocks, which ranks get trimmed first, and whether cash goes to GOLDBEES or LIQUIDCASE.</p>
+            </div>
+            <div class="segmented" role="group" aria-label="Quick market weather scenarios">
+              <button type="button" class="seg-btn active" data-guide-scen="LIVE">Today Live</button>
+              <button type="button" class="seg-btn" data-guide-scen="BULL">Calm Bull (+0.25)</button>
+              <button type="button" class="seg-btn" data-guide-scen="CAUTION">Shaky Dip (-0.15)</button>
+              <button type="button" class="seg-btn" data-guide-scen="CRASH">Full Crash (-0.35)</button>
+              <button type="button" class="seg-btn" data-guide-scen="THRUST">Breadth Thrust Recovery</button>
+            </div>
+          </div>
+
+          <div class="guide-sim-controls">
+            <div class="field">
+              <label for="guideCapInput">Your Portfolio Size (&#8377;)</label>
+              <input class="input-box mono" type="number" id="guideCapInput" value="100000" min="10000" step="10000" />
+            </div>
+            <div class="field">
+              <label for="guidePrevState">Yesterday's State (Hysteresis Memory)</label>
+              <select class="select-box" id="guidePrevState">
+                <option value="2">RISK_ON (Was 100% Stocks)</option>
+                <option value="1">CAUTIOUS (Was 60% Stocks)</option>
+                <option value="0">DEFENSIVE (Was 25% Stocks)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="guideMf4Range">Market Health Score (MF4): <strong class="mono" id="guideMf4Val">0.00</strong></label>
+              <input class="guide-range" type="range" id="guideMf4Range" min="-0.50" max="0.50" step="0.01" value="0.00" />
+              <div class="guide-scale-labels">
+                <span>-0.25 Defensive (25% Eq)</span>
+                <span>-0.10 Cautious (60% Eq)</span>
+                <span>+0.18 Full Re-Entry</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="guideHoldDaysRange">Trading Days Since Downgrade: <strong class="mono" id="guideHoldDaysVal">10d</strong></label>
+              <input class="guide-range" type="range" id="guideHoldDaysRange" min="0" max="35" step="1" value="10" />
+              <div class="guide-scale-labels">
+                <span>0d (Cooldown Active)</span>
+                <span>25d+ (Recovery Unlocked)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="check-group" style="margin-bottom: 18px;">
+            <label class="check-label">
+              <input type="checkbox" id="guideThrustCheck" />
+              <span><strong>Zweig Breadth Thrust</strong> (+25% 21-day jump in stocks &gt; 50-DMA &amp; breadth &ge; 50% &mdash; lets us re-enter early)</span>
+            </label>
+            <label class="check-label">
+              <input type="checkbox" id="guideGoldTrendCheck" />
+              <span><strong>GOLDBEES Rising (&gt; 150-day EMA + 2%)</strong> &mdash; unchecked simulates Gold slump (&lt; EMA150 - 2%), holding LIQUIDCASE instead</span>
+            </label>
+          </div>
+
+          <div class="guide-sim-result" id="guideSimResultBox">
+            <div class="guide-verdict-row">
+              <div>
+                <div class="posture-kicker" id="guideSimKicker">—</div>
+                <div class="guide-verdict-title" id="guideSimHeadline">—</div>
+                <p class="posture-sub" id="guideSimExplain" style="margin-bottom:0;">—</p>
+              </div>
+              <div class="alloc-block" style="width: min(360px, 100%);">
+                <div class="alloc-row-labels">
+                  <span id="guideSimLblEq">Stocks —%</span>
+                  <span id="guideSimLblGold">Gold —%</span>
+                  <span id="guideSimLblLiq">Cash —%</span>
+                </div>
+                <div class="alloc-bar">
+                  <div class="seg-eq" id="guideSimBarEq" style="width:100%"></div>
+                  <div class="seg-gold" id="guideSimBarGold" style="width:0%"></div>
+                  <div class="seg-liq" id="guideSimBarLiq" style="width:0%"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="metric-strip metric-strip-4" style="margin: 16px 0 12px;">
+              <div class="metric-cell">
+                <div class="metric-label">Kept in Top Stocks</div>
+                <div class="metric-value t-green" id="guideSimEqInr">—</div>
+                <div class="metric-note" id="guideSimTrimWhich">All 30 slots active</div>
+              </div>
+              <div class="metric-cell">
+                <div class="metric-label">Routed to GOLDBEES</div>
+                <div class="metric-value" style="color:#d97706;" id="guideSimGoldInr">&#8377;0</div>
+                <div class="metric-note">Held only if Gold &gt; EMA150</div>
+              </div>
+              <div class="metric-cell">
+                <div class="metric-label">Routed to LIQUIDCASE</div>
+                <div class="metric-value t-blue" id="guideSimLiqInr">&#8377;0</div>
+                <div class="metric-note">Overnight liquid yield (~5.75%)</div>
+              </div>
+              <div class="metric-cell">
+                <div class="metric-label">Come-Back Path</div>
+                <div class="metric-value" style="font-size:16px;" id="guideSimReentryRule">—</div>
+                <div class="metric-note" id="guideSimReentrySub">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Strategy Options Explorer (What Every Preset Name Means) -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">What Do Each of the 6 Strategy Options Mean?</h2>
+              <p class="panel-desc">Click any strategy below to see how it ranks stocks, how it exits crashes, its 16-year verified stats, and who it fits best.</p>
+            </div>
+            <div class="segmented" id="guidePresetTabs" role="tablist" aria-label="Explore strategy presets">
+              <button type="button" class="seg-btn active" data-guide-preset="R3">R3 Optimal</button>
+              <button type="button" class="seg-btn" data-guide-preset="S3">S3 Sortino</button>
+              <button type="button" class="seg-btn" data-guide-preset="R2">R2 Simple -15%</button>
+              <button type="button" class="seg-btn" data-guide-preset="R7">R7 NormZ</button>
+              <button type="button" class="seg-btn" data-guide-preset="F2">F2 Legacy</button>
+              <button type="button" class="seg-btn" data-guide-preset="F4">F4 &#8377;5L+ 12M</button>
+            </div>
+          </div>
+
+          <div class="guide-preset-detail" id="guidePresetCard"></div>
+        </div>
+
+        <!-- Interactive 20+30=30 & Retail SlotCap Walkthrough -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Why "20 + 30 = 30 Stocks" &amp; What SlotCap Does at &#8377;1 Lakh</h2>
+              <p class="panel-desc">Toggle between &#8377;1L Retail and &#8377;10L Standard to see live examples of how weights combine and how SlotCap avoids dead cash.</p>
+            </div>
+            <div class="segmented" id="guideCapModeTabs" role="group" aria-label="Toggle retail vs standard capital example">
+              <button type="button" class="seg-btn active" data-guide-capmode="1L">&#8377;1,00,000 (SlotCap ON)</button>
+              <button type="button" class="seg-btn" data-guide-capmode="10L">&#8377;10,00,000 (Standard)</button>
+            </div>
+          </div>
+          <div id="guideBasketExplainer"></div>
+        </div>
+
+        <!-- Deep Dive Links: Downloadable PDF & Main Repo -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Want the Exact Mathematics &amp; Every Line of Source Code?</h2>
+              <p class="panel-desc">Everything on this site runs deterministically from auditable open-source Python &mdash; zero black boxes, paid APIs, or proprietary signals.</p>
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="step-block" style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 18px;">
+              <div class="step-num">Complete Equations &amp; Provenance (14 Pages)</div>
+              <div class="step-title">Mathematical Specification PDF</div>
+              <p class="step-copy" style="margin-bottom: 14px;">Downloads the synced typeset PDF (<code>Momentum_Strategy_Mathematical_Specification.pdf</code>) covering every momentum formula, causal 756-day MAD math, TrendGold EMA150 gate, Sec 50AA debt taxation, and full 16-year PIT tables.</p>
+              <a href="./docs/Momentum_Strategy_Mathematical_Specification.pdf" download="Momentum_Strategy_Mathematical_Specification.pdf" class="btn-primary" id="guideDownloadPdfBtn">Download Mathematical Spec PDF &darr;</a>
+            </div>
+            <div class="step-block" style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 18px;">
+              <div class="step-num">Open-Source Code &amp; Daily Automation</div>
+              <div class="step-title">GitHub Repository &amp; Audit Logs</div>
+              <p class="step-copy" style="margin-bottom: 14px;">Inspect the pure-Python production backtester (<code>src/backtester.py</code>), autonomous paper-trading engine (<code>src/paper_bot.py</code>), Numba walk-forward scripts, and automated weekday GitHub Actions workflow.</p>
+              <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                <a href="https://github.com/HarjasChadha/midcap-momentum-index" target="_blank" rel="noopener" class="btn-secondary">Main GitHub Repository &nearr;</a>
+                <a href="https://github.com/HarjasChadha/midcap-momentum-index/blob/main/MATHEMATICAL_SPECIFICATION.md" target="_blank" rel="noopener" class="btn-secondary">Read Markdown Spec &nearr;</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- ================================================================ -->
       <!-- VIEW 1: ACTION & ORDERS                                          -->
       <!-- ================================================================ -->
@@ -734,8 +941,8 @@
               <h1 class="panel-title">How This Strategy Works</h1>
               <p class="panel-desc">Verified over 16 years (2011–2026) across 4,047 NSE equities with zero survivorship bias, 0.15% trade costs, and Indian FIFO taxes.</p>
             </div>
-            <a href="./docs/Momentum_Strategy_Mathematical_Specification.pdf" target="_blank" rel="noopener" class="btn-secondary">
-              Full Math Specification (PDF) &nearr;
+            <a href="./docs/Momentum_Strategy_Mathematical_Specification.pdf" download="Momentum_Strategy_Mathematical_Specification.pdf" class="btn-secondary" id="proofDownloadPdfBtn">
+              Download Math Spec (PDF) &darr;
             </a>
           </div>
 
@@ -801,7 +1008,7 @@
                 <span class="qa-chevron" aria-hidden="true">&#9662;</span>
               </summary>
               <div class="qa-answer">
-                Testing 21,600 single-threshold crash rules showed that any single drawdown number overfits past crash depths (out-of-sample rank correlation was near zero: Spearman &rho; = -0.091). Replacing it with <strong>4 causally normalized orthogonal blocks</strong> — Trend (44%), Breadth (34%), Macro/Gold (12%), and Volatility/VIX (10%) — converged to identical weights across periods and lifted 16-year return from <strong>15.79%</strong> (R2) to <strong>18.16%</strong> (R3) while winning every blind test window.
+                Testing 21,600 single-threshold crash rules showed that any single drawdown number overfits past crash depths (out-of-sample rank correlation was near zero: Spearman &rho; = -0.092). Replacing it with <strong>4 causally normalized orthogonal blocks</strong> &mdash; Trend (44%), Breadth (34%), Macro/Gold (12%), and Volatility/VIX (10%) &mdash; converged to identical weights across periods and lifted net 16-year FIFO return (with Sec 50AA debt/Gold tax &amp; 35 bps risk-off slippage) from <strong>15.17%</strong> (R2) to <strong>15.61%</strong> (R3, vs 17.73% pre-defensive-tax and 13.44% Zero-Fit EQ4), outperforming both Clean PIT Equal-Weight (9.76%) and Official Nifty Midcap 100 (12.95%) across P1 (2011&ndash;16), P2 (2016&ndash;21), and P3 (2021&ndash;26 post-selection).
               </div>
             </details>
 
@@ -841,7 +1048,7 @@
                 <span class="qa-chevron" aria-hidden="true">&#9662;</span>
               </summary>
               <div class="qa-answer">
-                16-year head-to-head tests show: internal Low-Vol stocks still crash hard (<strong>-40.96%</strong> DD, 0.93 stress correlation); monthly 5% OTM Put options bleed VIX-scaled theta (<strong>0.47</strong> Sharpe); Long Gilts stay capped around <strong>0.48</strong> Sharpe with 30% debt tax; and Short Index Futures (<strong>0.81</strong> Sharpe) require <strong>&#8377;25L–&#8377;1Cr+</strong> due to &#8377;16.5L NSE lot minimums and 30% F&amp;O tax. <strong>TrendGold150</strong> works cleanly from &#8377;1L upward.
+                16-year head-to-head tests show: internal Low-Vol stocks still crash hard (<strong>-40.96%</strong> DD, 0.93 stress correlation); monthly 5% OTM Put options bleed VIX-scaled theta (<strong>0.48&ndash;0.49</strong> Sharpe); Long Gilts stay capped around <strong>0.50</strong> Sharpe (2016&ndash;26, 30% debt tax); and Short Index Futures (<strong>0.82&ndash;0.84</strong> Sharpe) require <strong>&#8377;25L&ndash;&#8377;1Cr+</strong> due to &#8377;16.5L NSE lot minimums and 30% F&amp;O tax. <strong>TrendGold150</strong> works cleanly from &#8377;1L upward.
               </div>
             </details>
 
@@ -851,7 +1058,7 @@
                 <span class="qa-chevron" aria-hidden="true">&#9662;</span>
               </summary>
               <div class="qa-answer">
-                All 419 NSE ETFs were purged from equity rankings, historical midcap constituents were rebuilt semi-annually from official NSE archives (772 liquid midcaps, 2010–2026) with a 1-day lagged mask to remove forward look-ahead, and every finalist was re-verified on an exact T+1 Python FIFO tax-lot simulator deducting 0.15% one-way friction and Indian capital-gains taxes.
+                All 419 NSE ETFs were purged from equity rankings, historical midcap constituents were rebuilt semi-annually from official NSE archives (772 liquid midcaps, 2010&ndash;2026) with a 1-day lagged mask to remove forward look-ahead, and every finalist was re-verified on an exact T+1 Python FIFO tax-lot simulator deducting 15 bps scheduled / 35 bps risk-off slippage, Sec 50AA debt/Gold taxes, and Indian FIFO capital-gains taxes.
               </div>
             </details>
           </div>
@@ -873,7 +1080,7 @@
           </div>
 
           <div class="intuition-key" id="vaultIntuition" style="margin-bottom: 12px;">
-            <div><strong>How to read this table:</strong> Splits 16 years into three 5-year windows (2011–16 Train, 2016–21 Blind Test 1, 2021–26 Blind Test 2). <strong>CAGR</strong> = steady yearly growth; <strong>Max DD</strong> = worst drop; <strong>Sharpe</strong> = return per unit of volatility.</div>
+            <div><strong>How to read this table:</strong> Splits 16 years into three 5-year windows (2011&ndash;16 Train, 2016&ndash;21 Blind Test, 2021&ndash;26 Post-Selection for TrendGold150). <strong>CAGR</strong> = steady yearly growth; <strong>Max DD</strong> = worst drop; <strong>Sharpe</strong> = return per unit of volatility.</div>
           </div>
 
           <div class="vault-pane" id="vault-pit">

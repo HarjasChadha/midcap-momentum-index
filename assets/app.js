@@ -28,6 +28,7 @@ let LAST_DIFF_CTX = null;
 let PENDING_CONFIRM_FN = null;
 
 const TAB_LABELS = {
+  guide: 'Start Here · Guide',
   portfolio: 'Action & Orders',
   rebalance: 'Rebalance & Tax Diff',
   paperbot: 'Paper Trading Bot',
@@ -41,6 +42,7 @@ function switchTab(tabId) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tabId));
   document.getElementById('breadcrumbTitle').textContent = TAB_LABELS[tabId] || 'Portfolio';
   closeMobileSidebar();
+  if (tabId === 'guide' && STATE) renderGuidePage();
   if (tabId === 'charts' && STATE) renderCharts();
   if (tabId === 'rebalance' && STATE) computeHoldingsDiff();
   if (tabId === 'paperbot' && STATE) renderPaperBotPage();
@@ -78,6 +80,8 @@ async function init() {
   computeHoldingsDiff();
   updatePbViewsBadge();
   renderPaperBotPage();
+  initGuideDefaults();
+  renderGuidePage();
 }
 
 function renderHeaderAndRegime() {
@@ -1094,7 +1098,7 @@ const PRESET_INTUITION = {
 };
 
 const VAULT_INTUITION = {
-  pit: '<div><strong>How to read this table:</strong> Splits 16 years into three 5-year windows (2011–16 Train, 2016–21 Blind Test 1, 2021–26 Blind Test 2). <strong>CAGR</strong> = steady yearly growth; <strong>Max DD</strong> = worst drop; <strong>Sharpe</strong> = return per unit of volatility.</div>',
+  pit: '<div><strong>How to read this table:</strong> Splits 16 years into three 5-year windows (2011&ndash;16 Train, 2016&ndash;21 Blind Test, 2021&ndash;26 Post-Selection for TrendGold150). <strong>CAGR</strong> = steady yearly growth; <strong>Max DD</strong> = worst drop; <strong>Sharpe</strong> = return per unit of volatility.</div>',
   crash: '<div><strong>How to read this table:</strong> Shows how each defensive engine survived 6 real market shocks — negative numbers are losses during that crash; notice how TrendGold avoided static Gold\'s -31.7% slump in 2026.</div>',
   fno: '<div><strong>How to read this table:</strong> Compares real futures/options hedges against TrendGold. <strong>OTM Put Options</strong> act like crash insurance but lose money every quiet month (theta bleed), while <strong>Short Futures</strong> need ₹25L+ capital due to ₹16.5L NSE lot minimums.</div>',
   live: '<div><strong>How to read this table:</strong> Full post-tax comparison from 2018–26. <strong>Sortino</strong> = return per unit of downside drops only; <strong>Calmar</strong> = CAGR &divide; Max DD; <strong>Turnover</strong> = % of portfolio replaced yearly; <strong>Avg Eq</strong> = average % held in stocks.</div>',
@@ -3071,6 +3075,342 @@ document.getElementById('pbImportViewsFile').addEventListener('change', async (e
   } catch (err) {
     showToast('Failed to import JSON: ' + err.message);
   }
+});
+
+// =========================================================================
+// START HERE · INTERACTIVE BEGINNER GUIDE
+// =========================================================================
+let GUIDE_PRESET_KEY = 'R3';
+let GUIDE_CAP_MODE = '1L';
+
+const GUIDE_PRESET_META = {
+  R3: {
+    title: 'R3 Optimal (Default Strategy)',
+    pitId: 'R3_src_Frac',
+    cleanId: 'R3_Risk9m_6M_MF4_TrendGold150',
+    tag: 'Recommended Default',
+    picking: 'Ranks all 150 midcaps by 9-month return divided by volatility (skipping last 1M) — rewards steady upward trends.',
+    exit: 'Checks 4 daily market health alarms (MF4). Cuts 40% Equity below -0.10 (60% Eq) and 75% below -0.25 (25% Eq), trimming weakest ranks 16-30 first.',
+    reenter: 'Waits 25 trading days AND MF4 > +0.18 to avoid fake bounces, or re-enters immediately on a Zweig Breadth Thrust (>= +25% 21d surge).',
+    haven: 'Causal TrendGold150: shelters defensive cash in GOLDBEES when Gold > EMA150 + 2%, or LIQUIDCASE when Gold slumps (< EMA150 - 2%).',
+    cadence: 'Every 6 months (126 trading days) with 330-364d LTCG shield; works cleanly from ₹1L upward with SlotCap.',
+  },
+  S3: {
+    title: 'S3 Sortino (Runner-Up)',
+    pitId: 'S3_src_Frac',
+    cleanId: 'S3_Sortino9m_6M_MF4_TrendGold150',
+    tag: 'Upside-Friendly Ranking',
+    picking: 'Like R3, divides 9-month return by downside volatility only (Sortino) — never penalizes explosive upside breakouts.',
+    exit: 'Same 4-signal MF4 regime switch (100% -> 60% -> 25%) and weakest-first rank trimming.',
+    reenter: 'Same 25-day cooldown + MF4 > +0.18 or Zweig Breadth Thrust override.',
+    haven: 'Same causal TrendGold150 switch between GOLDBEES and LIQUIDCASE.',
+    cadence: 'Every 6 months (126 trading days); highest return over the 2018-26 live panel, close runner-up to R3 over full 16Y PIT.',
+  },
+  R2: {
+    title: 'R2 Simple -15% Drawdown Switch',
+    pitId: 'R2_src_Frac',
+    cleanId: 'R2_Risk9m_6M_DD15_Sh75_GoldLiq50',
+    tag: 'Low-Turnover Simple Rule',
+    picking: 'Identical Risk-Adjusted 9M stock selection (Top 20 @ 4.17% + Ranks 21-30 @ 1.67%).',
+    exit: 'Watches a single switch: when average Midcap 150 1Y drawdown breaches -15%, cuts 75% out of stocks.',
+    reenter: 'Re-enters 100% stocks when equal-weight drawdown recovers tighter than -9%.',
+    haven: 'Static 50% GOLDBEES + 50% LIQUIDCASE split (simpler, fewer Sec 50AA switches, ~189% annual turnover vs 377% for R3).',
+    cadence: 'Every 6 months; good alternative if you strongly prefer ultra-simple single-trigger rules over MF4.',
+  },
+  R7: {
+    title: 'R7 Concentrated NormZ',
+    pitId: 'R3_NormZ_Frac',
+    cleanId: 'R7_Risk9m_NormZ_6M_DD15',
+    tag: 'Higher Concentration',
+    picking: 'Uses PDF Normal-Z score weighting inside Top 20 + Top 30 — puts extra weight into top #1-#5 outliers.',
+    exit: 'Uses -15% drawdown switch (cuts 75% Equity in severe midcap drops).',
+    reenter: 'Re-enters 100% stocks once 1Y drawdown improves inside -9%.',
+    haven: 'Static 50% GOLDBEES + 50% LIQUIDCASE split.',
+    cadence: 'Every 6 months; higher reward in momentum booms, deeper swings (-39.03% 16Y Max DD) when leaders reverse.',
+  },
+  F2: {
+    title: 'F2 Legacy V1 Baseline',
+    pitId: 'F2_src_Frac',
+    cleanId: 'F2_9m_6M_DD12_Sh75_GoldLiq50',
+    tag: 'Historical Reference',
+    picking: 'Ranks purely by raw 9-month percentage gain without dividing by volatility (picks noisier high-beta movers).',
+    exit: 'Switches 75% out of stocks when equal-weight drawdown crosses -12%.',
+    reenter: 'Re-enters when drawdown recovers inside -7% (frequent whipsaws).',
+    haven: 'Static 50% GOLDBEES + 50% LIQUIDCASE.',
+    cadence: 'Every 6 months; kept strictly as a baseline proving risk-adjusted ranking + MF4 clearly beats raw momentum.',
+  },
+  F4: {
+    title: 'F4 Large-Capital 12M Hold',
+    pitId: null,
+    cleanId: 'F4_12m_12M_DD15_Sh50_GoldLiq50',
+    tag: '₹5L+ Ultra-Low Tax Churn',
+    picking: 'Ranks by 12-month raw return (1M skip) across the 30-stock 20+30 basket.',
+    exit: 'Cuts only 50% Equity (not 75%) when drawdown crosses -15%.',
+    reenter: 'Returns to 100% Equity inside -9% drawdown.',
+    haven: 'Static 50% GOLDBEES + 50% LIQUIDCASE.',
+    cadence: 'Annual rebalance (every 252 trading days) — designed for larger accounts (>₹5L) seeking nearly 100% long-term 12.5% LTCG classification.',
+  },
+};
+
+function initGuideDefaults() {
+  if (!STATE || !STATE.regime) return;
+  const r = STATE.regime;
+  const sm = Number(r.multifactor_blocks?.composite_smooth ?? 0);
+  const slider = document.getElementById('guideMf4Range');
+  const prevSel = document.getElementById('guidePrevState');
+  const goldChk = document.getElementById('guideGoldTrendCheck');
+  const thrustChk = document.getElementById('guideThrustCheck');
+  if (slider) slider.value = sm.toFixed(2);
+  if (prevSel) prevSel.value = String(r.state_code ?? 2);
+  if (goldChk) goldChk.checked = !!r.trend_gold_status?.gold_above_gate;
+  if (thrustChk) thrustChk.checked = false;
+}
+
+function renderGuideSim() {
+  const cap = Math.max(10000, Number(document.getElementById('guideCapInput')?.value) || 100000);
+  const prev = Number(document.getElementById('guidePrevState')?.value ?? 2);
+  const mf4 = Number(document.getElementById('guideMf4Range')?.value ?? 0);
+  const holdDays = Number(document.getElementById('guideHoldDaysRange')?.value ?? 10);
+  const thrust = !!document.getElementById('guideThrustCheck')?.checked;
+  const goldUp = !!document.getElementById('guideGoldTrendCheck')?.checked;
+
+  document.getElementById('guideMf4Val').textContent = (mf4 >= 0 ? '+' : '') + mf4.toFixed(2);
+  document.getElementById('guideHoldDaysVal').textContent = `${holdDays}d`;
+
+  const canUp = holdDays >= 25 || thrust;
+  let nextState = prev;
+  let why = '';
+  if (prev === 2) {
+    if (mf4 < -0.25) {
+      nextState = 0;
+      why = 'Score dropped below -0.25: immediate jump straight to DEFENSIVE (keep 25% top leaders).';
+    } else if (mf4 < -0.10) {
+      nextState = 1;
+      why = 'Score dropped below -0.10: step down to CAUTIOUS (sell weakest 40% of stocks).';
+    } else {
+      nextState = 2;
+      why = `Score ${(mf4 >= 0 ? '+' : '') + mf4.toFixed(2)} stays above -0.10 threshold: hysteresis holds 100% Stocks without churn.`;
+    }
+  } else if (prev === 1) {
+    if (mf4 < -0.25) {
+      nextState = 0;
+      why = 'Market worsened below -0.25: step down from Caution to DEFENSIVE (cut another 35% -> 25% Stocks).';
+    } else if (canUp && (mf4 > 0.18 || (thrust && mf4 > -0.10))) {
+      nextState = 2;
+      why = thrust
+        ? 'Zweig Breadth Thrust active (> -0.10) triggered immediate return to 100% Stocks!'
+        : `Waited ${holdDays}d (>=25d) and health cleared +0.18: safe to return to 100% Stocks.`;
+    } else {
+      nextState = 1;
+      why = !canUp
+        ? `Cooldown guard (${holdDays}/25 trading days) keeps portfolio at 60% Stocks until 25 days or Breadth Thrust.`
+        : `Needs health > +0.18 (+0.18 vs ${(mf4 >= 0 ? '+' : '') + mf4.toFixed(2)}) before stepping back to 100% Stocks.`;
+    }
+  } else {
+    if (canUp && (mf4 > -0.10 || (thrust && mf4 > -0.20))) {
+      nextState = 1;
+      why = thrust
+        ? 'Zweig Breadth Thrust lifted DEFENSIVE up one step to CAUTIOUS (60% Stocks).'
+        : `Cooldown cleared (${holdDays}d) and health recovered above -0.10: step up to CAUTIOUS (60% Stocks).`;
+    } else {
+      nextState = 0;
+      why = !canUp
+        ? `Cooldown active (${holdDays}/25 days since crash downgrade): remain sheltered in 25% Stocks + 75% Safe Haven.`
+        : 'Score must cross > -0.10 (or > -0.20 on Breadth Thrust) to step up to 60% Stocks.';
+    }
+  }
+
+  const eqPct = nextState === 2 ? 100 : (nextState === 1 ? 60 : 25);
+  const defPct = 100 - eqPct;
+  const goldPct = goldUp ? defPct : 0;
+  const liqPct = goldUp ? 0 : defPct;
+
+  const eqInr = cap * (eqPct / 100);
+  const goldInr = cap * (goldPct / 100);
+  const liqInr = cap * (liqPct / 100);
+
+  const kickerEl = document.getElementById('guideSimKicker');
+  kickerEl.className = 'posture-kicker ' + (nextState === 2 ? 't-green' : (nextState === 1 ? 't-amber' : 't-red'));
+  kickerEl.textContent = nextState === 2 ? 'POSTURE: RISK_ON (100% EQUITY)' : (nextState === 1 ? 'POSTURE: CAUTIOUS (40% CUT)' : 'POSTURE: DEFENSIVE (75% CUT)');
+  document.getElementById('guideSimHeadline').textContent = nextState === 2
+    ? `Hold ${fmtInrInt(eqInr)} in Top 30 Momentum Stocks`
+    : `Keep ${fmtInrInt(eqInr)} in Stocks · Shelter ${fmtInrInt(defPct / 100 * cap)} in ${goldUp ? 'GOLDBEES' : 'LIQUIDCASE'}`;
+  document.getElementById('guideSimExplain').textContent = why;
+
+  document.getElementById('guideSimLblEq').textContent = `Stocks ${eqPct}%`;
+  document.getElementById('guideSimLblGold').textContent = `Gold ${goldPct}%`;
+  document.getElementById('guideSimLblLiq').textContent = `Cash ${liqPct}%`;
+  document.getElementById('guideSimBarEq').style.width = `${eqPct}%`;
+  document.getElementById('guideSimBarGold').style.width = `${goldPct}%`;
+  document.getElementById('guideSimBarLiq').style.width = `${liqPct}%`;
+
+  document.getElementById('guideSimEqInr').textContent = fmtInrInt(eqInr);
+  document.getElementById('guideSimGoldInr').textContent = fmtInrInt(goldInr);
+  document.getElementById('guideSimLiqInr').textContent = fmtInrInt(liqInr);
+  document.getElementById('guideSimTrimWhich').textContent = eqPct === 100
+    ? 'All 30 ranked stocks kept intact'
+    : (eqPct === 60 ? 'Weakest-first trim: Ranks ~17-30 exited first' : 'Deep cut: Only Top ~6-8 leaders stay open');
+  document.getElementById('guideSimReentryRule').textContent = nextState === 2
+    ? 'Already 100% Invested'
+    : (thrust ? 'Breadth Thrust Ready' : (holdDays >= 25 ? (mf4 > (nextState === 0 ? -0.10 : 0.18) ? 'Re-Entry Triggered' : `Need > ${nextState === 0 ? '-0.10' : '+0.18'}`) : `Wait ${25 - holdDays} More Days`));
+  document.getElementById('guideSimReentrySub').textContent = nextState === 2
+    ? 'Exits only if MF4 falls < -0.10'
+    : `Steps up cleanly one rung at a time (25% -> 60% -> 100%)`;
+}
+
+function renderGuidePresetCard() {
+  const m = GUIDE_PRESET_META[GUIDE_PRESET_KEY] || GUIDE_PRESET_META.R3;
+  const pitRow = (STATE?.pit_validation_16yr || []).find(x => x.id === m.pitId);
+  const cleanRow = (STATE?.clean_verification || []).find(x => x.name === m.cleanId);
+  const statsHtml = `
+    <div class="metric-strip metric-strip-4" style="margin: 12px 0 14px;">
+      <div class="metric-cell">
+        <div class="metric-label">16Y Zero-Surv PIT CAGR</div>
+        <div class="metric-value t-green">${pitRow ? fmtPct(pitRow.full_cagr) : 'Annual Focus'}</div>
+        <div class="metric-note">${pitRow ? `P1 ${fmtPct(pitRow.p1_cagr, 1)} · P2 ${fmtPct(pitRow.p2_cagr, 1)} · P3 ${fmtPct(pitRow.p3_cagr, 1)}` : 'Tested on 2018-26 live panel'}</div>
+      </div>
+      <div class="metric-cell">
+        <div class="metric-label">16Y Worst Drop (Max DD)</div>
+        <div class="metric-value t-red">${pitRow ? fmtPct(pitRow.full_dd) : (cleanRow ? fmtPct(cleanRow.max_dd_pct) : '—')}</div>
+        <div class="metric-note">Vs -54.08% PIT Equal-Weight</div>
+      </div>
+      <div class="metric-cell">
+        <div class="metric-label">16Y Risk-Adj Sharpe</div>
+        <div class="metric-value">${pitRow ? fmtNum(pitRow.full_sh) : (cleanRow ? fmtNum(cleanRow.sharpe) : '—')}</div>
+        <div class="metric-note">Net Sec 50AA + 35 bps risk-off</div>
+      </div>
+      <div class="metric-cell">
+        <div class="metric-label">2018-26 Live Panel CAGR</div>
+        <div class="metric-value t-blue">${cleanRow ? fmtPct(cleanRow.cagr_pct) : '—'}</div>
+        <div class="metric-note">${cleanRow ? `Tax paid ${fmtInrInt(cleanRow.total_tax_paid)} on ₹1L` : ''}</div>
+      </div>
+    </div>
+  `;
+  document.getElementById('guidePresetCard').innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div>
+        <span class="badge badge-green">${esc(m.tag)}</span>
+        <h3 style="margin-top:6px; font-family:var(--font-display); font-size:18px;">${esc(m.title)}</h3>
+      </div>
+      <button type="button" class="btn-primary btn-sm" id="guideLoadPresetBtn">Use ${esc(GUIDE_PRESET_KEY)} in Action &amp; Orders &rarr;</button>
+    </div>
+    ${statsHtml}
+    <div class="guide-spec-grid">
+      <div class="guide-spec-item"><div class="guide-spec-lbl">How It Picks Stocks</div><div class="guide-spec-val">${esc(m.picking)}</div></div>
+      <div class="guide-spec-item"><div class="guide-spec-lbl">When It Exits &amp; How Much</div><div class="guide-spec-val">${esc(m.exit)}</div></div>
+      <div class="guide-spec-item"><div class="guide-spec-lbl">When It Comes Back</div><div class="guide-spec-val">${esc(m.reenter)}</div></div>
+      <div class="guide-spec-item"><div class="guide-spec-lbl">Where Safety Money Parks</div><div class="guide-spec-val">${esc(m.haven)}</div></div>
+      <div class="guide-spec-item" style="grid-column: span 2;"><div class="guide-spec-lbl">Rebalance Schedule &amp; Best Fit</div><div class="guide-spec-val">${esc(m.cadence)}</div></div>
+    </div>
+  `;
+  document.getElementById('guideLoadPresetBtn').addEventListener('click', () => {
+    const sel = document.getElementById('presetSelect');
+    if (sel) {
+      sel.value = GUIDE_PRESET_KEY;
+      document.getElementById('presetIntuition').innerHTML = PRESET_INTUITION[GUIDE_PRESET_KEY] || '';
+      renderPortfolioCalculator();
+    }
+    switchTab('portfolio');
+  });
+}
+
+function renderGuideBasketExplainer() {
+  const is1L = GUIDE_CAP_MODE === '1L';
+  const top60 = STATE?.rankings_top60 || [];
+  const skipped = top60.filter(r => (r.rank_risk9m ?? 99) <= 30 && !r.risk_affordable_slotcap_1l).slice(0, 4);
+  const promoted = top60.filter(r => (r.rank_risk9m ?? 99) > 30 && r.risk_affordable_slotcap_1l).slice(0, 4);
+  const oBox = is1L ? STATE?.orders_1L?.R3_Risk9M_SlotCap_LiqSweep : STATE?.orders_1L?.R2_Risk9M_NoCap;
+
+  document.getElementById('guideBasketExplainer').innerHTML = `
+    <div class="guide-spec-grid" style="margin-top:0;">
+      <div class="guide-spec-item">
+        <div class="guide-spec-lbl">Why Not 50 Stocks?</div>
+        <div class="guide-spec-val"><strong>Ranks 1&ndash;20 sit inside BOTH halves</strong> (50%/20 + 50%/30 = <strong>4.17% each</strong>). Ranks 21&ndash;30 sit only in the 30-stock half (<strong>1.67% each</strong>). Total = <strong>30 unique stocks</strong>, giving your Top 20 winners 2.5&times; larger weights.</div>
+      </div>
+      <div class="guide-spec-item">
+        <div class="guide-spec-lbl">${is1L ? 'Why SlotCap Matters at ₹1 Lakh' : 'At ₹10 Lakh+ (Standard Sizing)'}</div>
+        <div class="guide-spec-val">${is1L
+          ? `A 4.17% slot at ₹1L is <strong>₹4,167</strong>. Any stock priced higher (today: ${skipped.map(s => `<strong>${esc(s.symbol)}</strong> (${fmtInrInt(s.price)})`).join(', ') || 'high-price names'}) would buy <strong>0 whole shares</strong> &mdash; so SlotCap skips them and promotes <strong>${promoted.map(s => `#${s.rank_risk9m} ${esc(s.symbol)}`).join(', ')}</strong> so money stays invested.`
+          : `Every Top-20 slot has <strong>₹41,667</strong> and Ranks 21&ndash;30 have <strong>₹16,667</strong>, so even ₹14,160 shares buy whole units cleanly with zero skipped leaders.`
+        }</div>
+      </div>
+      <div class="guide-spec-item">
+        <div class="guide-spec-lbl">Where Leftover Rupees Go</div>
+        <div class="guide-spec-val">Because NSE requires whole shares, leftover rupees under one share price automatically sweep into <strong>LIQUIDCASE</strong> (${oBox ? `${oBox.liquidcase_sweep_units} units = ${fmtInrInt(oBox.liquidcase_sweep_inr)}` : 'overnight liquid ETF'}) instead of sitting idle at 0%.</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderGuidePage() {
+  if (!STATE) return;
+  const r = STATE.regime || {};
+  const tg = r.trend_gold_status || {};
+  const banner = document.getElementById('guideLiveWeatherBanner');
+  if (banner) {
+    banner.innerHTML = `<span><strong>Today Live (${esc(STATE.as_of_date)}):</strong> Posture is <strong>${esc(r.state)}</strong> (${fmtPct(r.target_equity_pct, 1)} Target Stocks · MF4 smoothed ${fmtNum(r.multifactor_blocks?.composite_smooth, 3)}). Safe-haven gate currently selects <strong>${esc(r.active_defensive_etf)}</strong> (GOLDBEES ${fmtPct(tg.gold_vs_ema150_pct, 2)} vs 150-day EMA).</span>`;
+  }
+  renderGuideSim();
+  renderGuidePresetCard();
+  renderGuideBasketExplainer();
+}
+
+document.querySelectorAll('[data-guide-scen]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-guide-scen]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const sc = btn.dataset.guideScen;
+    if (sc === 'LIVE') {
+      initGuideDefaults();
+    } else if (sc === 'BULL') {
+      document.getElementById('guidePrevState').value = '2';
+      document.getElementById('guideMf4Range').value = '0.25';
+      document.getElementById('guideHoldDaysRange').value = '30';
+      document.getElementById('guideThrustCheck').checked = false;
+    } else if (sc === 'CAUTION') {
+      document.getElementById('guidePrevState').value = '2';
+      document.getElementById('guideMf4Range').value = '-0.15';
+      document.getElementById('guideHoldDaysRange').value = '5';
+      document.getElementById('guideThrustCheck').checked = false;
+    } else if (sc === 'CRASH') {
+      document.getElementById('guidePrevState').value = '1';
+      document.getElementById('guideMf4Range').value = '-0.35';
+      document.getElementById('guideHoldDaysRange').value = '3';
+      document.getElementById('guideThrustCheck').checked = false;
+    } else if (sc === 'THRUST') {
+      document.getElementById('guidePrevState').value = '1';
+      document.getElementById('guideMf4Range').value = '0.08';
+      document.getElementById('guideHoldDaysRange').value = '6';
+      document.getElementById('guideThrustCheck').checked = true;
+    }
+    renderGuideSim();
+  });
+});
+
+['guideCapInput', 'guidePrevState', 'guideMf4Range', 'guideHoldDaysRange', 'guideThrustCheck', 'guideGoldTrendCheck'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('input', renderGuideSim);
+    el.addEventListener('change', renderGuideSim);
+  }
+});
+
+document.querySelectorAll('[data-guide-preset]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-guide-preset]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    GUIDE_PRESET_KEY = btn.dataset.guidePreset;
+    renderGuidePresetCard();
+  });
+});
+
+document.querySelectorAll('[data-guide-capmode]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-guide-capmode]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    GUIDE_CAP_MODE = btn.dataset.guideCapmode;
+    renderGuideBasketExplainer();
+  });
 });
 
 init().catch(err => {

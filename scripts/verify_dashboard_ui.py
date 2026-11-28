@@ -125,11 +125,51 @@ def verify_target(url: str, shot_dir: Path | None = None, is_local: bool = True)
         # 1. Exact Python-vs-JS Engine Parity Check
         assert_python_js_parity(page)
 
+        # 1b. Sidebar must contain zero non-clickable nav group headers & all nav buttons work
+        assert page.locator(".nav-group-label").count() == 0, "Non-clickable sidebar group labels should be removed"
+
         # 2. Walk every sidebar tab cleanly + verify P2 Tab requirements
-        for tab in ("charts", "rankings", "research", "paperbot"):
+        for tab in ("guide", "charts", "rankings", "research", "paperbot"):
             page.click(f'button.nav-btn[data-tab="{tab}"]')
             page.wait_for_timeout(350)
             assert page.locator(f"#tab-{tab}.active").count() == 1, f"Tab {tab} did not activate"
+
+        # Verify Start Here · Guide interactive simulator, presets, SlotCap toggle & PDF download
+        page.click('button.nav-btn[data-tab="guide"]')
+        page.wait_for_timeout(250)
+        assert as_of in page.inner_text("#guideLiveWeatherBanner")
+        page.click('button[data-guide-scen="CRASH"]')
+        page.wait_for_timeout(150)
+        assert "DEFENSIVE" in page.inner_text("#guideSimKicker")
+        assert "Stocks 25%" in page.inner_text("#guideSimLblEq")
+        page.click('button[data-guide-scen="THRUST"]')
+        page.wait_for_timeout(150)
+        assert "RISK_ON" in page.inner_text("#guideSimKicker")
+        assert "Stocks 100%" in page.inner_text("#guideSimLblEq")
+        page.click('button[data-guide-preset="R2"]')
+        page.wait_for_timeout(150)
+        assert "15.17%" in page.inner_text("#guidePresetCard")
+        page.click('button[data-guide-capmode="10L"]')
+        page.wait_for_timeout(150)
+        assert "41,667" in page.inner_text("#guideBasketExplainer")
+        page.click('button[data-guide-capmode="1L"]')
+        with page.expect_download() as dl_info:
+            page.click("#guideDownloadPdfBtn")
+        dl = dl_info.value
+        assert dl.suggested_filename == "Momentum_Strategy_Mathematical_Specification.pdf", f"Unexpected download name: {dl.suggested_filename}"
+        dl_path = dl.path()
+        assert dl_path and Path(dl_path).stat().st_size > 500_000, "Downloaded PDF looks too small"
+        if shot_dir:
+            page.screenshot(path=str(shot_dir / "verify_guide_page.png"), full_page=True)
+        # Verify Load preset CTA routes cleanly to portfolio tab with R2 selected
+        page.click("#guideLoadPresetBtn")
+        page.wait_for_timeout(200)
+        assert page.locator("#tab-portfolio.active").count() == 1
+        assert page.input_value("#presetSelect") == "R2"
+        page.click("#toggleAdvancedBtn")
+        page.wait_for_timeout(100)
+        page.select_option("#presetSelect", "R3")
+        page.click("#toggleAdvancedBtn")
 
         # Verify Performance & Risk tab (16Y Hero first + Survivorship disclosure + ? tooltips + no 4-line key)
         page.click('button.nav-btn[data-tab="charts"]')
@@ -148,12 +188,19 @@ def verify_target(url: str, shot_dir: Path | None = None, is_local: bool = True)
         assert "Listing Days" in rk_head
         assert "New Listing" in page.inner_text("#rankingsTable tbody")
 
-        # Verify Strategy & Proof PDF path & Post-Selection P3 label
+        # Verify Strategy & Proof PDF path, Post-Selection P3 label, and zero stale copy
         page.click('button.nav-btn[data-tab="research"]')
         page.wait_for_timeout(250)
-        pdf_href = page.locator('#tab-research a[href$=".pdf"]').get_attribute("href")
+        pdf_link = page.locator('#tab-research a[href$=".pdf"]')
+        pdf_href = pdf_link.get_attribute("href")
         assert pdf_href == "./docs/Momentum_Strategy_Mathematical_Specification.pdf", f"Unexpected PDF href: {pdf_href}"
+        assert pdf_link.get_attribute("download") == "Momentum_Strategy_Mathematical_Specification.pdf"
         assert "2021–26 (Post-Selection)" in page.inner_text("#pitResearchTable thead")
+        assert "2021–26 Post-Selection" in page.inner_text("#vaultIntuition")
+        research_txt = page.inner_text("#tab-research")
+        for stale in ("Blind Test 2", "15.79%", "18.16%"):
+            assert stale not in research_txt, f"Stale copy '{stale}' still present in Strategy & Proof"
+        assert "15.17%" in research_txt and "15.61%" in research_txt
 
         # Return to Paper Trading Bot for Tab A & Tab B checks
         page.click('button.nav-btn[data-tab="paperbot"]')
