@@ -1,0 +1,28 @@
+# DIY Nifty Midcap 150 Momentum Index (V3 / R3)
+
+> Plain-text & static AI-readable mirror (as of 2026-11-27) of the live quantitative dashboard at https://harjaschadha.github.io/midcap-momentum-index/. Personal Quantitative Research & Paper-Trading Sandbox — Not Investment Advice / Not SEBI Registered.
+
+## Why Read Here
+- The interactive dashboard at https://harjaschadha.github.io/midcap-momentum-index/ renders purely via client-side JavaScript (`assets/app.js` fetching `data/live_state.json`).
+- Web AI fetchers without JavaScript execution should read `llms-full.txt` or `/ai/` below, which contain 100% of the live numbers, orders, Top-60 rankings, Paper Bot ledgers, and verified backtest tables directly in plain text / semantic HTML.
+
+## Live Snapshot
+- **As of Date:** 2026-11-27 (150 NSE Nifty Midcap 150 equities + 9 ETFs/benchmarks)
+- **Model Posture (T+1 Close):** `RISK_ON` -> 100.0% Equity / 0.0% GOLDBEES / 0.0% LIQUIDCASE
+- **MF4 Composite:** raw `0.012` / smoothed `-0.032` (Cautious `< -0.10`, Defensive `< -0.25`, Re-enter `> +0.18`)
+- **TrendGold150 Gate:** active `LIQUIDCASE` (`GOLDBEES` ₹103.78 vs EMA150 ₹118.41, -12.35%)
+- **Market Internals:** India VIX `16.55` · Breadth > 50-DMA `58.73%` · EW 1Y Drawdown `-4.35%`
+- **Paper Bot NAV (`R3_1L_SlotCap`):** ₹99,850.29 (-0.15% | alpha `-0.15%` | 31 positions)
+- **Paper Bot NAV (`R3_10L_Standard`):** ₹998,502.33 (-0.15% | 31 positions)
+
+## Direct Static Links (Zero JavaScript Required)
+- [Complete Live & Backtest Data Dump (Markdown)](https://harjaschadha.github.io/midcap-momentum-index/llms-full.txt): Single-file complete state (`R3/S3/R2/R7/F2/F4` orders, Top-60 stocks, Paper Bot positions & ledger, 16Y PIT + 2018-26 verified tables)
+- [Static No-JS HTML Snapshot](https://harjaschadha.github.io/midcap-momentum-index/ai/): Clean semantic HTML page with all tables pre-rendered on GitHub Pages
+- [Complete Mathematical Specification (Markdown)](https://raw.githubusercontent.com/HarjasChadha/midcap-momentum-index/main/MATHEMATICAL_SPECIFICATION.md): Every formula, corporate action rule, Sec 50AA tax model, and parameter provenance
+- [Mathematical Specification PDF](https://harjaschadha.github.io/midcap-momentum-index/docs/Momentum_Strategy_Mathematical_Specification.pdf): 14-page typeset audit PDF
+- [Final Strategy Audit Report](https://raw.githubusercontent.com/HarjasChadha/midcap-momentum-index/main/reports/FINAL_STRATEGY_REPORT.md): 16-year PIT empirical verification & stress findings
+- [16-Year Exact Verification JSON](https://raw.githubusercontent.com/HarjasChadha/midcap-momentum-index/main/reports/src_exact_16yr_verification.json): Raw Python FIFO benchmark metrics (`2011-2026`)
+- [Live State JSON](https://harjaschadha.github.io/midcap-momentum-index/data/live_state.json): Full live API payload
+- [Paper Bot Ledger JSON](https://harjaschadha.github.io/midcap-momentum-index/data/paper_ledger.json): Autonomous FIFO paper-trading ledger
+- [Compact Forward Tape JSON](https://harjaschadha.github.io/midcap-momentum-index/data/forward_tape.json): Daily forward replay tape
+- [GitHub Source Repository](https://github.com/HarjasChadha/midcap-momentum-index): Complete Python engine, Numba research suite, and GitHub Actions CI

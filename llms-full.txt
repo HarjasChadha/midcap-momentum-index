@@ -1,0 +1,289 @@
+# DIY Nifty Midcap 150 Momentum Index — Complete AI Data & Audit Snapshot (2026-11-27)
+
+Generated: `2026-11-28T01:13:19Z` | Dashboard: https://harjaschadha.github.io/midcap-momentum-index/ | Repo: https://github.com/HarjasChadha/midcap-momentum-index
+Disclosure: Personal Quantitative Research & Paper-Trading Sandbox — Not Investment Advice / Not SEBI Registered.
+
+---
+
+## 1. Live Market Regime & Multi-Factor Health (MF4)
+| Metric | Current Value | Rule / Meaning |
+|---|---|---|
+| Data As Of | 2026-11-27 | NSE Source: nse_mcp / Bulk quotes: 159 |
+| Model Posture (T+1) | RISK_ON | Eq 100.0% / Gold 0.0% / Liquid 0.0% |
+| MF4 Block 1 (Trend 44%) | -0.457 | EW vs EMA200, EMA126 & Rel Strength vs NIFTYBEES |
+| MF4 Block 2 (Vol/VIX 10%) | 0.034 | 21d downside semivol + India VIX (16.55) |
+| MF4 Block 3 (Breadth 34%) | 0.461 | 58.73% stocks > 50-DMA + Zweig 21d thrust |
+| MF4 Block 4 (DM/Gold 12%) | 0.44 | Daniel-Moskowitz crash flag + Gold 126d risk trend |
+| MF4 Composite (Raw / Smooth) | 0.012 / -0.032 | 8d down / 22d up EWMA; Cautious < -0.10, Defensive < -0.25, Re-enter > +0.18 |
+| TrendGold150 Gate | LIQUIDCASE | GOLDBEES ₹103.78 vs EMA150 ₹118.41 (-12.35%; +/-2% band) |
+| EW Index & 1Y Drawdown | 847.08 (-4.35% DD) | Midcap 150 Index: 22652.7 (-3.77% DD) |
+| LIQUIDCASE Live Price | ₹117.16 | Overnight liquid ETF sweep destination |
+
+### Recent Historical MF4 Regime Shifts
+| Date | Event | Target Eq% | EW 1Y DD% |
+|---|---|---|---|
+| 2025-05-07 | SHIFT_TO_CAUTIOUS | 60% | -8.83% |
+| 2025-05-15 | REENTER_EQUITY | 100% | -4.64% |
+| 2025-07-31 | SHIFT_TO_CAUTIOUS | 60% | -2.81% |
+| 2025-08-07 | EXIT_TO_DEFENSIVE | 25% | -3.91% |
+| 2025-09-25 | STEP_UP_CAUTIOUS | 60% | -2.12% |
+| 2025-12-02 | EXIT_TO_DEFENSIVE | 25% | -1.29% |
+| 2026-04-21 | STEP_UP_CAUTIOUS | 60% | -1.13% |
+| 2026-04-22 | REENTER_EQUITY | 100% | -0.61% |
+| 2026-06-10 | SHIFT_TO_CAUTIOUS | 60% | -4.38% |
+| 2026-09-29 | EXIT_TO_DEFENSIVE | 25% | -6.77% |
+| 2026-11-16 | STEP_UP_CAUTIOUS | 60% | -4.46% |
+| 2026-11-20 | REENTER_EQUITY | 100% | -3.82% |
+
+## 2. Current ₹1,00,000 Model Order Calculators (`T+1` Execution)
+| Preset Basket | Stocks | Equity Deployed | Eq% | LIQUIDCASE Units | Liquid Sweep | Uninvested Cash |
+|---|---|---|---|---|---|---|
+| R3_Risk9M_SlotCap_LiqSweep | 30 | ₹86,566.55 | 86.6% | 114 | ₹13,356.24 | ₹77.21 |
+| S3_Sortino9M_SlotCap_LiqSweep | 30 | ₹85,348.80 | 85.3% | 125 | ₹14,645.00 | ₹6.20 |
+| R2_Risk9M_SlotCap_LiqSweep | 30 | ₹86,566.55 | 86.6% | 114 | ₹13,356.24 | ₹77.21 |
+| R2_Risk9M_NoCap | 22 | ₹64,064.15 | 64.1% | 306 | ₹35,850.96 | ₹84.89 |
+| R7_Risk9M_NormZ_SlotCap | 30 | ₹86,824.81 | 86.8% | 112 | ₹13,121.92 | ₹53.27 |
+| F2_SlotCap_LiqSweep | 30 | ₹86,253.05 | 86.2% | 117 | ₹13,707.72 | ₹39.23 |
+| F2_NoCap | 21 | ₹62,921.53 | 62.9% | 316 | ₹37,022.56 | ₹55.91 |
+| F4_12M_NoCap | 23 | ₹68,370.29 | 68.4% | 269 | ₹31,516.04 | ₹113.67 |
+
+### R3 Optimal (₹1,00,000 SlotCap + LIQUIDCASE Sweep) Target Orders
+| Rank | Symbol | Bucket | Target Wt | LTP | Target ₹ | Qty | Order Value | Raw 9M% |
+|---|---|---|---|---|---|---|---|---|
+| 1 | LAURUSLABS | Top20 | 4.17% | ₹2,504.40 | ₹4,166.67 | 1 | ₹2,504.40 | 101.76% |
+| 2 | LENSKART | Top20 | 4.17% | ₹718.35 | ₹4,166.67 | 5 | ₹3,591.75 | 50.92% |
+| 3 | AUROPHARMA | Top20 | 4.17% | ₹1,791.80 | ₹4,166.67 | 2 | ₹3,583.60 | 39.39% |
+| 4 | BHEL | Top20 | 4.17% | ₹421.95 | ₹4,166.67 | 9 | ₹3,797.55 | 52.49% |
+| 5 | ANTHEM | Top20 | 4.17% | ₹984.15 | ₹4,166.67 | 4 | ₹3,936.60 | 36.11% |
+| 6 | IPCALAB | Top20 | 4.17% | ₹1,782.90 | ₹4,166.67 | 2 | ₹3,565.80 | 33.65% |
+| 7 | LLOYDSME | Top20 | 4.17% | ₹1,556.80 | ₹4,166.67 | 2 | ₹3,113.60 | 47.16% |
+| 8 | NYKAA | Top20 | 4.17% | ₹350.65 | ₹4,166.67 | 11 | ₹3,857.15 | 35.33% |
+| 9 | AJANTPHARM | Top20 | 4.17% | ₹3,360.60 | ₹4,166.67 | 1 | ₹3,360.60 | 26.02% |
+| 10 | FEDERALBNK | Top20 | 4.17% | ₹360.00 | ₹4,166.67 | 11 | ₹3,960.00 | 22.55% |
+| 11 | INDHOTEL | Top20 | 4.17% | ₹884.80 | ₹4,166.67 | 4 | ₹3,539.20 | 22.16% |
+| 12 | BHARATFORG | Top20 | 4.17% | ₹1,771.00 | ₹4,166.67 | 2 | ₹3,542.00 | 25.11% |
+| 13 | MCX | Top20 | 4.17% | ₹3,900.00 | ₹4,166.67 | 1 | ₹3,900.00 | 31.52% |
+| 14 | LGEINDIA | Top20 | 4.17% | ₹1,770.90 | ₹4,166.67 | 2 | ₹3,541.80 | 22.38% |
+| 15 | MEESHO | Top20 | 4.17% | ₹258.44 | ₹4,166.67 | 16 | ₹4,135.04 | 35.12% |
+| 16 | MAHABANK | Top20 | 4.17% | ₹95.73 | ₹4,166.67 | 43 | ₹4,116.39 | 23.49% |
+| 17 | MANKIND | Top20 | 4.17% | ₹2,689.40 | ₹4,166.67 | 1 | ₹2,689.40 | 18.20% |
+| 18 | KPRMILL | Top20 | 4.17% | ₹1,217.30 | ₹4,166.67 | 3 | ₹3,651.90 | 25.52% |
+| 19 | ASTERDM | Top20 | 4.17% | ₹756.85 | ₹4,166.67 | 5 | ₹3,784.25 | 16.18% |
+| 20 | PREMIERENE | Top20 | 4.17% | ₹811.50 | ₹4,166.67 | 5 | ₹4,057.50 | 16.74% |
+| 21 | APLAPOLLO | Rank21-30 | 1.67% | ₹1,509.50 | ₹1,666.67 | 1 | ₹1,509.50 | 15.77% |
+| 22 | JSWINFRA | Rank21-30 | 1.67% | ₹355.50 | ₹1,666.67 | 4 | ₹1,422.00 | 16.67% |
+| 23 | MOTILALOFS | Rank21-30 | 1.67% | ₹1,222.15 | ₹1,666.67 | 1 | ₹1,222.15 | 18.20% |
+| 24 | MEDANTA | Rank21-30 | 1.67% | ₹1,473.70 | ₹1,666.67 | 1 | ₹1,473.70 | 13.17% |
+| 25 | SAIL | Rank21-30 | 1.67% | ₹163.95 | ₹1,666.67 | 10 | ₹1,639.50 | 15.86% |
+| 26 | GROWW | Rank21-30 | 1.67% | ₹222.41 | ₹1,666.67 | 7 | ₹1,556.87 | 15.69% |
+| 27 | PETRONET | Rank21-30 | 1.67% | ₹322.35 | ₹1,666.67 | 5 | ₹1,611.75 | 6.91% |
+| 28 | OIL | Rank21-30 | 1.67% | ₹433.45 | ₹1,666.67 | 3 | ₹1,300.35 | 6.77% |
+| 29 | NAM-INDIA | Rank21-30 | 1.67% | ₹1,047.00 | ₹1,666.67 | 1 | ₹1,047.00 | 8.19% |
+| 30 | BHARTIHEXA | Rank21-30 | 1.67% | ₹1,555.20 | ₹1,666.67 | 1 | ₹1,555.20 | 5.63% |
+
+## 3. Top-60 Nifty Midcap 150 Momentum Rankings (As of 2026-11-27)
+| R3 Rank | S3 Rank | Symbol | LTP | Listed | Risk9M | Sortino9M | Raw 9M% | Raw 12M% | 50-DMA Signal | 50/50 Wt% | 1L SlotCap |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 1 | LAURUSLABS | ₹2,504.40 | 2457d | 3.23 | 5.61 | 101.76% | 138.42% | Hold (>50DMA) | 4.17% | Yes |
+| 2 | 2 | APARINDS | ₹14,160.00 | 2472d | 2.12 | 3.57 | 109.52% | 74.98% | Trim (<50DMA) | 4.17% | Skip (>Slot) |
+| 3 | 4 | LENSKART | ₹718.35 | 260d (NEW) | 1.57 | 2.62 | 50.92% | — | Hold (>50DMA) | 4.17% | Yes |
+| 4 | 3 | RADICO | ₹4,646.60 | 2471d | 1.55 | 2.65 | 51.52% | 38.31% | Hold (>50DMA) | 4.17% | Skip (>Slot) |
+| 5 | 5 | AUROPHARMA | ₹1,791.80 | 2471d | 1.41 | 2.20 | 39.39% | 47.82% | Hold (>50DMA) | 4.17% | Yes |
+| 6 | 7 | BHEL | ₹421.95 | 2472d | 1.34 | 2.05 | 52.49% | 72.47% | Hold (>50DMA) | 4.17% | Yes |
+| 7 | 6 | ANTHEM | ₹984.15 | 335d (NEW) | 1.25 | 2.05 | 36.11% | 10.79% | Hold (>50DMA) | 4.17% | Yes |
+| 8 | 8 | IPCALAB | ₹1,782.90 | 2471d | 1.22 | 2.04 | 33.65% | 54.53% | Trim (<50DMA) | 4.17% | Yes |
+| 9 | 10 | LLOYDSME | ₹1,556.80 | 831d | 1.22 | 2.00 | 47.16% | 34.10% | Trim (<50DMA) | 4.17% | Yes |
+| 10 | 9 | NYKAA | ₹350.65 | 1248d | 1.21 | 2.00 | 35.33% | 29.97% | Hold (>50DMA) | 4.17% | Yes |
+| 11 | 11 | GVT&D | ₹4,263.00 | 2472d | 1.11 | 1.70 | 50.72% | 34.81% | Hold (>50DMA) | 4.17% | Skip (>Slot) |
+| 12 | 12 | AJANTPHARM | ₹3,360.60 | 2471d | 0.98 | 1.57 | 26.02% | 40.34% | Trim (<50DMA) | 4.17% | Yes |
+| 13 | 13 | FEDERALBNK | ₹360.00 | 2472d | 0.88 | 1.35 | 22.55% | 61.39% | Hold (>50DMA) | 4.17% | Yes |
+| 14 | 15 | INDHOTEL | ₹884.80 | 2472d | 0.82 | 1.21 | 22.16% | 11.02% | Hold (>50DMA) | 4.17% | Yes |
+| 15 | 14 | FLUOROCHEM | ₹4,824.50 | 1762d | 0.81 | 1.34 | 26.55% | 13.99% | Hold (>50DMA) | 4.17% | Skip (>Slot) |
+| 16 | 16 | BHARATFORG | ₹1,771.00 | 2471d | 0.79 | 1.20 | 25.11% | 42.59% | Trim (<50DMA) | 4.17% | Yes |
+| 17 | 17 | OFSS | ₹9,250.00 | 2472d | 0.78 | 1.18 | 27.81% | 18.11% | Trim (<50DMA) | 4.17% | Skip (>Slot) |
+| 18 | 18 | MCX | ₹3,900.00 | 2472d | 0.78 | 1.15 | 31.52% | 71.23% | Hold (>50DMA) | 4.17% | Yes |
+| 19 | 20 | LGEINDIA | ₹1,770.90 | 277d (NEW) | 0.73 | 1.12 | 22.38% | 0.59% | Hold (>50DMA) | 4.17% | Yes |
+| 20 | 19 | MEESHO | ₹258.44 | 238d (NEW) | 0.71 | 1.15 | 35.12% | — | Hold (>50DMA) | 4.17% | Yes |
+| 21 | 23 | MAHABANK | ₹95.73 | 2472d | 0.62 | 0.93 | 23.49% | 44.38% | Hold (>50DMA) | 1.67% | Yes |
+| 22 | 22 | MANKIND | ₹2,689.40 | 879d | 0.59 | 0.96 | 18.20% | 1.05% | Hold (>50DMA) | 1.67% | Yes |
+| 23 | 21 | KPRMILL | ₹1,217.30 | 2472d | 0.57 | 1.05 | 25.52% | 0.67% | Hold (>50DMA) | 1.67% | Yes |
+| 24 | 24 | ASTERDM | ₹756.85 | 2161d | 0.55 | 0.82 | 16.18% | -5.23% | Hold (>50DMA) | 1.67% | Yes |
+| 25 | 27 | PREMIERENE | ₹811.50 | 554d | 0.50 | 0.73 | 16.74% | -19.05% | Trim (<50DMA) | 1.67% | Yes |
+| 26 | 25 | APLAPOLLO | ₹1,509.50 | 2472d | 0.48 | 0.76 | 15.77% | 26.70% | Trim (<50DMA) | 1.67% | Yes |
+| 27 | 30 | GLENMARK | ₹2,834.90 | 2472d | 0.47 | 0.68 | 13.98% | 21.81% | Hold (>50DMA) | 1.67% | Skip (>Slot) |
+| 28 | 28 | PAYTM | ₹1,741.90 | 1242d | 0.47 | 0.72 | 20.29% | 24.61% | Hold (>50DMA) | 1.67% | Skip (>Slot) |
+| 29 | 26 | JSWINFRA | ₹355.50 | 778d | 0.46 | 0.74 | 16.67% | 7.07% | Hold (>50DMA) | 1.67% | Yes |
+| 30 | 29 | MOTILALOFS | ₹1,222.15 | 2472d | 0.44 | 0.71 | 18.20% | -2.77% | Hold (>50DMA) | 1.67% | Yes |
+| 31 | 31 | MEDANTA | ₹1,473.70 | 994d | 0.42 | 0.66 | 13.17% | -8.07% | Hold (>50DMA) | 0.00% | Yes |
+| 32 | 32 | SAIL | ₹163.95 | 2472d | 0.41 | 0.65 | 15.86% | 34.79% | Trim (<50DMA) | 0.00% | Yes |
+| 33 | 33 | GROWW | ₹222.41 | 258d (NEW) | 0.39 | 0.60 | 15.69% | — | Hold (>50DMA) | 0.00% | Yes |
+| 34 | 34 | COFORGE | ₹2,071.00 | 2472d | 0.38 | 0.59 | 16.11% | 15.91% | Hold (>50DMA) | 0.00% | Skip (>Slot) |
+| 35 | 35 | GLAXO | ₹2,770.40 | 2472d | 0.32 | 0.48 | 8.83% | -7.57% | Hold (>50DMA) | 0.00% | Skip (>Slot) |
+| 36 | 36 | LTTS | ₹4,227.20 | 2472d | 0.24 | 0.38 | 9.62% | 2.55% | Hold (>50DMA) | 0.00% | Skip (>Slot) |
+| 37 | 42 | PETRONET | ₹322.35 | 2472d | 0.22 | 0.29 | 6.91% | 11.44% | Hold (>50DMA) | 0.00% | Yes |
+| 38 | 39 | OIL | ₹433.45 | 2472d | 0.20 | 0.30 | 6.77% | 14.71% | Trim (<50DMA) | 0.00% | Yes |
+| 39 | 38 | NAM-INDIA | ₹1,047.00 | 2238d | 0.20 | 0.30 | 8.19% | 5.46% | Trim (<50DMA) | 0.00% | Yes |
+| 40 | 37 | THERMAX | ₹2,722.30 | 2471d | 0.19 | 0.32 | 7.78% | 0.67% | Trim (<50DMA) | 0.00% | Skip (>Slot) |
+| 41 | 40 | BHARTIHEXA | ₹1,555.20 | 650d | 0.19 | 0.30 | 5.63% | -7.27% | Trim (<50DMA) | 0.00% | Yes |
+| 42 | 41 | KALYANKJIL | ₹659.50 | 1401d | 0.18 | 0.29 | 9.41% | 2.49% | Hold (>50DMA) | 0.00% | Skip (>Slot) |
+| 43 | 43 | MARICO | ₹922.30 | 2472d | 0.13 | 0.19 | 2.51% | 6.06% | Hold (>50DMA) | 0.00% | Skip (>Slot) |
+| 44 | 44 | PHOENIXLTD | ₹2,229.70 | 2471d | 0.12 | 0.18 | 3.61% | 13.02% | Hold (>50DMA) | 0.00% | Skip (>Slot) |
+| 45 | 45 | PAGEIND | ₹30,870.00 | 2471d | 0.09 | 0.13 | 2.27% | -14.29% | Trim (<50DMA) | 0.00% | Skip (>Slot) |
+| 46 | 46 | PIRAMALFIN | ₹1,937.60 | 261d (NEW) | 0.06 | 0.09 | 1.79% | — | Trim (<50DMA) | 0.00% | Skip (>Slot) |
+| 47 | 47 | DIXON | ₹13,138.00 | 2271d | 0.05 | 0.08 | 1.97% | -32.68% | Hold (>50DMA) | 0.00% | Skip (>Slot) |
+| 48 | 48 | EMBASSY | ₹424.46 | 1892d | 0.02 | 0.03 | 0.32% | 5.83% | Hold (>50DMA) | 0.00% | Skip (>Slot) |
+| 49 | 49 | INDIANB | ₹929.85 | 2472d | -0.00 | -0.00 | -0.09% | 9.66% | Hold (>50DMA) | 0.00% | Skip (>Slot) |
+| 50 | 50 | EXIDEIND | ₹399.10 | 2472d | -0.02 | -0.03 | -0.71% | -15.23% | Hold (>50DMA) | 0.00% | Skip (>Slot) |
+| 51 | 51 | ATGL | ₹547.90 | 1991d | -0.03 | -0.05 | -1.24% | -13.21% | Trim (<50DMA) | 0.00% | Skip (>Slot) |
+| 52 | 52 | CRISIL | ₹3,925.80 | 2472d | -0.04 | -0.07 | -1.25% | 1.07% | Trim (<50DMA) | 0.00% | Skip (>Slot) |
+| 53 | 54 | TATACOMM | ₹1,707.30 | 2472d | -0.05 | -0.09 | -1.87% | -10.27% | Trim (<50DMA) | 0.00% | Skip (>Slot) |
+| 54 | 53 | OBEROIRLTY | ₹1,889.20 | 2472d | -0.06 | -0.08 | -1.69% | -4.21% | Hold (>50DMA) | 0.00% | Skip (>Slot) |
+| 55 | 55 | ABCAPITAL | ₹410.30 | 2282d | -0.06 | -0.09 | -2.09% | 18.13% | Hold (>50DMA) | 0.00% | Skip (>Slot) |
+| 56 | 56 | SCHAEFFLER | ₹3,658.90 | 2472d | -0.06 | -0.09 | -1.89% | -4.57% | Trim (<50DMA) | 0.00% | Skip (>Slot) |
+| 57 | 57 | LODHA | ₹1,251.80 | 1388d | -0.07 | -0.10 | -2.88% | -14.57% | Hold (>50DMA) | 0.00% | Skip (>Slot) |
+| 58 | 59 | ICICIAMC | ₹2,975.00 | 231d (NEW) | -0.07 | -0.10 | -2.25% | — | Hold (>50DMA) | 0.00% | Skip (>Slot) |
+| 59 | 58 | LICI | ₹405.40 | 1121d | -0.07 | -0.10 | -2.00% | -10.38% | Hold (>50DMA) | 0.00% | Skip (>Slot) |
+| 60 | 60 | LICHSGFIN | ₹594.65 | 2472d | -0.08 | -0.12 | -2.57% | -8.45% | Hold (>50DMA) | 0.00% | Skip (>Slot) |
+
+## 4. Autonomous Paper Trading Bot (`inception=2026-11-27`, `as_of=2026-11-27`)
+| Account | Label | Start Cap | NAV (Net Tax) | NAV (Pre Def-Tax) | Return% | Alpha vs EW | Allocation | Fees | Held | Next Rebal |
+|---|---|---|---|---|---|---|---|---|---|---|
+| R3_1L_SlotCap | R3 · ₹1L (SlotCap + Sweep) | ₹100,000 | ₹99,850.29 | ₹99,850.29 | -0.15% | -0.15% | 86.7% Eq / 0.0% Gold / 13.3% Liq | ₹149.71 | 31 | 126d |
+| R3_10L_Standard | R3 · ₹10L (Standard) | ₹1,000,000 | ₹998,502.33 | ₹998,502.33 | -0.15% | -0.15% | 95.3% Eq / 0.0% Gold / 4.7% Liq | ₹1,497.67 | 31 | 126d |
+
+### Open FIFO Positions — `R3_1L_SlotCap` (31)
+| Symbol | Bucket | Qty | Avg Buy | Live | Value | Unrealized P&L | LTCG Timer |
+|---|---|---|---|---|---|---|---|
+| MEESHO | Top 20 | 16 | ₹258.44 | ₹258.44 | ₹4,135.04 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| MAHABANK | Top 20 | 43 | ₹95.73 | ₹95.73 | ₹4,116.39 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| PREMIERENE | Top 20 | 5 | ₹811.50 | ₹811.50 | ₹4,057.50 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| FEDERALBNK | Top 20 | 11 | ₹360.00 | ₹360.00 | ₹3,960.00 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| ANTHEM | Top 20 | 4 | ₹984.15 | ₹984.15 | ₹3,936.60 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| MCX | Top 20 | 1 | ₹3,900.00 | ₹3,900.00 | ₹3,900.00 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| NYKAA | Top 20 | 11 | ₹350.65 | ₹350.65 | ₹3,857.15 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| BHEL | Top 20 | 9 | ₹421.95 | ₹421.95 | ₹3,797.55 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| ASTERDM | Top 20 | 5 | ₹756.85 | ₹756.85 | ₹3,784.25 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| KPRMILL | Top 20 | 3 | ₹1,217.30 | ₹1,217.30 | ₹3,651.90 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| LENSKART | Top 20 | 5 | ₹718.35 | ₹718.35 | ₹3,591.75 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| AUROPHARMA | Top 20 | 2 | ₹1,791.80 | ₹1,791.80 | ₹3,583.60 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| IPCALAB | Top 20 | 2 | ₹1,782.90 | ₹1,782.90 | ₹3,565.80 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| BHARATFORG | Top 20 | 2 | ₹1,771.00 | ₹1,771.00 | ₹3,542.00 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| LGEINDIA | Top 20 | 2 | ₹1,770.90 | ₹1,770.90 | ₹3,541.80 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| INDHOTEL | Top 20 | 4 | ₹884.80 | ₹884.80 | ₹3,539.20 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| AJANTPHARM | Top 20 | 1 | ₹3,360.60 | ₹3,360.60 | ₹3,360.60 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| LLOYDSME | Top 20 | 2 | ₹1,556.80 | ₹1,556.80 | ₹3,113.60 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| MANKIND | Top 20 | 1 | ₹2,689.40 | ₹2,689.40 | ₹2,689.40 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| LAURUSLABS | Top 20 | 1 | ₹2,504.40 | ₹2,504.40 | ₹2,504.40 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| SAIL | Ranks 21-30 | 10 | ₹163.95 | ₹163.95 | ₹1,639.50 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| PETRONET | Ranks 21-30 | 5 | ₹322.35 | ₹322.35 | ₹1,611.75 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| GROWW | Ranks 21-30 | 7 | ₹222.41 | ₹222.41 | ₹1,556.87 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| BHARTIHEXA | Ranks 21-30 | 1 | ₹1,555.20 | ₹1,555.20 | ₹1,555.20 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| APLAPOLLO | Ranks 21-30 | 1 | ₹1,509.50 | ₹1,509.50 | ₹1,509.50 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| MEDANTA | Ranks 21-30 | 1 | ₹1,473.70 | ₹1,473.70 | ₹1,473.70 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| JSWINFRA | Ranks 21-30 | 4 | ₹355.50 | ₹355.50 | ₹1,422.00 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| OIL | Ranks 21-30 | 3 | ₹433.45 | ₹433.45 | ₹1,300.35 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| MOTILALOFS | Ranks 21-30 | 1 | ₹1,222.15 | ₹1,222.15 | ₹1,222.15 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| NAM-INDIA | Ranks 21-30 | 1 | ₹1,047.00 | ₹1,047.00 | ₹1,047.00 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| LIQUIDCASE | Defensive | 113 | ₹117.16 | ₹117.16 | ₹13,239.08 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+
+### Recent Bot Decisions — `R3_1L_SlotCap`
+- `2026-11-27` **INCEPTION_BUY**: Day-0 deployment under R3 (SlotCap ON): RISK_ON posture (100% Eq / 0% Def) across 30 slots.
+
+### Open FIFO Positions — `R3_10L_Standard` (31)
+| Symbol | Bucket | Qty | Avg Buy | Live | Value | Unrealized P&L | LTCG Timer |
+|---|---|---|---|---|---|---|---|
+| INDHOTEL | Top 20 | 47 | ₹884.80 | ₹884.80 | ₹41,585.60 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| FEDERALBNK | Top 20 | 115 | ₹360.00 | ₹360.00 | ₹41,400.00 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| NYKAA | Top 20 | 118 | ₹350.65 | ₹350.65 | ₹41,376.70 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| BHEL | Top 20 | 98 | ₹421.95 | ₹421.95 | ₹41,351.10 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| MEESHO | Top 20 | 160 | ₹258.44 | ₹258.44 | ₹41,350.40 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| ANTHEM | Top 20 | 42 | ₹984.15 | ₹984.15 | ₹41,334.30 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| AUROPHARMA | Top 20 | 23 | ₹1,791.80 | ₹1,791.80 | ₹41,211.40 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| IPCALAB | Top 20 | 23 | ₹1,782.90 | ₹1,782.90 | ₹41,006.70 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| LENSKART | Top 20 | 57 | ₹718.35 | ₹718.35 | ₹40,945.95 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| BHARATFORG | Top 20 | 23 | ₹1,771.00 | ₹1,771.00 | ₹40,733.00 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| LGEINDIA | Top 20 | 23 | ₹1,770.90 | ₹1,770.90 | ₹40,730.70 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| LLOYDSME | Top 20 | 26 | ₹1,556.80 | ₹1,556.80 | ₹40,476.80 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| AJANTPHARM | Top 20 | 12 | ₹3,360.60 | ₹3,360.60 | ₹40,327.20 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| LAURUSLABS | Top 20 | 16 | ₹2,504.40 | ₹2,504.40 | ₹40,070.40 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| MCX | Top 20 | 10 | ₹3,900.00 | ₹3,900.00 | ₹39,000.00 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| FLUOROCHEM | Top 20 | 8 | ₹4,824.50 | ₹4,824.50 | ₹38,596.00 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| GVT&D | Top 20 | 9 | ₹4,263.00 | ₹4,263.00 | ₹38,367.00 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| RADICO | Top 20 | 8 | ₹4,646.60 | ₹4,646.60 | ₹37,172.80 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| OFSS | Top 20 | 4 | ₹9,250.00 | ₹9,250.00 | ₹37,000.00 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| APARINDS | Top 20 | 2 | ₹14,160.00 | ₹14,160.00 | ₹28,320.00 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| APLAPOLLO | Ranks 21-30 | 11 | ₹1,509.50 | ₹1,509.50 | ₹16,604.50 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| MAHABANK | Ranks 21-30 | 173 | ₹95.73 | ₹95.73 | ₹16,561.29 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| JSWINFRA | Ranks 21-30 | 46 | ₹355.50 | ₹355.50 | ₹16,353.00 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| PREMIERENE | Ranks 21-30 | 20 | ₹811.50 | ₹811.50 | ₹16,230.00 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| MANKIND | Ranks 21-30 | 6 | ₹2,689.40 | ₹2,689.40 | ₹16,136.40 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| ASTERDM | Ranks 21-30 | 21 | ₹756.85 | ₹756.85 | ₹15,893.85 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| MOTILALOFS | Ranks 21-30 | 13 | ₹1,222.15 | ₹1,222.15 | ₹15,887.95 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| KPRMILL | Ranks 21-30 | 13 | ₹1,217.30 | ₹1,217.30 | ₹15,824.90 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| PAYTM | Ranks 21-30 | 9 | ₹1,741.90 | ₹1,741.90 | ₹15,677.10 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| GLENMARK | Ranks 21-30 | 5 | ₹2,834.90 | ₹2,834.90 | ₹14,174.50 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+| LIQUIDCASE | Defensive | 399 | ₹117.16 | ₹117.16 | ₹46,746.84 | ₹0.00 (0.00%) | 0d (365d to LTCG) |
+
+### Recent Bot Decisions — `R3_10L_Standard`
+- `2026-11-27` **INCEPTION_BUY**: Day-0 deployment under R3 (Standard): RISK_ON posture (100% Eq / 0% Def) across 30 slots.
+
+## 5. Verified 16-Year Zero-Survivorship PIT Verification (`2011-01-03` to `2026-11-26`, Net Sec 50AA + `15/35 bps`)
+| ID | Strategy / Benchmark | P1 11-16 | P2 16-21 | P3 21-26 (Post-Sel) | 16Y CAGR | 16Y MaxDD | Calmar | Sharpe |
+|---|---|---|---|---|---|---|---|---|
+| PIT_EW_Benchmark | Passive Liquid Midcap PIT EW Benchmark (Proxy) | 0.40% | 15.23% | 14.57% | 9.76% | -54.08% | 0.18 | 0.18 |
+| NIFTY_MIDCAP_100 | Official NSE Nifty Midcap 100 Index (Full 16Y) | 7.03% | 11.23% | 16.65% | 12.95% | -45.83% | 0.28 | 0.31 |
+| NIFTY_MIDCAP_100_150_STITCHED | Official Stitched Midcap 100 -> Midcap 150 | 6.84% | 8.29% | 15.99% | 10.32% | -44.74% | 0.23 | 0.24 |
+| NIFTY_MIDCAP_150_2019_26 | Official NSE Nifty Midcap 150 Index (2019-26) | — | — | 15.99% | 17.77% | -38.67% | 0.46 | 0.63 |
+| NIFTYBEES | Official Nifty 50 ETF (NIFTYBEES) | 5.41% | 15.08% | 10.89% | 10.30% | -36.34% | 0.28 | 0.27 |
+| R3_src_Frac | R3 Optimal (Risk9M · 4-Block MF · TrendGold150) | 11.43% | 23.31% | 16.78% | 15.61% | -28.78% | 0.54 | 0.61 |
+| R3_Staggered_2x6M | R3 Staggered 2-Tranche 6M (50% Every 3M) | 9.82% | 19.63% | 18.19% | 13.48% | -27.46% | 0.49 | 0.49 |
+| R3_Stress_30bps_2xCost | R3 Stress Test (30 bps / 2x Friction) | 9.87% | 21.61% | 14.88% | 13.95% | -31.14% | 0.45 | 0.50 |
+| R3_PreDefTax_Comparison | R3 Pre-Def-Tax Comparison (Sec 50AA Off) | 13.15% | 25.14% | 20.48% | 17.73% | -28.45% | 0.62 | 0.75 |
+| R3_Delist_Haircut_15pct | R3 Delist/Halt Stress (-15% Write-Down) | 11.03% | 23.08% | 16.70% | 15.91% | -34.23% | 0.46 | 0.57 |
+| R3_Delist_Haircut_25pct | R3 Delist/Halt Stress (-25% Write-Down) | 10.80% | 22.77% | 16.66% | 15.66% | -34.23% | 0.46 | 0.56 |
+| R3_src_Disc1L | R3 Optimal ₹1L Discrete SlotCap | 8.83% | 21.64% | 16.08% | 14.08% | -30.53% | 0.46 | 0.51 |
+| S3_src_Frac | S3 Sortino9M · 4-Block MF · TrendGold150 | 11.07% | 23.04% | 17.67% | 14.74% | -30.03% | 0.49 | 0.56 |
+| S3_src_Disc1L | S3 Sortino9M ₹1L Discrete SlotCap | 8.88% | 20.08% | 16.02% | 12.97% | -32.19% | 0.40 | 0.44 |
+| R3_NormZ_Frac | R3 Concentrated NormZ · 4-Block MF · TrendGold150 | 9.97% | 28.86% | 17.47% | 15.25% | -39.03% | 0.39 | 0.57 |
+| R2_src_Frac | R2 Simple Trigger (Risk9M · DD>15% · 50/50 Gold+Liq) | 8.24% | 28.92% | 18.59% | 15.17% | -28.72% | 0.53 | 0.61 |
+| R2_src_Disc1L | R2 Simple Trigger ₹1L Discrete SlotCap | 6.97% | 27.03% | 17.71% | 14.36% | -28.53% | 0.50 | 0.56 |
+| F2_src_Frac | F2 Legacy V1 (Raw9M · DD>12% · 50/50 Gold+Liq) | 7.08% | 25.07% | 12.52% | 11.16% | -27.47% | 0.41 | 0.32 |
+| ZeroFit_EQ4_GoldLiq50 | Zero-Fit Ablation (Equal 25%x4 MF · 50/50 Gold+Liq) | 9.15% | 24.68% | 11.77% | 13.44% | -28.84% | 0.47 | 0.52 |
+| ZeroFit_EQ4_Liquid | Zero-Fit Ablation (Equal 25%x4 MF · 100% Liquid) | 9.32% | 23.79% | 9.58% | 12.65% | -27.30% | 0.46 | 0.48 |
+| Unhedged_Risk9M | Unhedged Risk9M EW (No Regime Hedge) | 11.47% | 24.18% | 20.74% | 15.50% | -30.84% | 0.50 | 0.54 |
+| Unhedged_Sortino9M | Unhedged Sortino9M EW (No Regime Hedge) | 11.11% | 23.33% | 21.82% | 14.89% | -30.04% | 0.50 | 0.51 |
+
+## 6. Live Synchronized Current-Constituent Panel (`2018-01-02` to current, Survivorship-Biased Disclosure)
+| Scenario | End Value (₹1L Start) | CAGR% | MaxDD% | Calmar | Sharpe | Avg Eq% | Turnover% | Total Tax |
+|---|---|---|---|---|---|---|---|---|
+| R3 Optimal MF (Net Sec 50AA + 35 bps Risk-Off) | ₹869,568 | 27.53% | -26.00% | 1.06 | 1.19 | 68.4% | 380.7% | ₹198,465 |
+| R3 Staggered 2-Tranche 6M (50% Every 3M) | ₹796,689 | 26.28% | -21.68% | 1.21 | 1.16 | 68.4% | 391.8% | ₹198,173 |
+| R3 Stress Test (30 bps / 2x Friction) | ₹766,143 | 25.75% | -29.55% | 0.87 | 1.09 | 68.4% | 380.9% | ₹179,861 |
+| R3 Comparison (Pre-Def-Tax Toggle Off) | ₹1,091,905 | 30.83% | -22.91% | 1.35 | 1.39 | 68.4% | 380.1% | ₹83,985 |
+| R3 Discrete ₹1L SlotCap (2018-26 Luck Caveat) | ₹875,465 | 27.62% | -25.05% | 1.10 | 1.22 | 64.7% | 381.8% | ₹203,113 |
+| S3 Runner-Up (₹1L SlotCap) | ₹890,156 | 27.86% | -25.94% | 1.07 | 1.24 | 64.7% | 385.2% | ₹207,932 |
+| S3 Sortino MF (Frac) | ₹898,283 | 27.99% | -25.04% | 1.12 | 1.22 | 68.4% | 384.7% | ₹207,903 |
+| R7 Concentrated NormZ | ₹817,645 | 26.65% | -27.67% | 0.96 | 1.10 | 90.3% | 199.5% | ₹58,719 |
+| R2 Simple DD15 (Frac) | ₹759,110 | 25.60% | -26.39% | 0.97 | 1.06 | 90.3% | 195.0% | ₹58,103 |
+| R2 Simple DD15 (₹1L SlotCap) | ₹728,704 | 25.02% | -26.81% | 0.93 | 1.06 | 85.4% | 192.0% | ₹58,033 |
+| F2 Legacy V1 (Frac) | ₹677,852 | 24.01% | -25.26% | 0.95 | 0.97 | 86.0% | 255.1% | ₹58,858 |
+| F4 Large Cap 12M | ₹819,831 | 26.69% | -30.35% | 0.88 | 1.07 | 90.6% | 164.7% | ₹34,356 |
+| Baseline Unhedged 9M | ₹881,036 | 27.71% | -37.85% | 0.73 | 1.01 | 100.0% | 114.8% | ₹37,294 |
+| Benchmark: Current Universe EW (Biased 2018-26) | ₹570,291 | 21.60% | -36.97% | 0.58 | 0.87 | — | 0.0% | ₹0 |
+| Benchmark: Official Nifty Midcap 150 (2019-26) | ₹362,058 | 17.76% | -38.67% | 0.46 | 0.63 | — | 0.0% | ₹0 |
+| Defensive Gate ETF | ₹342,107 | 14.82% | -24.44% | 0.61 | 0.54 | — | 0.0% | ₹0 |
+| Defensive 50/50 | ₹256,721 | 11.17% | -14.86% | 0.75 | 0.59 | — | 0.0% | ₹0 |
+
+## 7. Forward Tape Trailing Daily Signals (2026-11-27 to 2026-11-27)
+| Date | MF4 Posture | Target Eq% | Def ETF | EW Index |
+|---|---|---|---|---|
+| 2026-11-27 | RISK_ON | 100% | LIQUIDCASE | 847.08 |
+
+## 8. Canonical Documentation & Raw Endpoints
+- Full Math Specification (Markdown): https://raw.githubusercontent.com/HarjasChadha/midcap-momentum-index/main/MATHEMATICAL_SPECIFICATION.md
+- Full Math Specification (14-page PDF): https://harjaschadha.github.io/midcap-momentum-index/docs/Momentum_Strategy_Mathematical_Specification.pdf
+- Final Research Audit Report: https://raw.githubusercontent.com/HarjasChadha/midcap-momentum-index/main/reports/FINAL_STRATEGY_REPORT.md
+- 16Y Exact Verification JSON: https://raw.githubusercontent.com/HarjasChadha/midcap-momentum-index/main/reports/src_exact_16yr_verification.json
+- Live State JSON: https://harjaschadha.github.io/midcap-momentum-index/data/live_state.json
+- Paper Bot Ledger JSON: https://harjaschadha.github.io/midcap-momentum-index/data/paper_ledger.json
+- Forward Tape JSON: https://harjaschadha.github.io/midcap-momentum-index/data/forward_tape.json

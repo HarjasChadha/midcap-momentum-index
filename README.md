@@ -4,7 +4,7 @@ Autonomous research engine, Numba/SciPy walk-forward optimizer, **16-year offici
 
 > **Disclaimer:** *Personal Quantitative Research & Paper-Trading Sandbox — Not Investment Advice / Not SEBI Registered.*
 
-Live Dashboard: **[harjaschadha.github.io/midcap-momentum-index](https://harjaschadha.github.io/midcap-momentum-index/)** · **Complete Equations & Provenance:** **[MATHEMATICAL_SPECIFICATION.md](MATHEMATICAL_SPECIFICATION.md)** · **PDF Spec:** **[docs/Momentum_Strategy_Mathematical_Specification.pdf](docs/Momentum_Strategy_Mathematical_Specification.pdf)** · Strategy Report: **[reports/FINAL_STRATEGY_REPORT.md](reports/FINAL_STRATEGY_REPORT.md)**
+Live Dashboard: **[harjaschadha.github.io/midcap-momentum-index](https://harjaschadha.github.io/midcap-momentum-index/)** · **AI/LLM Plain-Text & Static Feeds:** **[llms.txt](llms.txt)** · **[llms-full.txt](llms-full.txt)** · **[ai/](https://harjaschadha.github.io/midcap-momentum-index/ai/)** · **Complete Equations & Provenance:** **[MATHEMATICAL_SPECIFICATION.md](MATHEMATICAL_SPECIFICATION.md)** · **PDF Spec:** **[docs/Momentum_Strategy_Mathematical_Specification.pdf](docs/Momentum_Strategy_Mathematical_Specification.pdf)** · Strategy Report: **[reports/FINAL_STRATEGY_REPORT.md](reports/FINAL_STRATEGY_REPORT.md)**
 
 ---
 

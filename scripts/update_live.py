@@ -16,6 +16,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from src.backtester import BacktestConfig, compute_metrics, run_backtest  # noqa: E402
+from src.ai_feed import build_ai_feeds  # noqa: E402
 from src.data_loader import BENCHMARK_TICKERS, fetch_and_cache_all, load_universe  # noqa: E402
 from src.momentum import (  # noqa: E402
     combine_sleeves,
@@ -668,6 +669,8 @@ def build_live_state() -> dict[str, Any]:
         f"1L_NAV=₹{ledger_obj['accounts']['R3_1L_SlotCap']['summary']['nav']:,.2f}, "
         f"10L_NAV=₹{ledger_obj['accounts']['R3_10L_Standard']['summary']['nav']:,.2f})"
     )
+    ai_paths = build_ai_feeds(REPO_ROOT, safe_payload, ledger_obj, tape_obj)
+    print(f"Wrote static AI feeds ({len(ai_paths)} files): llms.txt, llms-full.txt, ai/index.html, robots.txt, sitemap.xml")
     return safe_payload
 
 

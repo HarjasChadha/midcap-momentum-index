@@ -286,6 +286,35 @@ class PaperBotTests(unittest.TestCase):
             self.assertIn("R3_1L_SlotCap", ledger["accounts"])
             self.assertIn("R3_10L_Standard", ledger["accounts"])
 
+    def test_ai_feed_generation_and_static_endpoints(self):
+        from src.ai_feed import build_ai_feeds
+
+        live_path = REPO_ROOT / "data" / "live_state.json"
+        ledger_path = REPO_ROOT / "data" / "paper_ledger.json"
+        tape_path = REPO_ROOT / "data" / "forward_tape.json"
+        if not (live_path.exists() and ledger_path.exists() and tape_path.exists()):
+            self.skipTest("Live data payloads absent")
+
+        live = json.loads(live_path.read_text())
+        ledger = json.loads(ledger_path.read_text())
+        tape = json.loads(tape_path.read_text())
+
+        with tempfile.TemporaryDirectory() as tmpd:
+            out = build_ai_feeds(Path(tmpd), live, ledger, tape)
+            for k in ("llms", "llms_full", "ai_html", "robots", "sitemap"):
+                self.assertTrue(out[k].exists(), msg=f"Missing AI endpoint {k}")
+            llms_txt = out["llms"].read_text(encoding="utf-8")
+            full_txt = out["llms_full"].read_text(encoding="utf-8")
+            ai_html = out["ai_html"].read_text(encoding="utf-8")
+            self.assertIn(live["as_of_date"], llms_txt)
+            self.assertIn("R3_1L_SlotCap", full_txt)
+            self.assertIn("Top-60 Nifty Midcap 150", full_txt)
+            self.assertIn("15.61%", full_txt)
+            self.assertNotIn("NaN", full_txt)
+            self.assertIn("<article>", ai_html)
+            self.assertIn("GPTBot", out["robots"].read_text(encoding="utf-8"))
+            self.assertIn("llms-full.txt", out["sitemap"].read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()

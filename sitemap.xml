@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://harjaschadha.github.io/midcap-momentum-index/</loc><lastmod>2026-11-27</lastmod></url>
+  <url><loc>https://harjaschadha.github.io/midcap-momentum-index/llms.txt</loc><lastmod>2026-11-27</lastmod></url>
+  <url><loc>https://harjaschadha.github.io/midcap-momentum-index/llms-full.txt</loc><lastmod>2026-11-27</lastmod></url>
+  <url><loc>https://harjaschadha.github.io/midcap-momentum-index/ai/</loc><lastmod>2026-11-27</lastmod></url>
+  <url><loc>https://harjaschadha.github.io/midcap-momentum-index/docs/Momentum_Strategy_Mathematical_Specification.pdf</loc><lastmod>2026-11-27</lastmod></url>
+  <url><loc>https://harjaschadha.github.io/midcap-momentum-index/data/live_state.json</loc><lastmod>2026-11-27</lastmod></url>
+  <url><loc>https://harjaschadha.github.io/midcap-momentum-index/data/paper_ledger.json</loc><lastmod>2026-11-27</lastmod></url>
+  <url><loc>https://harjaschadha.github.io/midcap-momentum-index/data/forward_tape.json</loc><lastmod>2026-11-27</lastmod></url>
+</urlset>
